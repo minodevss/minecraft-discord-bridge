@@ -30,7 +30,7 @@ public final class ModdedJoinGate {
         MinecraftServer server = current.server();
         try {
             return current.bridge()
-                    .checkJoin(ModdedProfiles.of(profile), isOperator(server, profile))
+                    .checkJoin(current.profiles().of(profile), isOperator(server, profile))
                     .completeOnTimeout(new JoinDecision.Allow(), GATE_WAIT_SECONDS, TimeUnit.SECONDS)
                     .thenApplyAsync(decision -> kickMessage(decision, server), server);
         } catch (RuntimeException | LinkageError error) {

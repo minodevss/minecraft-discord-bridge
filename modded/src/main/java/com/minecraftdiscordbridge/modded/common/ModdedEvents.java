@@ -1,6 +1,7 @@
 package com.minecraftdiscordbridge.modded.common;
 
 import com.minecraftdiscordbridge.core.Bridge;
+import com.minecraftdiscordbridge.core.platform.Floodgate;
 import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
@@ -31,9 +32,10 @@ public final class ModdedEvents {
     public void serverStarted(MinecraftServer server) {
         guard("server start", () -> {
             Bridge bridge = Bridge.create(new ModdedPlatform(server, loader));
-            session.set(new Session(server, bridge));
+            ModdedProfiles profiles = new ModdedProfiles(Floodgate.bedrockCheck());
+            session.set(new Session(server, bridge, profiles));
             bridge.start();
-            bridge.publish(new GameEvent.ServerStarted(onlinePlayers(server)));
+            bridge.publish(new GameEvent.ServerStarted(onlinePlayers(server, profiles)));
         });
     }
 
@@ -128,18 +130,18 @@ public final class ModdedEvents {
             return;
         }
         guard(event, () -> {
-            GameEvent created =
-                    factory.create(ModdedProfiles.of(player), current.server().registryAccess());
+            GameEvent created = factory.create(
+                    current.profiles().of(player), current.server().registryAccess());
             if (created != null) {
                 current.bridge().publish(created);
             }
         });
     }
 
-    private List<PlayerProfile> onlinePlayers(MinecraftServer server) {
+    private List<PlayerProfile> onlinePlayers(MinecraftServer server, ModdedProfiles profiles) {
         return server.getPlayerList().getPlayers().stream()
                 .filter(player -> !loader.isFakePlayer(player))
-                .map(ModdedProfiles::of)
+                .map(profiles::of)
                 .toList();
     }
 
@@ -164,5 +166,5 @@ public final class ModdedEvents {
         return session.get();
     }
 
-    record Session(MinecraftServer server, Bridge bridge) {}
+    record Session(MinecraftServer server, Bridge bridge, ModdedProfiles profiles) {}
 }

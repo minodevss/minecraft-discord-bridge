@@ -6,24 +6,30 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import java.util.Collection;
 import java.util.UUID;
+import java.util.function.Predicate;
 import net.minecraft.server.level.ServerPlayer;
 import org.jspecify.annotations.Nullable;
 
 final class ModdedProfiles {
-    private ModdedProfiles() {}
+    private final Predicate<UUID> bedrock;
 
-    static PlayerProfile of(ServerPlayer player) {
+    ModdedProfiles(Predicate<UUID> bedrock) {
+        this.bedrock = bedrock;
+    }
+
+    PlayerProfile of(ServerPlayer player) {
         return new PlayerProfile(
                 player.getUUID(),
                 player.getScoreboardName(),
                 player.getDisplayName().getString(),
                 skinTexture(player.getGameProfile()),
-                false);
+                bedrock.test(player.getUUID()));
     }
 
-    static PlayerProfile of(GameProfile profile) {
+    PlayerProfile of(GameProfile profile) {
         String name = name(profile);
-        return new PlayerProfile(id(profile), name, name, skinTexture(profile), false);
+        UUID id = id(profile);
+        return new PlayerProfile(id, name, name, skinTexture(profile), bedrock.test(id));
     }
 
     private static @Nullable String skinTexture(GameProfile profile) {
