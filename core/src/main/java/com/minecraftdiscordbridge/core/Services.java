@@ -16,7 +16,7 @@ import com.minecraftdiscordbridge.core.vanilla.VanillaTranslations;
 import java.time.Duration;
 import java.time.InstantSource;
 
-record Shared(
+record Services(
         Platform platform,
         CoreLoop loop,
         IoExecutor io,

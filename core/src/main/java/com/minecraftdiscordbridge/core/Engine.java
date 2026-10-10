@@ -67,7 +67,7 @@ final class Engine {
 
     private record WaitingJoin(PlayerProfile player, boolean bypass, CompletableFuture<JoinDecision> result) {}
 
-    private final Shared shared;
+    private final Services services;
     private final ExecutorService lifecycle;
     private final DiscordFactory factory;
     private final ConfigLoader loader;
@@ -89,13 +89,13 @@ final class Engine {
     private long droppedEvents;
 
     Engine(
-            Shared shared,
+            Services services,
             ExecutorService lifecycle,
             DiscordFactory factory,
             ConfigLoader loader,
             ShutdownMarker marker,
             BooleanSupplier stopping) {
-        this.shared = shared;
+        this.services = services;
         this.lifecycle = lifecycle;
         this.factory = factory;
         this.loader = loader;
@@ -104,10 +104,10 @@ final class Engine {
     }
 
     void boot() {
-        shared.io()
+        services.io()
                 .completeOnLoop(
                         () -> new Boot(
-                                Stores.open(shared.platform().dataDirectory()), loader.load(), marker.markRunning()),
+                                Stores.open(services.platform().dataDirectory()), loader.load(), marker.markRunning()),
                         this::booted,
                         failure -> {
                             LOGGER.error(
@@ -121,19 +121,19 @@ final class Engine {
     void onGameEvent(GameEvent event) {
         Session current = session;
         if (event instanceof GameEvent.ServerStarted started) {
-            shared.roster().reset(started.online());
+            services.roster().reset(started.online());
             serverStarted = true;
             announceStart();
             refreshStatus();
         } else if (event instanceof GameEvent.PlayerJoined joined) {
-            shared.roster().joined(joined.player(), joined.vanished());
+            services.roster().joined(joined.player(), joined.vanished());
             if (current != null) {
                 current.events().joined(joined);
                 current.roleSync().playerJoined(joined.player());
             }
             refreshStatus();
         } else if (event instanceof GameEvent.PlayerLeft left) {
-            shared.roster().left(left.player());
+            services.roster().left(left.player());
             if (current != null && !stopping.getAsBoolean()) {
                 current.events().left(left);
             }
@@ -196,7 +196,7 @@ final class Engine {
             Lang english = Lang.of(Language.EN);
             return new JoinDecision.Deny(TextRenderer.toJson(
                     english.component("game.gate.starting"),
-                    shared.platform().info().dataVersion()));
+                    services.platform().info().dataVersion()));
         }
         return new JoinDecision.Allow();
     }
@@ -218,8 +218,8 @@ final class Engine {
         if (current != null) {
             current.close();
         }
-        shared.vanilla().close();
-        return shared.discord().swap(OfflineDiscord.stopped(OfflineDiscord.STOPPED));
+        services.vanilla().close();
+        return services.discord().swap(OfflineDiscord.stopped(OfflineDiscord.STOPPED));
     }
 
     void clearMarker() throws IOException {
@@ -227,7 +227,7 @@ final class Engine {
     }
 
     private void joinIfNotOnline(GameEvent.PlayerSwitchedServer first) {
-        if (shared.roster().find(first.player().id()).isEmpty()) {
+        if (services.roster().find(first.player().id()).isEmpty()) {
             onGameEvent(new GameEvent.PlayerJoined(first.player(), false));
         }
     }
@@ -235,14 +235,14 @@ final class Engine {
     private void booted(Boot boot) {
         stores = boot.stores();
         recovered = boot.recovered();
-        boot.stores().links().onChange(change -> shared.loop().control(() -> linkChanged(change)));
+        boot.stores().links().onChange(change -> services.loop().control(() -> linkChanged(change)));
         apply(boot.config(), null);
     }
 
     private void linkChanged(LinkChange change) {
         if (change instanceof LinkChange.Unlinked) {
             Link link = change.link();
-            shared.access().forget(link.minecraftId(), link.discordId());
+            services.access().forget(link.minecraftId(), link.discordId());
         }
         Session current = session;
         if (current != null) {
@@ -262,7 +262,7 @@ final class Engine {
             replies.send(source, "game.not-ready");
             return;
         }
-        shared.io().completeOnLoop(loader::load, result -> apply(result, source), failure -> {
+        services.io().completeOnLoop(loader::load, result -> apply(result, source), failure -> {
             LOGGER.warn(
                     "Could not reload config.yml or secrets.yml: {}. Check that both files are readable and run"
                             + " /discord reload again",
@@ -300,7 +300,7 @@ final class Engine {
         errors.forEach(error -> LOGGER.error("{}", error));
         SetupGuide.logConfigErrors();
         if (snapshot == null) {
-            shared.discord().swap(OfflineDiscord.stopped(OfflineDiscord.CONFIG_ERRORS));
+            services.discord().swap(OfflineDiscord.stopped(OfflineDiscord.CONFIG_ERRORS));
         }
         if (source != null) {
             Replies replies = replies();
@@ -324,17 +324,17 @@ final class Engine {
             if (previous != null) {
                 previous.close();
             }
-            session = Sessions.build(shared, ready, loaded, channels, this::rebound);
+            session = Sessions.build(services, ready, loaded, channels, this::rebound);
         }
         Outcome outcome;
         if (!loaded.secrets().hasDiscordToken()) {
-            SetupGuide.log(shared.platform().dataDirectory());
+            SetupGuide.log(services.platform().dataDirectory());
             settings = null;
             replaceDiscord(OfflineDiscord.stopped(OfflineDiscord.NO_TOKEN));
             outcome = Outcome.NO_TOKEN;
         } else {
             DiscordSettings next = DiscordPlan.settings(loaded, channels);
-            if (next.equals(settings) && shared.discord().status().state() == DiscordStatus.State.READY) {
+            if (next.equals(settings) && services.discord().status().state() == DiscordStatus.State.READY) {
                 outcome = Outcome.APPLIED;
             } else {
                 settings = next;
@@ -345,14 +345,14 @@ final class Engine {
         announceStart();
         refreshStatus();
         Session current = session;
-        if (current != null && shared.discord().status().isConnected()) {
+        if (current != null && services.discord().status().isConnected()) {
             current.roleSync().discordReady();
         }
         return outcome;
     }
 
     private void rebound() {
-        shared.loop().later(REBIND_DELAY, () -> {
+        services.loop().later(REBIND_DELAY, () -> {
             ConfigSnapshot current = snapshot;
             if (current != null && !closed) {
                 activate(current);
@@ -362,11 +362,11 @@ final class Engine {
 
     private void connect(DiscordSettings next) {
         int target = ++generation;
-        Discord previous = shared.discord().swap(OfflineDiscord.connecting(OfflineDiscord.CONNECTING));
+        Discord previous = services.discord().swap(OfflineDiscord.connecting(OfflineDiscord.CONNECTING));
         try {
             lifecycle.execute(() -> {
                 previous.shutdown(List.of(), Deadline.after(Bridge.DISCORD_STOP_BUDGET));
-                shared.loop().control(() -> create(target, next));
+                services.loop().control(() -> create(target, next));
             });
         } catch (RejectedExecutionException stopped) {
             LOGGER.debug("Not reconnecting to Discord because the bridge is stopping");
@@ -375,7 +375,7 @@ final class Engine {
 
     private void replaceDiscord(Discord next) {
         generation++;
-        Discord previous = shared.discord().swap(next);
+        Discord previous = services.discord().swap(next);
         if (previous instanceof OfflineDiscord) {
             return;
         }
@@ -394,17 +394,17 @@ final class Engine {
             try {
                 Discord created = factory.create(
                         next,
-                        shared.loop(),
+                        services.loop(),
                         new Listener(target),
-                        new StoredWebhooks(requireStores().webhooks(), shared.io()),
-                        new StoredCommandHashes(requireStores().commandHashes(), shared.io()));
-                shared.discord().swap(created);
+                        new StoredWebhooks(requireStores().webhooks(), services.io()),
+                        new StoredCommandHashes(requireStores().commandHashes(), services.io()));
+                services.discord().swap(created);
                 created.start();
             } catch (RuntimeException failure) {
                 LOGGER.error(
                         "Could not start the Discord connection: {}. Run /discord reload to try again",
                         Failures.describe(failure));
-                shared.discord().swap(OfflineDiscord.stopped(failure.toString()));
+                services.discord().swap(OfflineDiscord.stopped(failure.toString()));
                 return;
             }
         }
@@ -427,15 +427,15 @@ final class Engine {
     }
 
     private void status(Replies replies, CommandSource source) {
-        droppedEvents += shared.loop().takeDropped();
+        droppedEvents += services.loop().takeDropped();
         Stores ready = stores;
         int links = ready == null ? 0 : ready.links().all().size();
-        DiscordStatus status = shared.discord().status();
+        DiscordStatus status = services.discord().status();
         StatusReport.send(replies, source, status, links, droppedEvents);
     }
 
     private Replies replies() {
-        return new Replies(lang, shared.platform().info().dataVersion());
+        return new Replies(lang, services.platform().info().dataVersion());
     }
 
     private Stores requireStores() {
@@ -478,7 +478,7 @@ final class Engine {
             if (target != generation) {
                 return;
             }
-            shared.access().remember(member, shared.clock().instant());
+            services.access().remember(member, services.clock().instant());
             Session current = session;
             if (current != null) {
                 current.roleSync().memberUpdated(member);
@@ -490,8 +490,9 @@ final class Engine {
             if (target != generation) {
                 return;
             }
-            shared.access()
-                    .remember(new MemberLookup.NotMember(userId), shared.clock().instant());
+            services.access()
+                    .remember(
+                            new MemberLookup.NotMember(userId), services.clock().instant());
             Session current = session;
             if (current != null) {
                 current.roleSync().memberLeft(userId);

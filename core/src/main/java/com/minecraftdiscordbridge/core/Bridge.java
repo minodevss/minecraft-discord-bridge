@@ -75,7 +75,7 @@ public final class Bridge {
         this.io = IoExecutor.forLoop(loop, "I/O");
         this.downloads = IoExecutor.forLoop(loop, "Downloads");
         this.lifecycle = Executors.newSingleThreadExecutor(Threads.named("Reconnect"));
-        Shared shared = new Shared(
+        Services services = new Services(
                 platform,
                 loop,
                 io,
@@ -94,7 +94,7 @@ public final class Bridge {
                 groups,
                 new AccessMemory());
         this.engine = new Engine(
-                shared,
+                services,
                 lifecycle,
                 discordFactory,
                 new ConfigLoader(platform.dataDirectory(), environment),

@@ -34,67 +34,69 @@ import java.util.Optional;
 final class Sessions {
     private Sessions() {}
 
-    static Session build(Shared shared, Stores stores, ConfigSnapshot snapshot, Channels channels, Runnable rebound) {
+    static Session build(
+            Services services, Stores stores, ConfigSnapshot snapshot, Channels channels, Runnable rebound) {
         BridgeConfig config = snapshot.config();
         Lang lang = Lang.of(config.language());
-        Replies replies = new Replies(lang, shared.platform().info().dataVersion());
+        Replies replies = new Replies(lang, services.platform().info().dataVersion());
         Optional<DiscordId> chat = channels.chat();
         Optional<DiscordId> events = channels.events();
         boolean hasGuild = !DiscordPlan.channelIds(config, channels).isEmpty();
         ChannelSetup setup = new ChannelSetup(
-                shared.discord(),
+                services.discord(),
                 stores.bindings(),
                 config.discord(),
-                shared.io(),
-                shared.setupCodes(),
-                shared.setupAttempts(),
-                shared.clock(),
+                services.io(),
+                services.setupCodes(),
+                services.setupAttempts(),
+                services.clock(),
                 replies,
                 rebound);
         Linking linking = new Linking(
                 config.linking(),
                 stores.links(),
-                shared.io(),
-                shared.pendingLinks(),
-                shared.linkAttempts(),
-                shared.roster(),
-                shared.clock(),
+                services.io(),
+                services.pendingLinks(),
+                services.linkAttempts(),
+                services.roster(),
+                services.clock(),
                 replies,
-                () -> hasGuild && shared.discord().status().isConnected());
-        GameActions gameActions = new GameActions(shared.platform(), shared.loop()::control, shared.actionTimeout());
+                () -> hasGuild && services.discord().status().isConnected());
+        GameActions gameActions =
+                new GameActions(services.platform(), services.loop()::control, services.actionTimeout());
         Actions actions = new Actions(config.actions(), gameActions, lang);
-        AccessContext access = shared.accessContext(stores);
+        AccessContext access = services.accessContext(stores);
         return new Session(
                 replies,
-                new MinecraftChat(config.chat(), chat, shared.discord(), stores.links()::all),
+                new MinecraftChat(config.chat(), chat, services.discord(), stores.links()::all),
                 new DiscordChat(
                         config.chat(),
                         chat,
                         chatFormat(config.chat().format()),
                         lang,
-                        shared.platform(),
+                        services.platform(),
                         stores.preferences()::hidingDiscord),
                 new EventPosts(
-                        config.events(), events, lang, shared.vanilla().use(config.language()), shared.discord()),
-                new StatusBoard(config.status(), chat, lang, shared.discord(), shared.roster()),
-                new SlashRouter(setup, linking, actions, shared.roster(), lang),
-                new GameCommands(replies, linking, new ChatToggle(stores.preferences(), shared.io(), replies), setup),
+                        config.events(), events, lang, services.vanilla().use(config.language()), services.discord()),
+                new StatusBoard(config.status(), chat, lang, services.discord(), services.roster()),
+                new SlashRouter(setup, linking, actions, services.roster(), lang),
+                new GameCommands(replies, linking, new ChatToggle(stores.preferences(), services.io(), replies), setup),
                 ConsoleMirror.start(
                         config.console(),
                         snapshot.secrets().hasDiscordToken() ? config.discord().consoleChannel() : Optional.empty(),
-                        shared.discord(),
+                        services.discord(),
                         lang,
-                        shared.loop(),
-                        () -> secrets(shared, snapshot)),
-                JoinGate.create(config.linking(), shared.platform().info(), access, replies),
-                RoleSync.create(config.roleSync(), shared.platform().info(), access),
+                        services.loop(),
+                        () -> secrets(services, snapshot)),
+                JoinGate.create(config.linking(), services.platform().info(), access, replies),
+                RoleSync.create(config.roleSync(), services.platform().info(), access),
                 new ConsoleInput(
                         config.console(),
                         config.discord().consoleChannel(),
                         gameActions,
-                        shared.discord(),
+                        services.discord(),
                         lang,
-                        () -> secrets(shared, snapshot)));
+                        () -> secrets(services, snapshot)));
     }
 
     private static Format chatFormat(String template) {
@@ -110,13 +112,13 @@ final class Sessions {
         }
     }
 
-    private static Collection<String> secrets(Shared shared, ConfigSnapshot snapshot) {
+    private static Collection<String> secrets(Services services, ConfigSnapshot snapshot) {
         List<String> secrets = new ArrayList<>();
         if (snapshot.secrets().hasDiscordToken()) {
             secrets.add(snapshot.secrets().discordToken());
         }
-        shared.setupCodes().active(shared.clock().instant()).ifPresent(secrets::add);
-        secrets.addAll(shared.pendingLinks().codes(shared.clock().instant()));
+        services.setupCodes().active(services.clock().instant()).ifPresent(secrets::add);
+        secrets.addAll(services.pendingLinks().codes(services.clock().instant()));
         return secrets;
     }
 }
