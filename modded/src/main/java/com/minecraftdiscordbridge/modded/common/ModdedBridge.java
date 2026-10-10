@@ -76,16 +76,15 @@ public final class ModdedBridge {
                 : null);
     }
 
-    public void advancementEarned(
-            ServerPlayer player,
-            //? if >=1.21 {
-            AdvancementHolder advancement
-            //?} else {
-            /*Advancement advancement
-            *///?}
-    ) {
+    //? if >=1.21 {
+    public void advancementEarned(ServerPlayer player, AdvancementHolder advancement) {
         advancementEarned(player, () -> Advancements.announcement(advancement, player));
     }
+    //?} else {
+    /*public void advancementEarned(ServerPlayer player, Advancement advancement) {
+        advancementEarned(player, () -> Advancements.announcement(advancement, player));
+    }
+    *///?}
 
     public CompletableFuture<Optional<Component>> checkJoin(GameProfile profile) {
         Session current = session.get();
