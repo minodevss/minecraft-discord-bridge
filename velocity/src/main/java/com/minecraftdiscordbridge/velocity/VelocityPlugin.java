@@ -69,6 +69,8 @@ public final class VelocityPlugin {
                 (version.getName() + " " + version.getVersion()).trim(),
                 ProtocolVersion.MAXIMUM_VERSION.getMostRecentSupportedVersion(),
                 CAMEL_CASE_TEXT_DATA_VERSION,
-                proxy.getConfiguration().isOnlineMode());
+                proxy.getConfiguration().isOnlineMode(),
+                false,
+                false);
     }
 }

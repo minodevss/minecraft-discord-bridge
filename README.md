@@ -28,7 +28,7 @@ Download the jar for your server from the [latest release](https://github.com/mi
 
 Fabric also needs [Fabric API](https://modrinth.com/mod/fabric-api). The Paper and Velocity jars need Java 21 or newer. Spigot, Bukkit, BungeeCord and Waterfall are not supported.
 
-On a Velocity network, install the bridge on the proxy only. The proxy does not see deaths or advancements, and `/whitelist` does not work there.
+On a Velocity network, install the bridge on the proxy only. The proxy does not see deaths or advancements and has no whitelist, so Discord offers no `/whitelist` there.
 
 Releases also go to Modrinth (every jar), CurseForge (Fabric, NeoForge and Forge) and Hangar (Paper and Velocity). Each GitHub release lists SHA-256 checksums in `SHA256SUMS`, and every jar has a build provenance attestation. To check a download:
 
