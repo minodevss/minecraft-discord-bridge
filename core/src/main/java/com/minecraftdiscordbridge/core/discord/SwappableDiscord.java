@@ -1,22 +1,17 @@
-package com.minecraftdiscordbridge.core;
+package com.minecraftdiscordbridge.core.discord;
 
-import com.minecraftdiscordbridge.core.discord.Discord;
-import com.minecraftdiscordbridge.core.discord.DiscordStatus;
-import com.minecraftdiscordbridge.core.discord.MemberLookup;
-import com.minecraftdiscordbridge.core.discord.OutboundMessage;
-import com.minecraftdiscordbridge.core.discord.RoleInfo;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-final class DiscordHandle implements Discord {
+public final class SwappableDiscord implements Discord {
     private volatile Discord target;
 
-    DiscordHandle(Discord initial) {
+    public SwappableDiscord(Discord initial) {
         this.target = initial;
     }
 
-    synchronized Discord swap(Discord next) {
+    public synchronized Discord swap(Discord next) {
         Discord previous = target;
         target = next;
         return previous;

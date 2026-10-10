@@ -4,6 +4,7 @@ import com.minecraftdiscordbridge.core.access.AccessContext;
 import com.minecraftdiscordbridge.core.access.AccessMemory;
 import com.minecraftdiscordbridge.core.access.PermissionGroups;
 import com.minecraftdiscordbridge.core.codes.Attempts;
+import com.minecraftdiscordbridge.core.discord.SwappableDiscord;
 import com.minecraftdiscordbridge.core.linking.PendingLinks;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
@@ -20,7 +21,7 @@ record Shared(
         CoreLoop loop,
         IoExecutor io,
         InstantSource clock,
-        DiscordHandle discord,
+        SwappableDiscord discord,
         Roster roster,
         PendingLinks pendingLinks,
         SetupCodes setupCodes,

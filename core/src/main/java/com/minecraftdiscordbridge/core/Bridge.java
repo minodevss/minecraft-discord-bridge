@@ -8,7 +8,9 @@ import com.minecraftdiscordbridge.core.codes.Attempts;
 import com.minecraftdiscordbridge.core.codes.Codes;
 import com.minecraftdiscordbridge.core.config.ConfigLoader;
 import com.minecraftdiscordbridge.core.discord.Discord;
+import com.minecraftdiscordbridge.core.discord.OfflineDiscord;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
+import com.minecraftdiscordbridge.core.discord.SwappableDiscord;
 import com.minecraftdiscordbridge.core.discord.jda.JdaDiscord;
 import com.minecraftdiscordbridge.core.linking.PendingLinks;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
@@ -76,7 +78,7 @@ public final class Bridge {
                 loop,
                 io,
                 clock,
-                new DiscordHandle(OfflineDiscord.connecting(OfflineDiscord.STARTING)),
+                new SwappableDiscord(OfflineDiscord.connecting(OfflineDiscord.STARTING)),
                 new Roster(),
                 new PendingLinks(codes),
                 new SetupCodes(codes),

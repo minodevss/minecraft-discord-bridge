@@ -1,35 +1,30 @@
-package com.minecraftdiscordbridge.core;
+package com.minecraftdiscordbridge.core.discord;
 
-import com.minecraftdiscordbridge.core.discord.Discord;
-import com.minecraftdiscordbridge.core.discord.DiscordStatus;
-import com.minecraftdiscordbridge.core.discord.MemberLookup;
-import com.minecraftdiscordbridge.core.discord.OutboundMessage;
-import com.minecraftdiscordbridge.core.discord.RoleInfo;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-final class OfflineDiscord implements Discord {
-    static final String STARTING = "The bridge is starting";
-    static final String CONNECTING = "Connecting to Discord";
-    static final String NO_TOKEN = "No bot token is set. See the server log for the setup steps";
-    static final String CONFIG_ERRORS =
+public final class OfflineDiscord implements Discord {
+    public static final String STARTING = "The bridge is starting";
+    public static final String CONNECTING = "Connecting to Discord";
+    public static final String NO_TOKEN = "No bot token is set. See the server log for the setup steps";
+    public static final String CONFIG_ERRORS =
             "The settings have errors. See the server log, fix them and run /discord reload";
-    static final String STOPPED = "The bridge has stopped";
+    public static final String STOPPED = "The bridge has stopped";
 
     private final DiscordStatus status;
     private final String reason;
 
-    OfflineDiscord(DiscordStatus.State state, String reason) {
+    public OfflineDiscord(DiscordStatus.State state, String reason) {
         this.status = new DiscordStatus(state, reason, -1, Map.of());
         this.reason = reason;
     }
 
-    static OfflineDiscord stopped(String reason) {
+    public static OfflineDiscord stopped(String reason) {
         return new OfflineDiscord(DiscordStatus.State.STOPPED, reason);
     }
 
-    static OfflineDiscord connecting(String reason) {
+    public static OfflineDiscord connecting(String reason) {
         return new OfflineDiscord(DiscordStatus.State.CONNECTING, reason);
     }
 
