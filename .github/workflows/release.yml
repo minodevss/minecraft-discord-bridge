@@ -157,4 +157,4 @@ jobs:
           HANGAR_TOKEN: ${{ secrets.HANGAR_TOKEN }}
         run: >-
           ./gradlew :publishMods :publishAllPublicationsToHangar
-          -Ppublish.dist=dist -Ppublish.changelog=dist/notes.md --no-configuration-cache
+          -Ppublish.changelog=dist/notes.md --no-configuration-cache

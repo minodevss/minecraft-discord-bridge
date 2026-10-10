@@ -29,7 +29,7 @@ val hangarVelocityVersions = listOf("3.4-4.2.0")
 val bridgeVersion = version.toString()
 val paperJar = "minecraft-discord-bridge-paper-$bridgeVersion.jar"
 val velocityJar = "minecraft-discord-bridge-velocity-$bridgeVersion.jar"
-val dist = layout.projectDirectory.dir(providers.gradleProperty("publish.dist").orElse("dist"))
+val dist = layout.projectDirectory.dir("dist")
 val dryRunOnly = providers.gradleProperty("publish.dryRun").isPresent
 val releaseType = when {
     "alpha" in bridgeVersion -> ReleaseType.ALPHA
@@ -46,7 +46,7 @@ fun projectId(property: String, site: String) = providers.gradleProperty(propert
     it.ifBlank { throw GradleException("Set $property in gradle.properties to the $site project ID, or remove the token.") }
 }
 
-fun distFile(name: String) = dist.map { it.file(name) }
+fun distFile(name: String) = dist.file(name)
 
 val modrinthToken = secret("MODRINTH_TOKEN")
 val curseforgeToken = secret("CURSEFORGE_TOKEN")
