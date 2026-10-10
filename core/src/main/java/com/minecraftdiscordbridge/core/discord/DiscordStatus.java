@@ -20,11 +20,19 @@ public record DiscordStatus(
         STOPPED
     }
 
-    public record ChannelStatus(int queued, int inFlight, long dropped, long rateLimited) {
+    public record ChannelStatus(int queued, int inFlight, long dropped, long rateLimited, Optional<String> name) {
         public static final ChannelStatus IDLE = new ChannelStatus(0, 0, 0, 0);
 
+        public ChannelStatus(int queued, int inFlight, long dropped, long rateLimited) {
+            this(queued, inFlight, dropped, rateLimited, Optional.empty());
+        }
+
         public ChannelStatus withRateLimited(long count) {
-            return new ChannelStatus(queued, inFlight, dropped, count);
+            return new ChannelStatus(queued, inFlight, dropped, count, name);
+        }
+
+        public ChannelStatus withName(Optional<String> channelName) {
+            return new ChannelStatus(queued, inFlight, dropped, rateLimited, channelName);
         }
     }
 }

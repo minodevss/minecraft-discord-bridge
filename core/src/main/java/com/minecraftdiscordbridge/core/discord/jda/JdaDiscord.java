@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
@@ -104,8 +105,15 @@ public final class JdaDiscord implements Discord {
         Map<DiscordId, ChannelStatus> channels = new HashMap<>();
         settings.channelIds().forEach(id -> channels.put(id, ChannelStatus.IDLE));
         channels.putAll(outbox.snapshot());
-        channels.replaceAll((id, channel) -> channel.withRateLimited(rateLimits.count(id)));
+        channels.replaceAll(
+                (id, channel) -> channel.withRateLimited(rateLimits.count(id)).withName(channelName(id)));
         return connection.status(channels);
+    }
+
+    private Optional<String> channelName(DiscordId id) {
+        JDA jda = connection.jda();
+        GuildChannel channel = jda == null ? null : jda.getGuildChannelById(id.value());
+        return channel == null ? Optional.empty() : Optional.of(channel.getName());
     }
 
     @Override

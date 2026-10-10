@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core;
 import static com.minecraftdiscordbridge.core.Harness.ALEX;
 import static com.minecraftdiscordbridge.core.Harness.CHANNELS;
 import static com.minecraftdiscordbridge.core.Harness.CHAT;
+import static com.minecraftdiscordbridge.core.Harness.EVENTS;
 import static com.minecraftdiscordbridge.core.Harness.MEMBER;
 import static com.minecraftdiscordbridge.core.Harness.STEVE;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -94,6 +95,17 @@ class StatusTest {
                     .contains("Bot token: from MCDB_DISCORD_TOKEN")
                     .contains("Gateway ping: 42 ms")
                     .contains("Linked accounts: 0");
+        }
+    }
+
+    @Test
+    void namesTheChannelsItKnowsAndShowsTheIdOfTheOthers() throws IOException {
+        try (Harness harness = Harness.started(directory, CHANNELS)) {
+            harness.discord().channelNames.put(CHAT, "minecraft");
+
+            assertThat(harness.settledStatus())
+                    .contains("Channel #minecraft: 0 waiting")
+                    .contains("Channel " + EVENTS + ": 0 waiting");
         }
     }
 

@@ -15,6 +15,7 @@ import com.minecraftdiscordbridge.core.discord.RoleInfo;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
 import com.minecraftdiscordbridge.core.loop.Deadline;
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,6 +41,7 @@ public final class RecordingDiscord implements Discord {
     public volatile Function<DiscordId, CompletableFuture<MemberLookup>> members =
             userId -> CompletableFuture.completedFuture(new MemberLookup.NotMember(userId));
     public final Map<DiscordId, RoleInfo> roles = new ConcurrentHashMap<>();
+    public final Map<DiscordId, String> channelNames = new ConcurrentHashMap<>();
     public final List<String> roleChanges = new CopyOnWriteArrayList<>();
     public final List<DiscordId> memberLookups = new CopyOnWriteArrayList<>();
     private final CoreLoop loop;
@@ -114,7 +116,11 @@ public final class RecordingDiscord implements Discord {
 
     @Override
     public DiscordStatus status() {
-        return new DiscordStatus(shutDown ? DiscordStatus.State.STOPPED : state, Optional.empty(), 42, Map.of());
+        Map<DiscordId, DiscordStatus.ChannelStatus> channels = new LinkedHashMap<>();
+        settings.channelIds()
+                .forEach(id -> channels.put(
+                        id, DiscordStatus.ChannelStatus.IDLE.withName(Optional.ofNullable(channelNames.get(id)))));
+        return new DiscordStatus(shutDown ? DiscordStatus.State.STOPPED : state, Optional.empty(), 42, channels);
     }
 
     @Override
