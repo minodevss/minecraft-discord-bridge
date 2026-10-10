@@ -4,5 +4,6 @@ main: com.minecraftdiscordbridge.paper.PaperPlugin
 api-version: '1.21'
 folia-supported: true
 description: Minecraft ↔ Discord bridge
+authors: [minodevss]
 website: https://github.com/minodevss/minecraft-discord-bridge
 softdepend: [LuckPerms, floodgate]
