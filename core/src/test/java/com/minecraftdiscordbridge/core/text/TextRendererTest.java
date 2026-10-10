@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.minecraftdiscordbridge.core.platform.RichText;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
@@ -122,7 +123,7 @@ class TextRendererTest {
 
     @Test
     void flattensTranslatableWithSequentialArguments() {
-        Translations english = Map.of("death.attack.player", "%s was slain by %s")::get;
+        Translations english = translations(Map.of("death.attack.player", "%s was slain by %s"));
         Component death =
                 Component.translatable("death.attack.player", Component.text("Steve"), Component.text("Alex"));
 
@@ -131,7 +132,7 @@ class TextRendererTest {
 
     @Test
     void flattensTranslatableWithPositionalArgumentsAndPercent() {
-        Translations translations = Map.of("k", "%2$s before %1$s at 100%%")::get;
+        Translations translations = translations(Map.of("k", "%2$s before %1$s at 100%%"));
         Component component = Component.translatable("k", Component.text("a"), Component.text("b"));
 
         assertThat(TextRenderer.plain(component, translations)).isEqualTo("b before a at 100%");
@@ -139,7 +140,7 @@ class TextRendererTest {
 
     @Test
     void flattensNestedTranslatableArgumentsAndChildren() {
-        Translations translations = Map.of("outer", "<%s>", "inner", "[%s]")::get;
+        Translations translations = translations(Map.of("outer", "<%s>", "inner", "[%s]"));
         Component component = Component.translatable("outer", Component.translatable("inner", Component.text("x")))
                 .append(Component.text("!"));
 
@@ -154,13 +155,13 @@ class TextRendererTest {
                 .arguments(Component.text("Steve"))
                 .build();
 
-        assertThat(TextRenderer.plain(component, key -> null)).isEqualTo("Steve joined");
+        assertThat(TextRenderer.plain(component, key -> Optional.empty())).isEqualTo("Steve joined");
     }
 
     @Test
     void translatesRichTextWhenEveryKeyIsKnown() {
         Translations korean =
-                Map.of("death.attack.mob", "%1$s이(가) %2$s에게 살해당했습니다", "entity.minecraft.zombie", "좀비")::get;
+                translations(Map.of("death.attack.mob", "%1$s이(가) %2$s에게 살해당했습니다", "entity.minecraft.zombie", "좀비"));
         RichText death = new RichText(
                 "{\"translate\":\"death.attack.mob\",\"with\":[{\"text\":\"Steve\"},"
                         + "{\"translate\":\"entity.minecraft.zombie\"}]}",
@@ -171,7 +172,7 @@ class TextRendererTest {
 
     @Test
     void keepsThePlatformTextWhenAModKeyIsMissing() {
-        Translations korean = Map.of("death.attack.mob", "%1$s이(가) %2$s에게 살해당했습니다")::get;
+        Translations korean = translations(Map.of("death.attack.mob", "%1$s이(가) %2$s에게 살해당했습니다"));
         RichText death = new RichText(
                 "{\"translate\":\"death.attack.mob\",\"with\":[\"Steve\",{\"translate\":\"entity.mymod.wisp\"}]}",
                 "Steve was slain by Wisp");
@@ -181,11 +182,11 @@ class TextRendererTest {
 
     @Test
     void keepsThePlatformTextWithoutTheTranslationOrReadableJson() {
-        Translations korean = Map.of("death.attack.fall", "%1$s이(가) 땅바닥으로 곤두박질쳤습니다")::get;
+        Translations korean = translations(Map.of("death.attack.fall", "%1$s이(가) 땅바닥으로 곤두박질쳤습니다"));
 
         assertThat(TextRenderer.plain(
                         new RichText("{\"translate\":\"death.attack.fall\",\"with\":[\"Steve\"]}", "Steve fell"),
-                        key -> null))
+                        key -> Optional.empty()))
                 .isEqualTo("Steve fell");
         assertThat(TextRenderer.plain(new RichText("{broken", "Steve fell"), korean))
                 .isEqualTo("Steve fell");
@@ -193,7 +194,8 @@ class TextRendererTest {
 
     @Test
     void keepsRawPatternWhenFormatIsUnsupportedOrArgumentMissing() {
-        Translations translations = Map.of("number", "%d items", "missing", "%s and %s", "stray", "50% off")::get;
+        Translations translations =
+                translations(Map.of("number", "%d items", "missing", "%s and %s", "stray", "50% off"));
 
         assertThat(TextRenderer.plain(Component.translatable("number", Component.text("3")), translations))
                 .isEqualTo("%d items");
@@ -201,5 +203,9 @@ class TextRendererTest {
                 .isEqualTo("%s and %s");
         assertThat(TextRenderer.plain(Component.translatable("stray"), translations))
                 .isEqualTo("50% off");
+    }
+
+    private static Translations translations(Map<String, String> patterns) {
+        return key -> Optional.ofNullable(patterns.get(key));
     }
 }

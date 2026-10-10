@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.text.markdown;
 import static com.minecraftdiscordbridge.core.text.markdown.MarkdownText.NONE;
 
 import com.minecraftdiscordbridge.core.text.SafeText;
+import java.util.Optional;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import org.jspecify.annotations.Nullable;
@@ -58,8 +59,10 @@ final class DiscordTokens {
         if (id == null) {
             return null;
         }
-        String name = mentions.channelName(id);
-        return new Token(Component.text(name == null ? "#unknown-channel" : "#" + SafeText.strip(name)), idEnd + 1);
+        String name = mentions.channelName(id)
+                .map(found -> "#" + SafeText.strip(found))
+                .orElse("#unknown-channel");
+        return new Token(Component.text(name), idEnd + 1);
     }
 
     private @Nullable Token emoji(int nameStart, int end) {
@@ -138,15 +141,16 @@ final class DiscordTokens {
     }
 
     private Component userMention(long id) {
-        String name = mentions.userName(id);
-        return Component.text(name == null ? "@unknown-user" : "@" + SafeText.strip(name));
+        return Component.text(
+                mentions.userName(id).map(name -> "@" + SafeText.strip(name)).orElse("@unknown-user"));
     }
 
     private Component roleMention(long id) {
-        MentionResolver.Role role = mentions.role(id);
-        if (role == null) {
+        Optional<MentionResolver.Role> found = mentions.role(id);
+        if (found.isEmpty()) {
             return Component.text("@unknown-role");
         }
+        MentionResolver.Role role = found.get();
         Component mention = Component.text("@" + SafeText.strip(role.name()));
         return role.rgb().isPresent() ? mention.color(TextColor.color(role.rgb().getAsInt())) : mention;
     }

@@ -1,42 +1,31 @@
 package com.minecraftdiscordbridge.core.text.markdown;
 
+import java.util.Optional;
 import java.util.OptionalInt;
-import org.jspecify.annotations.Nullable;
 
 public interface MentionResolver {
     MentionResolver NONE = new MentionResolver() {
         @Override
-        public @Nullable String userName(long userId) {
-            return null;
+        public Optional<String> userName(long userId) {
+            return Optional.empty();
         }
 
         @Override
-        public @Nullable Role role(long roleId) {
-            return null;
+        public Optional<Role> role(long roleId) {
+            return Optional.empty();
         }
 
         @Override
-        public @Nullable String channelName(long channelId) {
-            return null;
+        public Optional<String> channelName(long channelId) {
+            return Optional.empty();
         }
     };
 
-    @Nullable
-    String userName(long userId);
+    Optional<String> userName(long userId);
 
-    @Nullable
-    Role role(long roleId);
+    Optional<Role> role(long roleId);
 
-    @Nullable
-    String channelName(long channelId);
+    Optional<String> channelName(long channelId);
 
-    record Role(String name, OptionalInt rgb) {
-        public static Role uncolored(String name) {
-            return new Role(name, OptionalInt.empty());
-        }
-
-        public static Role colored(String name, int rgb) {
-            return new Role(name, OptionalInt.of(rgb));
-        }
-    }
+    record Role(String name, OptionalInt rgb) {}
 }

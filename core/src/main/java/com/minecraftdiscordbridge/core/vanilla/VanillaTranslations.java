@@ -50,8 +50,8 @@ public final class VanillaTranslations implements Translations {
     }
 
     @Override
-    public @Nullable String pattern(String key) {
-        return patterns.get(key);
+    public Optional<String> pattern(String key) {
+        return Optional.ofNullable(patterns.get(key));
     }
 
     public void close() {

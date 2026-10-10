@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.text;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,13 +16,10 @@ final class TranslationFormat {
     private TranslationFormat() {}
 
     static void flatten(TranslatableComponent component, Translations translations, Consumer<Component> parts) {
-        String pattern = translations.pattern(component.key());
-        if (pattern == null) {
-            pattern = component.fallback();
-        }
-        if (pattern == null) {
-            pattern = component.key();
-        }
+        String pattern = translations
+                .pattern(component.key())
+                .or(() -> Optional.ofNullable(component.fallback()))
+                .orElse(component.key());
         List<Component> arguments = new ArrayList<>();
         for (TranslationArgument argument : component.arguments()) {
             arguments.add(argument.asComponent());

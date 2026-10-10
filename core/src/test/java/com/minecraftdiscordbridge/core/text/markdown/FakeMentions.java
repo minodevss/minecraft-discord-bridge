@@ -1,7 +1,8 @@
 package com.minecraftdiscordbridge.core.text.markdown;
 
 import java.util.Map;
-import org.jspecify.annotations.Nullable;
+import java.util.Optional;
+import java.util.OptionalInt;
 
 record FakeMentions(Map<Long, String> users, Map<Long, Role> roles, Map<Long, String> channels)
         implements MentionResolver {
@@ -13,22 +14,26 @@ record FakeMentions(Map<Long, String> users, Map<Long, Role> roles, Map<Long, St
     static FakeMentions standard() {
         return new FakeMentions(
                 Map.of(STEVE, "Steve"),
-                Map.of(ADMIN, Role.colored("Admin", 0x3498DB), HELPER, Role.uncolored("Helper")),
+                Map.of(
+                        ADMIN,
+                        new Role("Admin", OptionalInt.of(0x3498DB)),
+                        HELPER,
+                        new Role("Helper", OptionalInt.empty())),
                 Map.of(GENERAL, "general"));
     }
 
     @Override
-    public @Nullable String userName(long userId) {
-        return users.get(userId);
+    public Optional<String> userName(long userId) {
+        return Optional.ofNullable(users.get(userId));
     }
 
     @Override
-    public @Nullable Role role(long roleId) {
-        return roles.get(roleId);
+    public Optional<Role> role(long roleId) {
+        return Optional.ofNullable(roles.get(roleId));
     }
 
     @Override
-    public @Nullable String channelName(long channelId) {
-        return channels.get(channelId);
+    public Optional<String> channelName(long channelId) {
+        return Optional.ofNullable(channels.get(channelId));
     }
 }
