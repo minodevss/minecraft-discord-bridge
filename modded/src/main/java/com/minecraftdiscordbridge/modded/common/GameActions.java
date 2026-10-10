@@ -114,7 +114,7 @@ final class GameActions {
 
     private static ActionOutcome failed(GameAction action, Throwable error) {
         Throwable cause = error instanceof CompletionException && error.getCause() != null ? error.getCause() : error;
-        LOGGER.warn("Could not perform {}; check that the server can reach the Mojang API", action, cause);
+        LOGGER.warn("Could not {}; check that the server can reach the Mojang API", action.describe(), cause);
         return new ActionOutcome.Failed(Objects.toString(cause.getMessage(), cause.getClass().getSimpleName()));
     }
 }
