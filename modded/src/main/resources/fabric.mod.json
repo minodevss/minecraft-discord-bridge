@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "minecraftdiscordbridge",
+  "version": "${version}",
+  "name": "Minecraft Discord Bridge",
+  "description": "Minecraft ↔ Discord bridge",
+  "license": "Apache-2.0",
+  "contact": {
+    "sources": "https://github.com/minodevss/minecraft-discord-bridge"
+  },
+  "environment": "server",
+  "entrypoints": {
+    "server": ["com.minecraftdiscordbridge.modded.fabric.FabricEntrypoint"]
+  },
+  "depends": {
+    "fabricloader": ">=0.15",
+    "fabric-api": "*",
+    "minecraft": "${minecraft}",
+    "java": ">=${java}"
+  }
+}
