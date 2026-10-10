@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core;
 
+import com.minecraftdiscordbridge.core.access.AccessContext;
+import com.minecraftdiscordbridge.core.access.JoinGate;
 import com.minecraftdiscordbridge.core.actions.Actions;
 import com.minecraftdiscordbridge.core.chat.ChatToggle;
 import com.minecraftdiscordbridge.core.chat.DiscordChat;
@@ -60,6 +62,7 @@ final class Sessions {
                 () -> hasGuild && connected(shared.discord().status()));
         Actions actions =
                 new Actions(config.actions(), shared.platform(), shared.loop()::control, lang, shared.actionTimeout());
+        AccessContext access = shared.accessContext(stores);
         return new Session(
                 replies,
                 new MinecraftChat(config.chat(), chat, shared.discord(), stores.links()::all),
@@ -81,7 +84,8 @@ final class Sessions {
                         shared.discord(),
                         lang,
                         shared.loop(),
-                        () -> secrets(shared, snapshot)));
+                        () -> secrets(shared, snapshot)),
+                JoinGate.create(config.linking(), shared.platform().info(), access, replies));
     }
 
     private static boolean connected(DiscordStatus status) {

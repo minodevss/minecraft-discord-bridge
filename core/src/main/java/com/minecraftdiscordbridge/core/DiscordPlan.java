@@ -27,8 +27,12 @@ final class DiscordPlan {
                 channelIds,
                 Author.server(),
                 config.discord().autoEnableMessageContent(),
-                false,
+                needsMembers(config),
                 commands);
+    }
+
+    static boolean needsMembers(BridgeConfig config) {
+        return config.linking().requiredRole().isPresent();
     }
 
     static Set<Long> channelIds(BridgeConfig config, Channels channels) {

@@ -54,6 +54,16 @@ class BridgeLifecycleTest {
     }
 
     @Test
+    void asksForTheMembersIntentOnlyWhenARoleIsRequired() throws IOException {
+        try (Harness harness = Harness.started(directory, CHANNELS + """
+                linking:
+                  required-role: "777777777777777777"
+                """)) {
+            assertThat(harness.discord().settings.requestMembersIntent()).isTrue();
+        }
+    }
+
+    @Test
     void staysIdleWithoutATokenAndKeepsTheServerUnaffected() throws IOException {
         try (Harness harness = Harness.create(directory, CHANNELS, Map.of())) {
             harness.bridge.start();
