@@ -90,19 +90,19 @@ class StartupTest {
     }
 
     @Test
-    void explainsTheMissingTokenInAShortBannerThatAgreesWithItself() throws IOException {
+    void explainsTheMissingTokenInOneLineWithTheSetupGuide() throws IOException {
         try (RecordingLogs.Capture logs = RecordingLogs.capture();
                 Harness harness = Harness.create(directory, CHANNELS, Map.of())) {
             harness.bridge.start();
             harness.settledStatus();
 
             assertThat(logs.lines(Level.WARN))
-                    .hasSizeLessThanOrEqualTo(3)
-                    .anySatisfy(line -> assertThat(line).contains(SetupGuide.QUICK_START))
-                    .anySatisfy(line -> assertThat(line)
-                            .contains("https://discord.com/developers/applications")
-                            .contains(directory.resolve("secrets.yml").toString())
-                            .contains("/discord reload"));
+                    .singleElement()
+                    .asString()
+                    .contains(SetupGuide.QUICK_START)
+                    .contains("https://discord.com/developers/applications")
+                    .contains(directory.resolve("secrets.yml").toString())
+                    .contains("/discord reload");
             assertThat(logs.lines()).noneSatisfy(line -> assertThat(line).contains("restart"));
         }
     }
