@@ -2,13 +2,13 @@ package com.minecraftdiscordbridge.core.access;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.minecraftdiscordbridge.core.FakeGroups;
-import com.minecraftdiscordbridge.core.MutableClock;
 import com.minecraftdiscordbridge.core.codes.Codes;
 import com.minecraftdiscordbridge.core.config.LinkingConfig;
 import com.minecraftdiscordbridge.core.config.UnreachablePolicy;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
+import com.minecraftdiscordbridge.core.fakes.FakeGroups;
+import com.minecraftdiscordbridge.core.fakes.MutableClock;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.i18n.Replies;

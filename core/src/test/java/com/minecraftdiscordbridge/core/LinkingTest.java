@@ -8,6 +8,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
+import com.minecraftdiscordbridge.core.fakes.RecordingReply;
+import com.minecraftdiscordbridge.core.fakes.RecordingSource;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.storage.Edition;
 import com.minecraftdiscordbridge.core.storage.Link;

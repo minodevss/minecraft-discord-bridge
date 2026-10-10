@@ -1,4 +1,4 @@
-package com.minecraftdiscordbridge.core;
+package com.minecraftdiscordbridge.core.fakes;
 
 import com.minecraftdiscordbridge.core.access.GroupCheck;
 import com.minecraftdiscordbridge.core.access.PermissionGroups;

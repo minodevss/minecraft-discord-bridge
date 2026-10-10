@@ -7,6 +7,10 @@ import static com.minecraftdiscordbridge.core.Harness.MEMBER;
 import static com.minecraftdiscordbridge.core.Harness.STEVE;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
+import com.minecraftdiscordbridge.core.fakes.RecordingReply;
+import com.minecraftdiscordbridge.core.fakes.RecordingSource;
+import com.minecraftdiscordbridge.core.fakes.Waits;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import java.io.IOException;

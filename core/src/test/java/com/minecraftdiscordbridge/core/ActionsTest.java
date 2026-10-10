@@ -10,6 +10,8 @@ import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import com.minecraftdiscordbridge.core.discord.InteractionRequest;
+import com.minecraftdiscordbridge.core.fakes.RecordingReply;
+import com.minecraftdiscordbridge.core.fakes.Waits;
 import com.minecraftdiscordbridge.core.platform.ActionOutcome;
 import com.minecraftdiscordbridge.core.platform.GameAction;
 import com.minecraftdiscordbridge.core.platform.GameEvent;

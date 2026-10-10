@@ -16,7 +16,6 @@ import static com.minecraftdiscordbridge.core.discord.jda.TestSupport.take;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
-import com.minecraftdiscordbridge.core.RecordingLogs;
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
@@ -32,6 +31,7 @@ import com.minecraftdiscordbridge.core.discord.WebhookCredentials;
 import com.minecraftdiscordbridge.core.discord.jda.TestSupport.MemoryCommandHashes;
 import com.minecraftdiscordbridge.core.discord.jda.TestSupport.MemoryWebhooks;
 import com.minecraftdiscordbridge.core.discord.jda.TestSupport.RecordingListener;
+import com.minecraftdiscordbridge.core.fakes.RecordingLogs;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
 import java.time.Duration;
 import java.util.ArrayList;

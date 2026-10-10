@@ -11,6 +11,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
+import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
+import com.minecraftdiscordbridge.core.fakes.RecordingReply;
+import com.minecraftdiscordbridge.core.fakes.RecordingSource;
 import com.minecraftdiscordbridge.core.storage.BindingStore;
 import com.minecraftdiscordbridge.core.storage.ChannelRole;
 import java.io.IOException;

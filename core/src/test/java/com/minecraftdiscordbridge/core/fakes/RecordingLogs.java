@@ -1,4 +1,4 @@
-package com.minecraftdiscordbridge.core;
+package com.minecraftdiscordbridge.core.fakes;
 
 import com.minecraftdiscordbridge.core.log.Log;
 import java.util.List;

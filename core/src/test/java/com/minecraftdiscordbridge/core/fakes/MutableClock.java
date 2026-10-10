@@ -1,4 +1,4 @@
-package com.minecraftdiscordbridge.core;
+package com.minecraftdiscordbridge.core.fakes;
 
 import java.time.Duration;
 import java.time.Instant;

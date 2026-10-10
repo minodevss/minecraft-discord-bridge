@@ -1,4 +1,4 @@
-package com.minecraftdiscordbridge.core;
+package com.minecraftdiscordbridge.core.fakes;
 
 import static org.assertj.core.api.Assertions.fail;
 

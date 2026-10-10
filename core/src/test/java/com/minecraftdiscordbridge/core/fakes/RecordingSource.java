@@ -1,4 +1,4 @@
-package com.minecraftdiscordbridge.core;
+package com.minecraftdiscordbridge.core.fakes;
 
 import com.minecraftdiscordbridge.core.platform.CommandSource;
 import com.minecraftdiscordbridge.core.platform.Permission;

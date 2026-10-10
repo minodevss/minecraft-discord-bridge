@@ -2,7 +2,7 @@ package com.minecraftdiscordbridge.core.vanilla;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.minecraftdiscordbridge.core.Waits;
+import com.minecraftdiscordbridge.core.fakes.Waits;
 import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.text.Translations;
