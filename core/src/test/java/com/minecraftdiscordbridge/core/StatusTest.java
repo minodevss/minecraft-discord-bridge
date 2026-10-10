@@ -10,7 +10,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
 import com.minecraftdiscordbridge.core.fakes.RecordingReply;
+import com.minecraftdiscordbridge.core.fakes.RecordingSource;
 import com.minecraftdiscordbridge.core.fakes.Waits;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import java.io.IOException;
@@ -106,6 +108,19 @@ class StatusTest {
             assertThat(harness.settledStatus())
                     .contains("Channel #minecraft: 0 waiting")
                     .contains("Channel " + EVENTS + ": 0 waiting");
+        }
+    }
+
+    @Test
+    void explainsWhyDiscordIsNotConnectedInTheConfiguredLanguage() throws IOException {
+        try (Harness harness = Harness.create(directory, CHANNELS + "language: ko\n", Map.of())) {
+            harness.bridge.start();
+
+            Waits.until("the Korean reason", () -> {
+                RecordingSource console = harness.run(RecordingSource.console(), GameCommand.STATUS);
+                console.nextPlain();
+                return console.nextPlain().equals("이유: 봇 토큰이 없습니다. 설정 방법은 서버 로그에 있습니다");
+            });
         }
     }
 

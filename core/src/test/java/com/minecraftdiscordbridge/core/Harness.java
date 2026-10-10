@@ -4,7 +4,6 @@ import com.minecraftdiscordbridge.core.codes.Codes;
 import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
-import com.minecraftdiscordbridge.core.discord.OfflineDiscord;
 import com.minecraftdiscordbridge.core.fakes.FakeGroups;
 import com.minecraftdiscordbridge.core.fakes.FakePlatform;
 import com.minecraftdiscordbridge.core.fakes.MutableClock;
@@ -131,7 +130,7 @@ final class Harness implements AutoCloseable {
     }
 
     String settledStatus() {
-        Waits.until("the bridge to finish starting", () -> !status().contains(OfflineDiscord.STARTING));
+        Waits.until("the bridge to finish starting", () -> !status().contains("The bridge is starting"));
         return status();
     }
 

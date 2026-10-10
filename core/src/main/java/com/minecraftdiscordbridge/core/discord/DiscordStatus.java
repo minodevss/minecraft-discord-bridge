@@ -1,11 +1,13 @@
 package com.minecraftdiscordbridge.core.discord;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public record DiscordStatus(
-        State state, Optional<String> reason, long gatewayPingMillis, Map<DiscordId, ChannelStatus> channels) {
+        State state, List<StatusReason> reasons, long gatewayPingMillis, Map<DiscordId, ChannelStatus> channels) {
     public DiscordStatus {
+        reasons = List.copyOf(reasons);
         channels = Map.copyOf(channels);
     }
 

@@ -20,6 +20,7 @@ import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.OfflineDiscord;
+import com.minecraftdiscordbridge.core.discord.StatusReason;
 import com.minecraftdiscordbridge.core.discord.WebhookRepository;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.log.Failures;
@@ -187,7 +188,9 @@ final class DiscordConnection {
                 LOGGER.error(
                         "Could not start the Discord connection: {}. Run /discord reload to try again",
                         Failures.describe(failure));
-                services.discord().swap(OfflineDiscord.stopped(failure.toString()));
+                services.discord()
+                        .swap(OfflineDiscord.stopped(
+                                new StatusReason(StatusReason.Kind.START_FAILED, Failures.describe(failure))));
                 return;
             }
         }

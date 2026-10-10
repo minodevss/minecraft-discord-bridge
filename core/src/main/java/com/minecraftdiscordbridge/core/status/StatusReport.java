@@ -21,7 +21,13 @@ public final class StatusReport {
         Component state =
                 replies.lang().component("game.state." + status.state().name().toLowerCase(Locale.ROOT));
         replies.send(source, "game.status.state", Slot.component("state", state));
-        status.reason().ifPresent(reason -> replies.send(source, "game.status.reason", Slot.text("reason", reason)));
+        status.reasons()
+                .forEach(reason -> replies.send(
+                        source,
+                        "game.status.reason",
+                        Slot.text(
+                                "reason",
+                                replies.lang().text("status." + reason.kind().key(), reason.detail()))));
         tokenSource.ifPresentOrElse(
                 where -> replies.send(source, "game.status.token", Slot.text("source", where)),
                 () -> replies.send(source, "game.status.no-token"));

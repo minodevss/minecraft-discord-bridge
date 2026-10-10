@@ -120,7 +120,7 @@ public final class RecordingDiscord implements Discord {
         settings.channelIds()
                 .forEach(id -> channels.put(
                         id, DiscordStatus.ChannelStatus.IDLE.withName(Optional.ofNullable(channelNames.get(id)))));
-        return new DiscordStatus(shutDown ? DiscordStatus.State.STOPPED : state, Optional.empty(), 42, channels);
+        return new DiscordStatus(shutDown ? DiscordStatus.State.STOPPED : state, List.of(), 42, channels);
     }
 
     @Override

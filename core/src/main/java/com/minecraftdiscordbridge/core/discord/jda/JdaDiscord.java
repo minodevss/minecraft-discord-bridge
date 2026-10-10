@@ -12,6 +12,7 @@ import com.minecraftdiscordbridge.core.discord.DiscordStatus.ChannelStatus;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.discord.RoleInfo;
+import com.minecraftdiscordbridge.core.discord.StatusReason;
 import com.minecraftdiscordbridge.core.discord.WebhookRepository;
 import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
@@ -222,10 +223,17 @@ public final class JdaDiscord implements Discord {
         }
         Guild guild = scope.resolve(jda);
         if (guild == null) {
-            connection.degrade(settings.guild()
-                    .map(id -> "The bot is not in Discord server " + id + ". Invite it with " + inviteUrl(jda))
-                    .orElseGet(() -> "The bot cannot see the chat or events channel set in config.yml. Fix the"
-                            + " channel IDs and run /discord reload, or invite the bot with " + inviteUrl(jda)));
+            String invite = inviteUrl(jda);
+            if (settings.guild().isPresent()) {
+                connection.degrade(
+                        "The bot is not in Discord server " + settings.guild().get() + ". Invite it with " + invite,
+                        new StatusReason(StatusReason.Kind.NOT_IN_SERVER, invite));
+            } else {
+                connection.degrade(
+                        "The bot cannot see the chat or events channel set in config.yml. Fix the channel IDs and run"
+                                + " /discord reload, or invite the bot with " + invite,
+                        new StatusReason(StatusReason.Kind.CHANNELS_NOT_VISIBLE, invite));
+            }
             return;
         }
         commands.registerIfChanged(guild, jda.getSelfUser().getApplicationIdLong());
@@ -246,7 +254,10 @@ public final class JdaDiscord implements Discord {
     private void readyForSetup(JDA jda) {
         List<Guild> guilds = jda.getGuilds();
         if (guilds.isEmpty()) {
-            connection.degrade("The bot is not in any Discord server. Invite it with " + inviteUrl(jda));
+            String invite = inviteUrl(jda);
+            connection.degrade(
+                    "The bot is not in any Discord server. Invite it with " + invite,
+                    new StatusReason(StatusReason.Kind.NOT_IN_ANY_SERVER, invite));
             return;
         }
         long applicationId = jda.getSelfUser().getApplicationIdLong();
