@@ -49,23 +49,23 @@ public final class Actions {
     }
 
     public void whitelist(CommandRequest request, CommandReply reply) {
-        Lang reader = Lang.forDiscordLocale(request.locale(), lang);
+        Lang userLang = Lang.forDiscordLocale(request.locale(), lang);
         String change = request.subcommand();
         if (!config.whitelist()) {
-            reply.replyEphemeral(reader.text("discord.action.disabled"));
+            reply.replyEphemeral(userLang.text("discord.action.disabled"));
         } else if (ADD.equals(change)) {
-            perform(request, reply, reader, new GameAction.WhitelistAdd(player(request)));
+            perform(request, reply, userLang, new GameAction.WhitelistAdd(player(request)));
         } else if (REMOVE.equals(change)) {
-            perform(request, reply, reader, new GameAction.WhitelistRemove(player(request)));
+            perform(request, reply, userLang, new GameAction.WhitelistRemove(player(request)));
         } else {
-            reply.replyEphemeral(reader.text("discord.unknown-command"));
+            reply.replyEphemeral(userLang.text("discord.unknown-command"));
         }
     }
 
     public void kick(CommandRequest request, CommandReply reply) {
-        Lang reader = Lang.forDiscordLocale(request.locale(), lang);
+        Lang userLang = Lang.forDiscordLocale(request.locale(), lang);
         if (!config.kick()) {
-            reply.replyEphemeral(reader.text("discord.action.disabled"));
+            reply.replyEphemeral(userLang.text("discord.action.disabled"));
             return;
         }
         String reason = SafeText.strip(request.options().getOrDefault(REASON_OPTION, ""))
@@ -73,13 +73,17 @@ public final class Actions {
         if (reason.isEmpty()) {
             reason = lang.text("plain.kick-reason", SafeText.strip(request.userDisplayName()));
         }
-        perform(request, reply, reader, new GameAction.Kick(player(request), Graphemes.fit(reason, MAX_REASON_LENGTH)));
+        perform(
+                request,
+                reply,
+                userLang,
+                new GameAction.Kick(player(request), Graphemes.fit(reason, MAX_REASON_LENGTH)));
     }
 
-    private void perform(CommandRequest request, CommandReply reply, Lang reader, GameAction action) {
+    private void perform(CommandRequest request, CommandReply reply, Lang userLang, GameAction action) {
         String name = name(action);
         if (!isPlayerName(name)) {
-            reply.replyEphemeral(reader.text("discord.action.invalid-name", DiscordEscaper.escape(name)));
+            reply.replyEphemeral(userLang.text("discord.action.invalid-name", DiscordEscaper.escape(name)));
             return;
         }
         CompletableFuture<ActionOutcome> outcome;
@@ -89,9 +93,9 @@ public final class Actions {
             outcome = CompletableFuture.failedFuture(failure);
         }
         var unused = outcome.whenComplete((result, failure) -> loop.execute(() -> {
-            ActionOutcome done = result != null ? result : new ActionOutcome.Failed(describe(failure, reader));
+            ActionOutcome done = result != null ? result : new ActionOutcome.Failed(describe(failure, userLang));
             audit(request, action, done);
-            reply.reply(reader.text(outcomeKey(action, done), DiscordEscaper.escape(name), detail(done)));
+            reply.reply(userLang.text(outcomeKey(action, done), DiscordEscaper.escape(name), detail(done)));
         }));
     }
 
@@ -123,11 +127,11 @@ public final class Actions {
         return outcome instanceof ActionOutcome.Failed failed ? DiscordEscaper.escape(failed.reason()) : "";
     }
 
-    private static String describe(@Nullable Throwable failure, Lang reader) {
+    private static String describe(@Nullable Throwable failure, Lang userLang) {
         Throwable cause =
                 failure instanceof CompletionException && failure.getCause() != null ? failure.getCause() : failure;
         if (cause instanceof TimeoutException) {
-            return reader.text("discord.action.timeout");
+            return userLang.text("discord.action.timeout");
         }
         return cause == null ? "" : String.valueOf(cause.getMessage());
     }

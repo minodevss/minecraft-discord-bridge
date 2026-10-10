@@ -98,20 +98,20 @@ public final class Linking {
     }
 
     public void link(CommandRequest request, CommandReply reply) {
-        Lang reader = Lang.forDiscordLocale(request.locale(), replies.lang());
+        Lang userLang = Lang.forDiscordLocale(request.locale(), replies.lang());
         Instant now = clock.instant();
         if (!config.enabled()) {
-            reply.replyEphemeral(reader.text("discord.link.disabled"));
+            reply.replyEphemeral(userLang.text("discord.link.disabled"));
             return;
         }
         if (attempts.blocked(request.userId(), now)) {
-            reply.replyEphemeral(reader.text("discord.too-many-attempts"));
+            reply.replyEphemeral(userLang.text("discord.too-many-attempts"));
             return;
         }
         Optional<PendingLinks.Pending> found = pending.redeem(request.options().getOrDefault(CODE_OPTION, ""), now);
         if (found.isEmpty()) {
             attempts.failed(request.userId(), now);
-            reply.replyEphemeral(reader.text("discord.link.bad-code"));
+            reply.replyEphemeral(userLang.text("discord.link.bad-code"));
             return;
         }
         PendingLinks.Pending code = found.get();
@@ -122,7 +122,7 @@ public final class Linking {
                 () -> store.link(link),
                 () -> {
                     LOGGER.info("Linked Minecraft account {} to Discord user {}", code.playerName(), discordId);
-                    reply.replyEphemeral(reader.text("discord.link.done", DiscordEscaper.escape(code.playerName())));
+                    reply.replyEphemeral(userLang.text("discord.link.done", DiscordEscaper.escape(code.playerName())));
                     if (roster.find(code.playerId()).isPresent()) {
                         replies.send(code.source(), "game.link.done", Slot.text("name", request.userDisplayName()));
                     }
@@ -132,23 +132,23 @@ public final class Linking {
                             "Could not save the link for {}: {}. Check that the data folder is writable",
                             code.playerName(),
                             Failures.describe(failure));
-                    reply.replyEphemeral(reader.text("discord.save-failed"));
+                    reply.replyEphemeral(userLang.text("discord.save-failed"));
                 });
     }
 
     public void unlink(CommandRequest request, CommandReply reply) {
-        Lang reader = Lang.forDiscordLocale(request.locale(), replies.lang());
+        Lang userLang = Lang.forDiscordLocale(request.locale(), replies.lang());
         io.completeOnLoop(
                 () -> store.unlinkDiscord(request.userId()),
-                removed -> reply.replyEphemeral(removed.map(
-                                link -> reader.text("discord.unlink.done", DiscordEscaper.escape(link.minecraftName())))
-                        .orElseGet(() -> reader.text("discord.unlink.none"))),
+                removed -> reply.replyEphemeral(removed.map(link ->
+                                userLang.text("discord.unlink.done", DiscordEscaper.escape(link.minecraftName())))
+                        .orElseGet(() -> userLang.text("discord.unlink.none"))),
                 failure -> {
                     LOGGER.warn(
                             "Could not unlink Discord user {}: {}. Check that the data folder is writable",
                             request.userId(),
                             Failures.describe(failure));
-                    reply.replyEphemeral(reader.text("discord.save-failed"));
+                    reply.replyEphemeral(userLang.text("discord.save-failed"));
                 });
     }
 

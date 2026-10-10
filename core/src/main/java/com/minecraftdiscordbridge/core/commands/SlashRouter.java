@@ -36,14 +36,14 @@ public final class SlashRouter {
             case SlashCommandCatalog.UNLINK -> linking.unlink(request, reply);
             case SlashCommandCatalog.WHITELIST -> actions.whitelist(request, reply);
             case SlashCommandCatalog.KICK -> actions.kick(request, reply);
-            default -> reply.replyEphemeral(reader(request.locale()).text("discord.unknown-command"));
+            default -> reply.replyEphemeral(userLang(request.locale()).text("discord.unknown-command"));
         }
     }
 
     public void onAutocomplete(AutocompleteRequest request, AutocompleteReply reply) {
         if (request.command().equals(SlashCommandCatalog.SETUP)
                 && request.option().equals(ChannelSetup.ROLE_OPTION)) {
-            setup.autocomplete(request.typed(), reader(request.locale()), reply);
+            setup.autocomplete(request.typed(), userLang(request.locale()), reply);
         } else if (request.command().equals(SlashCommandCatalog.KICK)
                 && request.option().equals(Actions.PLAYER_OPTION)) {
             reply.respond(onlineNamesStartingWith(request.typed()));
@@ -53,15 +53,15 @@ public final class SlashRouter {
     }
 
     private void list(CommandRequest request, CommandReply reply) {
-        Lang reader = reader(request.locale());
+        Lang userLang = userLang(request.locale());
         List<String> names = roster.visibleNames();
         if (names.isEmpty()) {
-            reply.reply(reader.text("discord.list.empty"));
+            reply.reply(userLang.text("discord.list.empty"));
             return;
         }
         String joined =
                 String.join(", ", names.stream().map(DiscordEscaper::escape).toList());
-        reply.reply(reader.text("discord.list.players", names.size(), joined));
+        reply.reply(userLang.text("discord.list.players", names.size(), joined));
     }
 
     private List<AutocompleteReply.Choice> onlineNamesStartingWith(String typed) {
@@ -73,7 +73,7 @@ public final class SlashRouter {
                 .toList();
     }
 
-    private Lang reader(String locale) {
+    private Lang userLang(String locale) {
         return Lang.forDiscordLocale(locale, lang);
     }
 }

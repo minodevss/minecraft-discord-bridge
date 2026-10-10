@@ -63,21 +63,21 @@ public final class ChannelSetup {
     }
 
     public void handle(CommandRequest request, CommandReply reply) {
-        Lang reader = Lang.forDiscordLocale(request.locale(), replies.lang());
+        Lang userLang = Lang.forDiscordLocale(request.locale(), replies.lang());
         Optional<ChannelRole> role = role(request.options().get(ROLE_OPTION));
         if (role.isEmpty()) {
-            reply.replyEphemeral(reader.text("discord.setup.bad-role"));
+            reply.replyEphemeral(userLang.text("discord.setup.bad-role"));
         } else if (config.consoleChannel().equals(Optional.of(request.channelId()))) {
-            reply.replyEphemeral(reader.text("discord.setup.console-channel"));
-        } else if (authorized(request, reply, reader)) {
-            save(request, reply, reader, role.get());
+            reply.replyEphemeral(userLang.text("discord.setup.console-channel"));
+        } else if (authorized(request, reply, userLang)) {
+            save(request, reply, userLang, role.get());
         }
     }
 
-    public void autocomplete(String typed, Lang reader, AutocompleteReply reply) {
+    public void autocomplete(String typed, Lang userLang, AutocompleteReply reply) {
         String prefix = typed.strip().toLowerCase(Locale.ROOT);
         reply.respond(List.of(ChannelRole.CHAT, ChannelRole.EVENTS).stream()
-                .map(role -> new AutocompleteReply.Choice(reader.text("discord.setup.role." + role.id()), role.id()))
+                .map(role -> new AutocompleteReply.Choice(userLang.text("discord.setup.role." + role.id()), role.id()))
                 .filter(choice -> choice.value().startsWith(prefix)
                         || choice.name().toLowerCase(Locale.ROOT).startsWith(prefix))
                 .toList());
@@ -88,33 +88,33 @@ public final class ChannelSetup {
         replies.send(source, "game.setup.code", Slot.text("code", code));
     }
 
-    private boolean authorized(CommandRequest request, CommandReply reply, Lang reader) {
+    private boolean authorized(CommandRequest request, CommandReply reply, Lang userLang) {
         if (discord.isApplicationOwner(request.userId())) {
             return true;
         }
         String typed = request.options().getOrDefault(CODE_OPTION, "");
         if (typed.isBlank()) {
-            reply.replyEphemeral(reader.text("discord.setup.not-owner"));
+            reply.replyEphemeral(userLang.text("discord.setup.not-owner"));
             return false;
         }
         if (!request.canManageServer()) {
-            reply.replyEphemeral(reader.text("discord.setup.needs-manage-server"));
+            reply.replyEphemeral(userLang.text("discord.setup.needs-manage-server"));
             return false;
         }
         Instant now = clock.instant();
         if (attempts.blocked(request.userId(), now)) {
-            reply.replyEphemeral(reader.text("discord.too-many-attempts"));
+            reply.replyEphemeral(userLang.text("discord.too-many-attempts"));
             return false;
         }
         if (!codes.redeem(typed, now)) {
             attempts.failed(request.userId(), now);
-            reply.replyEphemeral(reader.text("discord.setup.bad-code"));
+            reply.replyEphemeral(userLang.text("discord.setup.bad-code"));
             return false;
         }
         return true;
     }
 
-    private void save(CommandRequest request, CommandReply reply, Lang reader, ChannelRole role) {
+    private void save(CommandRequest request, CommandReply reply, Lang userLang, ChannelRole role) {
         ChannelBinding next = bind(bindings.current(), request.guildId(), role, request.channelId());
         io.completeOnLoop(
                 () -> bindings.save(next),
@@ -124,24 +124,24 @@ public final class ChannelSetup {
                             request.userId(),
                             request.channelId(),
                             role.id());
-                    reply.replyEphemeral(confirmation(reader, role));
+                    reply.replyEphemeral(confirmation(userLang, role));
                     bound.run();
                 },
                 failure -> {
                     LOGGER.warn(
                             "Could not save the channel from /setup: {}. Check that the data folder is writable",
                             Failures.describe(failure));
-                    reply.replyEphemeral(reader.text("discord.save-failed"));
+                    reply.replyEphemeral(userLang.text("discord.save-failed"));
                 });
     }
 
-    private String confirmation(Lang reader, ChannelRole role) {
-        String done = reader.text("discord.setup.done." + role.id());
+    private String confirmation(Lang userLang, ChannelRole role) {
+        String done = userLang.text("discord.setup.done." + role.id());
         Optional<DiscordId> configured = role == ChannelRole.CHAT ? config.chatChannel() : config.eventsChannel();
         if (configured.isEmpty()) {
             return done;
         }
-        return done + "\n" + reader.text("discord.setup.config-wins", "discord." + role.id() + "-channel");
+        return done + "\n" + userLang.text("discord.setup.config-wins", "discord." + role.id() + "-channel");
     }
 
     static ChannelBinding bind(Optional<ChannelBinding> current, DiscordId guild, ChannelRole role, DiscordId channel) {
