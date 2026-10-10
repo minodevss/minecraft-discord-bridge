@@ -9,6 +9,7 @@ import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import org.jspecify.annotations.Nullable;
@@ -98,7 +99,7 @@ final class Outbox {
         try {
             return sender.send(channelId, post);
         } catch (RuntimeException failure) {
-            return Failures.failed(failure);
+            return CompletableFuture.failedFuture(failure);
         }
     }
 

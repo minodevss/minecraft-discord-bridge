@@ -1,15 +1,10 @@
 package com.minecraftdiscordbridge.core.discord.jda;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
 final class Failures {
     private Failures() {}
-
-    static <T> CompletableFuture<T> failed(Throwable failure) {
-        return CompletableFuture.failedFuture(failure);
-    }
 
     static Throwable unwrap(Throwable failure) {
         Throwable current = failure;

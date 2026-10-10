@@ -275,11 +275,11 @@ public final class JdaDiscord implements Discord {
     private CompletableFuture<Void> changeRole(long userId, long roleId, boolean add) {
         Guild guild = guild();
         if (guild == null) {
-            return Failures.failed(new IllegalStateException(NOT_CONNECTED));
+            return CompletableFuture.failedFuture(new IllegalStateException(NOT_CONNECTED));
         }
         Role role = guild.getRoleById(roleId);
         if (role == null) {
-            return Failures.failed(
+            return CompletableFuture.failedFuture(
                     new IllegalArgumentException("Discord role " + Long.toUnsignedString(roleId) + " does not exist"));
         }
         try {
@@ -288,7 +288,7 @@ public final class JdaDiscord implements Discord {
                     .reason(ROLE_SYNC_REASON)
                     .submit();
         } catch (RuntimeException failure) {
-            return Failures.failed(failure);
+            return CompletableFuture.failedFuture(failure);
         }
     }
 

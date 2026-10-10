@@ -54,7 +54,7 @@ final class WebhookSender implements MessageSender {
     public CompletionStage<Void> send(long channelId, Post post) {
         JDA api = jda.get();
         if (api == null) {
-            return Failures.failed(new IllegalStateException("Discord is not connected yet"));
+            return CompletableFuture.failedFuture(new IllegalStateException("Discord is not connected yet"));
         }
         return webhookFor(api, channelId)
                 .thenCompose(webhook -> webhook.isPresent()
@@ -65,7 +65,7 @@ final class WebhookSender implements MessageSender {
     CompletableFuture<Void> sendFinal(long channelId, Post post) {
         JDA api = jda.get();
         if (api == null) {
-            return Failures.failed(new IllegalStateException("Discord is not connected"));
+            return CompletableFuture.failedFuture(new IllegalStateException("Discord is not connected"));
         }
         WebhookCredentials webhook = known.get(channelId);
         return webhook == null ? sendAsBot(api, channelId, post) : execute(api, channelId, webhook, post, false);
@@ -172,10 +172,11 @@ final class WebhookSender implements MessageSender {
                     .setAvatarUrl(avatarUrl(api, post.author()))
                     .submit()
                     .<Void>thenApply(message -> null)
-                    .exceptionallyCompose(failure ->
-                            mayRecreate && isGone(failure) ? recreate(api, channelId, post) : Failures.failed(failure));
+                    .exceptionallyCompose(failure -> mayRecreate && isGone(failure)
+                            ? recreate(api, channelId, post)
+                            : CompletableFuture.failedFuture(failure));
         } catch (RuntimeException failure) {
-            return Failures.failed(failure);
+            return CompletableFuture.failedFuture(failure);
         }
     }
 
@@ -194,7 +195,7 @@ final class WebhookSender implements MessageSender {
     private CompletableFuture<Void> sendAsBot(JDA api, long channelId, Post post) {
         GuildMessageChannel channel = api.getChannelById(GuildMessageChannel.class, channelId);
         if (channel == null) {
-            return Failures.failed(
+            return CompletableFuture.failedFuture(
                     new IllegalStateException("the bot cannot see channel " + Long.toUnsignedString(channelId)));
         }
         try {
@@ -202,7 +203,7 @@ final class WebhookSender implements MessageSender {
                     .submit()
                     .thenApply(message -> null);
         } catch (RuntimeException failure) {
-            return Failures.failed(failure);
+            return CompletableFuture.failedFuture(failure);
         }
     }
 
