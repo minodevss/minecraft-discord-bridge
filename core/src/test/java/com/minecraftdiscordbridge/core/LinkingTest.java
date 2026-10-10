@@ -134,6 +134,27 @@ class LinkingTest {
     }
 
     @Test
+    void givesNoCodeWhileDiscordIsNotConnected() throws IOException {
+        try (Harness harness = Harness.create(directory, CHANNELS, Map.of())) {
+            harness.bridge.start();
+            harness.settledStatus();
+
+            assertThat(harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
+                            .nextPlain())
+                    .isEqualTo("Discord is not connected right now. Try again later.");
+        }
+    }
+
+    @Test
+    void givesNoCodeUntilTheBotHasAChannel() throws IOException {
+        try (Harness harness = Harness.started(directory, "config-version: 1\n")) {
+            assertThat(harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
+                            .nextPlain())
+                    .isEqualTo("Discord is not connected right now. Try again later.");
+        }
+    }
+
+    @Test
     void onlyPlayersCanLink() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             assertThat(harness.run(RecordingSource.console(), "link").nextPlain())

@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.time.InstantSource;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.BooleanSupplier;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
@@ -37,6 +38,7 @@ public final class Linking {
     private final Roster roster;
     private final InstantSource clock;
     private final Replies replies;
+    private final BooleanSupplier discordConnected;
 
     public Linking(
             LinkingConfig config,
@@ -46,7 +48,8 @@ public final class Linking {
             Attempts attempts,
             Roster roster,
             InstantSource clock,
-            Replies replies) {
+            Replies replies,
+            BooleanSupplier discordConnected) {
         this.config = config;
         this.store = store;
         this.io = io;
@@ -55,6 +58,7 @@ public final class Linking {
         this.roster = roster;
         this.clock = clock;
         this.replies = replies;
+        this.discordConnected = discordConnected;
     }
 
     public void linkInGame(CommandSource source) {
@@ -65,6 +69,8 @@ public final class Linking {
             replies.send(source, "game.players-only");
         } else if (store.byMinecraftId(player).isPresent()) {
             replies.send(source, "game.link.already");
+        } else if (!discordConnected.getAsBoolean()) {
+            replies.send(source, "game.link.offline");
         } else {
             String code = pending.issue(player, source.name(), isBedrock(player), source, clock.instant());
             replies.send(source, "game.link.code", Slot.component("code", copyable(code)));

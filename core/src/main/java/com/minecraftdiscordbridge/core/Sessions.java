@@ -10,6 +10,7 @@ import com.minecraftdiscordbridge.core.config.BridgeConfig;
 import com.minecraftdiscordbridge.core.config.Channels;
 import com.minecraftdiscordbridge.core.config.ConfigSnapshot;
 import com.minecraftdiscordbridge.core.console.ConsoleMirror;
+import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.events.EventPosts;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Replies;
@@ -44,6 +45,7 @@ final class Sessions {
         Replies replies = new Replies(lang, shared.platform().info().dataVersion());
         OptionalLong chat = Ids.parse(channels.chat());
         OptionalLong events = Ids.parse(channels.events());
+        boolean hasGuild = chat.isPresent() || events.isPresent() || console.isPresent();
         ChannelSetup setup = new ChannelSetup(
                 shared.discord(),
                 stores.bindings(),
@@ -63,7 +65,8 @@ final class Sessions {
                 shared.attempts(),
                 shared.roster(),
                 shared.clock(),
-                replies);
+                replies,
+                () -> hasGuild && connected(shared.discord().status()));
         Actions actions =
                 new Actions(config.actions(), shared.platform(), shared.loop()::control, lang, shared.actionTimeout());
         return new Session(
@@ -88,6 +91,10 @@ final class Sessions {
                         lang,
                         shared.loop(),
                         () -> secrets(shared, snapshot)));
+    }
+
+    private static boolean connected(DiscordStatus status) {
+        return status.state() == DiscordStatus.State.READY || status.state() == DiscordStatus.State.DEGRADED;
     }
 
     private static Format chatFormat(String template) {
