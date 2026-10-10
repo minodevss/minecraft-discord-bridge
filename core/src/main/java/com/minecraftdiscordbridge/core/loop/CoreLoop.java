@@ -13,7 +13,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-public final class CoreLoop implements AutoCloseable {
+public final class CoreLoop implements Scheduler, AutoCloseable {
     private static final int CONTENT_CAPACITY = 1024;
     private static final long IDLE = 0;
     private static final Duration CLOSE_WAIT = Duration.ofMillis(200);
@@ -62,8 +62,9 @@ public final class CoreLoop implements AutoCloseable {
         return dropped.getAndSet(0);
     }
 
-    public ScheduledFuture<?> schedule(Duration delay, Runnable task) {
-        return timer.schedule(() -> control(task), delay.toMillis(), TimeUnit.MILLISECONDS);
+    @Override
+    public void later(Duration delay, Runnable task) {
+        var unused = timer.schedule(() -> control(task), delay.toMillis(), TimeUnit.MILLISECONDS);
     }
 
     public ScheduledFuture<?> repeat(Duration period, Runnable task) {

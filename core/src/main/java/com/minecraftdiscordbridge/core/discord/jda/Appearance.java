@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.discord.jda;
 import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
 import com.minecraftdiscordbridge.core.log.Failures;
+import com.minecraftdiscordbridge.core.loop.Scheduler;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,12 +25,12 @@ final class Appearance {
 
     private final Supplier<@Nullable JDA> jda;
     private final LongSupplier nanoClock;
-    private final Throttle.Scheduler scheduler;
+    private final Scheduler scheduler;
     private final Throttle<String> presence;
     private final Map<Long, Throttle<String>> topics = new HashMap<>();
     private final Set<Long> topicLocked = new HashSet<>();
 
-    Appearance(Supplier<@Nullable JDA> jda, LongSupplier nanoClock, Throttle.Scheduler scheduler) {
+    Appearance(Supplier<@Nullable JDA> jda, LongSupplier nanoClock, Scheduler scheduler) {
         this.jda = jda;
         this.nanoClock = nanoClock;
         this.scheduler = scheduler;

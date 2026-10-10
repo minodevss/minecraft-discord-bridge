@@ -134,7 +134,7 @@ public final class JdaDiscord implements Discord {
         this.outbox = new Outbox(settings.serverAuthor(), webhooks, loop::control);
         this.commands = new SlashCommands(settings.commands(), commandHashes);
         this.events = new JdaEvents(settings, scope, loop, listener, webhooks);
-        this.appearance = new Appearance(this::currentJda, System::nanoTime, this::schedule);
+        this.appearance = new Appearance(this::currentJda, System::nanoTime, loop);
     }
 
     public static Discord create(
@@ -633,10 +633,6 @@ public final class JdaDiscord implements Discord {
         if (!next.equals(previous)) {
             loop.control(() -> listener.onStatusChanged(status()));
         }
-    }
-
-    private void schedule(Duration delay, Runnable task) {
-        var unused = loop.schedule(delay, task);
     }
 
     private void onLoop(Runnable task) {

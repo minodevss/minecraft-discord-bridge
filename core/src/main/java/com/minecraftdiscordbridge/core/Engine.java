@@ -350,7 +350,7 @@ final class Engine {
     }
 
     private void rebound() {
-        var unused = shared.loop().schedule(REBIND_DELAY, () -> {
+        shared.loop().later(REBIND_DELAY, () -> {
             ConfigSnapshot current = snapshot;
             if (current != null && !closed) {
                 activate(current);

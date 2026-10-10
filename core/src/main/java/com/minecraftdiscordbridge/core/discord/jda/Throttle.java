@@ -1,15 +1,12 @@
 package com.minecraftdiscordbridge.core.discord.jda;
 
+import com.minecraftdiscordbridge.core.loop.Scheduler;
 import java.time.Duration;
 import java.util.function.Consumer;
 import java.util.function.LongSupplier;
 import org.jspecify.annotations.Nullable;
 
 final class Throttle<T> {
-    interface Scheduler {
-        void schedule(Duration delay, Runnable task);
-    }
-
     private final Duration interval;
     private final LongSupplier nanoClock;
     private final Scheduler scheduler;
@@ -41,7 +38,7 @@ final class Throttle<T> {
             return;
         }
         scheduled = true;
-        scheduler.schedule(Duration.ofNanos(waitNanos), this::flush);
+        scheduler.later(Duration.ofNanos(waitNanos), this::flush);
     }
 
     void reapply() {

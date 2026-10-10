@@ -136,7 +136,7 @@ public final class RoleSync implements AutoCloseable {
         if (closed || !changedGroups.add(player)) {
             return;
         }
-        context.later().schedule(GROUP_CHANGE_DELAY, () -> {
+        context.scheduler().later(GROUP_CHANGE_DELAY, () -> {
             changedGroups.remove(player);
             if (!closed && pushesGroups()) {
                 context.links().byMinecraftId(player).ifPresent(link -> sync(link, null));
