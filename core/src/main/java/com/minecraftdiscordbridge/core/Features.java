@@ -22,6 +22,7 @@ import com.minecraftdiscordbridge.core.feature.FeatureContext;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Replies;
 import com.minecraftdiscordbridge.core.linking.Linking;
+import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.setup.ChannelSetup;
 import com.minecraftdiscordbridge.core.setup.Channels;
 import com.minecraftdiscordbridge.core.status.StatusBoard;
@@ -129,6 +130,29 @@ record Features(
         services.setupCodes().active(services.clock().instant()).ifPresent(secrets::add);
         secrets.addAll(services.pendingLinks().codes(services.clock().instant()));
         return secrets;
+    }
+
+    void onGameEvent(GameEvent event, boolean stopping) {
+        if (event instanceof GameEvent.ServerStarted) {
+            status.refresh();
+        } else if (event instanceof GameEvent.PlayerJoined joined) {
+            events.joined(joined);
+            roleSync.playerJoined(joined.player());
+            status.refresh();
+        } else if (event instanceof GameEvent.PlayerLeft left) {
+            if (!stopping) {
+                events.left(left);
+            }
+            status.refresh();
+        } else if (event instanceof GameEvent.PlayerSwitchedServer switched) {
+            events.switched(switched);
+        } else if (event instanceof GameEvent.PlayerChatted chatted) {
+            minecraftChat.onChat(chatted);
+        } else if (event instanceof GameEvent.PlayerDied died) {
+            events.died(died);
+        } else if (event instanceof GameEvent.AdvancementEarned earned) {
+            events.advanced(earned);
+        }
     }
 
     void close() {

@@ -92,39 +92,21 @@ final class Engine implements BridgeCommand.Callbacks {
     }
 
     void onGameEvent(GameEvent event) {
-        Features current = features;
         if (event instanceof GameEvent.ServerStarted started) {
             services.roster().reset(started.online());
             serverStarted = true;
             announceStart();
-            refreshStatus();
         } else if (event instanceof GameEvent.PlayerJoined joined) {
             services.roster().joined(joined.player(), joined.vanished());
-            if (current != null) {
-                current.events().joined(joined);
-                current.roleSync().playerJoined(joined.player());
-            }
-            refreshStatus();
         } else if (event instanceof GameEvent.PlayerLeft left) {
             services.roster().left(left.player());
-            if (current != null && !stopping.getAsBoolean()) {
-                current.events().left(left);
-            }
-            refreshStatus();
-        } else if (event instanceof GameEvent.PlayerSwitchedServer switched) {
-            if (switched.from() == null) {
-                joinIfNotOnline(switched);
-            } else if (current != null) {
-                current.events().switched(switched);
-            }
-        } else if (current == null) {
+        } else if (event instanceof GameEvent.PlayerSwitchedServer switched && switched.from() == null) {
+            joinIfNotOnline(switched);
             return;
-        } else if (event instanceof GameEvent.PlayerChatted chatted) {
-            current.minecraftChat().onChat(chatted);
-        } else if (event instanceof GameEvent.PlayerDied died) {
-            current.events().died(died);
-        } else if (event instanceof GameEvent.AdvancementEarned earned) {
-            current.events().advanced(earned);
+        }
+        Features current = features;
+        if (current != null) {
+            current.onGameEvent(event, stopping.getAsBoolean());
         }
     }
 
