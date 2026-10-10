@@ -8,11 +8,15 @@ import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.fakes.FakePlatform;
 import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
+import com.minecraftdiscordbridge.core.feature.FeatureContext;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Language;
+import com.minecraftdiscordbridge.core.i18n.Replies;
+import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.platform.ActionOutcome;
 import com.minecraftdiscordbridge.core.platform.GameAction;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -134,12 +138,13 @@ class ConsoleInputTest {
     }
 
     private ConsoleInput input(ConsoleConfig config, FakePlatform platform) {
+        FeatureContext context = new FeatureContext(
+                discord, new IoExecutor(Runnable::run), Clock.systemUTC(), new Replies(Lang.of(Language.EN), 0));
         return new ConsoleInput(
+                context,
                 config,
                 Optional.of(CONSOLE),
                 new GameActions(platform, Runnable::run, Duration.ofMillis(100)),
-                discord,
-                Lang.of(Language.EN),
                 List::of);
     }
 

@@ -18,6 +18,7 @@ import com.minecraftdiscordbridge.core.console.ConsoleInput;
 import com.minecraftdiscordbridge.core.console.ConsoleMirror;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.events.EventPosts;
+import com.minecraftdiscordbridge.core.feature.FeatureContext;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Replies;
 import com.minecraftdiscordbridge.core.linking.Linking;
@@ -51,25 +52,16 @@ record Features(
         Optional<DiscordId> chat = channels.chat();
         Optional<DiscordId> events = channels.events();
         boolean hasGuild = !DiscordPlan.channelIds(config, channels).isEmpty();
+        FeatureContext context = new FeatureContext(services.discord(), services.io(), services.clock(), replies);
         ChannelSetup setup = new ChannelSetup(
-                services.discord(),
-                stores.bindings(),
-                config.discord(),
-                services.io(),
-                services.setupCodes(),
-                services.setupAttempts(),
-                services.clock(),
-                replies,
-                rebound);
+                context, config.discord(), stores.bindings(), services.setupCodes(), services.setupAttempts(), rebound);
         Linking linking = new Linking(
+                context,
                 config.linking(),
                 stores.links(),
-                services.io(),
                 services.pendingLinks(),
                 services.linkAttempts(),
                 services.roster(),
-                services.clock(),
-                replies,
                 () -> hasGuild && services.discord().status().isConnected());
         GameActions gameActions =
                 new GameActions(services.platform(), services.loop()::control, services.actionTimeout());
@@ -100,11 +92,10 @@ record Features(
                 JoinGate.create(config.linking(), services.platform().info(), access, replies),
                 RoleSync.create(config.roleSync(), services.platform().info(), access),
                 new ConsoleInput(
+                        context,
                         config.console(),
                         config.discord().consoleChannel(),
                         gameActions,
-                        services.discord(),
-                        lang,
                         () -> secrets(services, snapshot)));
     }
 

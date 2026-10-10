@@ -9,6 +9,7 @@ import com.minecraftdiscordbridge.core.discord.Discord;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
+import com.minecraftdiscordbridge.core.feature.FeatureContext;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.platform.ActionOutcome;
 import com.minecraftdiscordbridge.core.platform.GameAction;
@@ -32,17 +33,16 @@ public final class ConsoleInput {
     private final Supplier<Collection<String>> secrets;
 
     public ConsoleInput(
+            FeatureContext context,
             ConsoleConfig config,
             Optional<DiscordId> channel,
             GameActions game,
-            Discord discord,
-            Lang lang,
             Supplier<Collection<String>> secrets) {
         this.channel = config.inputUsers().isEmpty() ? Optional.empty() : channel;
         this.users = Set.copyOf(config.inputUsers());
         this.game = game;
-        this.discord = discord;
-        this.lang = lang;
+        this.discord = context.discord();
+        this.lang = context.replies().lang();
         this.secrets = secrets;
     }
 

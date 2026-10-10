@@ -9,6 +9,7 @@ import com.minecraftdiscordbridge.core.discord.CommandReply;
 import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.Discord;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
+import com.minecraftdiscordbridge.core.feature.FeatureContext;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Replies;
 import com.minecraftdiscordbridge.core.log.Failures;
@@ -42,23 +43,20 @@ public final class ChannelSetup {
     private final Runnable bound;
 
     public ChannelSetup(
-            Discord discord,
-            BindingStore bindings,
+            FeatureContext context,
             DiscordConfig config,
-            IoExecutor io,
+            BindingStore bindings,
             SetupCodes codes,
             Attempts attempts,
-            InstantSource clock,
-            Replies replies,
             Runnable bound) {
-        this.discord = discord;
+        this.discord = context.discord();
         this.bindings = bindings;
         this.config = config;
-        this.io = io;
+        this.io = context.io();
         this.codes = codes;
         this.attempts = attempts;
-        this.clock = clock;
-        this.replies = replies;
+        this.clock = context.clock();
+        this.replies = context.replies();
         this.bound = bound;
     }
 

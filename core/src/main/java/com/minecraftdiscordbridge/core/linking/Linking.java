@@ -7,6 +7,7 @@ import com.minecraftdiscordbridge.core.config.LinkingConfig;
 import com.minecraftdiscordbridge.core.discord.CommandReply;
 import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
+import com.minecraftdiscordbridge.core.feature.FeatureContext;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Replies;
 import com.minecraftdiscordbridge.core.log.Failures;
@@ -43,23 +44,21 @@ public final class Linking {
     private final BooleanSupplier discordConnected;
 
     public Linking(
+            FeatureContext context,
             LinkingConfig config,
             LinkStore store,
-            IoExecutor io,
             PendingLinks pending,
             Attempts attempts,
             Roster roster,
-            InstantSource clock,
-            Replies replies,
             BooleanSupplier discordConnected) {
         this.config = config;
         this.store = store;
-        this.io = io;
+        this.io = context.io();
         this.pending = pending;
         this.attempts = attempts;
         this.roster = roster;
-        this.clock = clock;
-        this.replies = replies;
+        this.clock = context.clock();
+        this.replies = context.replies();
         this.discordConnected = discordConnected;
     }
 
