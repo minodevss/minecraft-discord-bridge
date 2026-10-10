@@ -20,6 +20,7 @@ import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus.State;
@@ -308,7 +309,7 @@ class JdaDiscordTest {
 
     @Test
     void recreatesTheWebhookOnceWhenDiscordNoLongerKnowsIt() {
-        webhooks.stored.put(CHANNEL_ID, new WebhookCredentials(777, "stale"));
+        webhooks.stored.put(CHANNEL_ID, new WebhookCredentials(new DiscordId(777), "stale"));
         discord.webhookGoneResponses.set(1);
         bridge = startReady();
 

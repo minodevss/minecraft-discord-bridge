@@ -18,6 +18,7 @@ class TokenRedactionTest {
 
     @Test
     void webhookCredentialsNeverPrintTheToken() {
-        assertThat(new WebhookCredentials(1, "hook-secret").toString()).doesNotContain("hook-secret");
+        assertThat(new WebhookCredentials(new DiscordId(1), "hook-secret").toString())
+                .doesNotContain("hook-secret");
     }
 }

@@ -18,14 +18,12 @@ public final class StoredWebhooks implements WebhookRepository {
 
     @Override
     public CompletionStage<Optional<WebhookCredentials>> find(long channelId) {
-        return io.completeOnIo(() -> store.forChannel(new DiscordId(channelId))
-                .map(webhook -> new WebhookCredentials(webhook.id().value(), webhook.token())));
+        return io.completeOnIo(() -> store.forChannel(new DiscordId(channelId)));
     }
 
     @Override
     public CompletionStage<Void> save(long channelId, WebhookCredentials webhook) {
-        return io.completeOnIo(
-                () -> store.put(new DiscordId(channelId), new Webhook(new DiscordId(webhook.id()), webhook.token())));
+        return io.completeOnIo(() -> store.put(new DiscordId(channelId), webhook));
     }
 
     @Override

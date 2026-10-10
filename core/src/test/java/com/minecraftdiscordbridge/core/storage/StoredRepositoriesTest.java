@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.WebhookCredentials;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import java.nio.file.Path;
@@ -29,13 +30,13 @@ class StoredRepositoriesTest {
     void keepsWebhooksInTheStoreAcrossRestarts() throws Exception {
         StoredWebhooks webhooks = new StoredWebhooks(WebhookStore.open(directory), io);
 
-        webhooks.save(CHANNEL, new WebhookCredentials(UNSIGNED_WEBHOOK, "secret"))
+        webhooks.save(CHANNEL, new WebhookCredentials(new DiscordId(UNSIGNED_WEBHOOK), "secret"))
                 .toCompletableFuture()
                 .get();
 
         StoredWebhooks reopened = new StoredWebhooks(WebhookStore.open(directory), io);
         assertThat(reopened.find(CHANNEL).toCompletableFuture().get())
-                .contains(new WebhookCredentials(UNSIGNED_WEBHOOK, "secret"));
+                .contains(new WebhookCredentials(new DiscordId(UNSIGNED_WEBHOOK), "secret"));
         reopened.forget(CHANNEL).toCompletableFuture().get();
         assertThat(reopened.find(CHANNEL).toCompletableFuture().get()).isEmpty();
     }

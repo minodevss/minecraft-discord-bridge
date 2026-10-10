@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.discord.jda;
 import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
 import com.minecraftdiscordbridge.core.discord.Author;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.discord.WebhookCredentials;
 import com.minecraftdiscordbridge.core.discord.WebhookRepository;
@@ -81,7 +82,7 @@ final class WebhookSender implements MessageSender {
     }
 
     boolean isOwnWebhook(long webhookId) {
-        return known.values().stream().anyMatch(webhook -> webhook.id() == webhookId);
+        return known.values().stream().anyMatch(webhook -> webhook.id().value() == webhookId);
     }
 
     private CompletionStage<Optional<WebhookCredentials>> webhookFor(JDA api, long channelId) {
@@ -166,9 +167,9 @@ final class WebhookSender implements MessageSender {
 
     private CompletableFuture<Void> execute(
             JDA api, WebhookCredentials webhook, OutboundMessage message, boolean mayRecreate) {
-        rateLimits.bindWebhook(webhook.id(), message.channelId());
+        rateLimits.bindWebhook(webhook.id().value(), message.channelId());
         try {
-            return WebhookClient.createClient(api, Long.toUnsignedString(webhook.id()), webhook.token())
+            return WebhookClient.createClient(api, webhook.id().toString(), webhook.token())
                     .sendMessage(Messages.create(message.text(), message.pingUserIds(), message.pingRoleIds()))
                     .setUsername(WebhookNames.sanitize(name(api, message.author())))
                     .setAvatarUrl(avatarUrl(api, message.author()))
@@ -220,7 +221,7 @@ final class WebhookSender implements MessageSender {
     }
 
     private WebhookCredentials store(long channelId, Webhook webhook) {
-        WebhookCredentials credentials = new WebhookCredentials(webhook.getIdLong(), webhook.getToken());
+        WebhookCredentials credentials = new WebhookCredentials(new DiscordId(webhook.getIdLong()), webhook.getToken());
         remember(channelId, credentials);
         var unused = repository.save(channelId, credentials).exceptionally(failure -> {
             LOGGER.warn(
@@ -235,7 +236,7 @@ final class WebhookSender implements MessageSender {
     private WebhookCredentials remember(long channelId, WebhookCredentials credentials) {
         known.put(channelId, credentials);
         botOnlyUntil.remove(channelId);
-        rateLimits.bindWebhook(credentials.id(), channelId);
+        rateLimits.bindWebhook(credentials.id().value(), channelId);
         return credentials;
     }
 
