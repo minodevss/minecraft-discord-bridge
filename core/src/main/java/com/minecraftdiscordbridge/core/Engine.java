@@ -91,7 +91,7 @@ final class Engine {
                                 Stores.open(shared.platform().dataDirectory()), loader.load(), marker.markRunning()),
                         this::booted,
                         failure -> LOGGER.error(
-                                "The bridge could not start: {}. Fix the problem and run /discord reload",
+                                "The bridge could not start: {}. Fix the problem and restart the server",
                                 failure.toString()));
     }
 
