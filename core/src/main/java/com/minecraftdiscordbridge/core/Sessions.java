@@ -56,7 +56,7 @@ final class Sessions {
                 Ids.parse(channels.console()),
                 shared.io(),
                 shared.setupCodes(),
-                shared.attempts(),
+                shared.setupAttempts(),
                 shared.clock(),
                 replies,
                 rebound);
@@ -65,7 +65,7 @@ final class Sessions {
                 stores.links(),
                 shared.io(),
                 shared.pendingLinks(),
-                shared.attempts(),
+                shared.linkAttempts(),
                 shared.roster(),
                 shared.clock(),
                 replies,

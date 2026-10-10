@@ -94,6 +94,23 @@ class SetupTest {
     }
 
     @Test
+    void acceptsTheSetupCodeAfterManyWrongLinkCodes() throws IOException {
+        try (Harness harness = Harness.started(directory, UNBOUND)) {
+            RecordingDiscord waiting = harness.discord();
+            for (int i = 0; i < 50; i++) {
+                waiting.command(Harness.request("link", null, Map.of("code", "WRONG"), MEMBER + i, CHAT))
+                        .next();
+            }
+            String code =
+                    Harness.code(harness.run(RecordingSource.console(), "setup").nextPlain());
+
+            RecordingReply reply = waiting.command(Harness.managerRequest("setup", Map.of("code", code), MEMBER, CHAT));
+
+            assertThat(reply.next().text()).isEqualTo("This channel now shows the Minecraft chat.");
+        }
+    }
+
+    @Test
     void refusesCodesFromMembersWhoCannotManageTheServer() throws IOException {
         try (Harness harness = Harness.started(directory, UNBOUND)) {
             String code =
