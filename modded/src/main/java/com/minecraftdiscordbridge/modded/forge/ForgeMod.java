@@ -3,10 +3,8 @@ package com.minecraftdiscordbridge.modded.forge;
 import com.minecraftdiscordbridge.modded.common.LoaderHooks;
 import com.minecraftdiscordbridge.modded.common.ModdedCommand;
 import com.minecraftdiscordbridge.modded.common.ModdedEvents;
-import net.minecraft.network.Connection;
-import net.minecraft.network.chat.Component;
+import com.minecraftdiscordbridge.modded.common.ModdedJoinGate;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.ServerLoginPacketListenerImpl;
 import net.minecraft.world.entity.Entity;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -14,7 +12,6 @@ import net.minecraftforge.event.ServerChatEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.player.AdvancementEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.entity.player.PlayerNegotiationEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
@@ -52,11 +49,7 @@ public final class ForgeMod {
                 false,
                 ServerChatEvent.class,
                 event -> events.playerChatted(event.getPlayer(), event.getRawText()));
-        bus.addListener(EventPriority.NORMAL, false, PlayerNegotiationEvent.class, event -> {
-            Connection connection = event.getConnection();
-            event.enqueueWork(events.checkJoin(event.getProfile())
-                    .thenAccept(kick -> kick.ifPresent(message -> disconnect(connection, message))));
-        });
+        ForgeJoinGate.register(bus, new ModdedJoinGate(events));
         bus.addListener(EventPriority.NORMAL, false, PlayerEvent.PlayerLoggedInEvent.class, event -> {
             if (event.getEntity() instanceof ServerPlayer player) {
                 events.playerJoined(player);
@@ -78,13 +71,5 @@ public final class ForgeMod {
                 events.advancementEarned(player, event.getAdvancement());
             }
         });
-    }
-
-    private static void disconnect(Connection connection, Component message) {
-        if (connection.getPacketListener() instanceof ServerLoginPacketListenerImpl login) {
-            login.disconnect(message);
-        } else {
-            connection.disconnect(message);
-        }
     }
 }

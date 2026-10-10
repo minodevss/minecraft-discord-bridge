@@ -3,8 +3,8 @@ package com.minecraftdiscordbridge.modded.neoforge;
 import com.minecraftdiscordbridge.modded.common.LoaderHooks;
 import com.minecraftdiscordbridge.modded.common.ModdedCommand;
 import com.minecraftdiscordbridge.modded.common.ModdedEvents;
+import com.minecraftdiscordbridge.modded.common.ModdedJoinGate;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
@@ -19,7 +19,6 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
-import net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent;
 import net.neoforged.neoforge.server.permission.events.PermissionGatherEvent;
 
 @Mod(value = LoaderHooks.MOD_ID, dist = Dist.DEDICATED_SERVER)
@@ -27,11 +26,7 @@ public final class NeoForgeMod {
     public NeoForgeMod(IEventBus modBus) {
         NeoForgeLoaderHooks hooks = new NeoForgeLoaderHooks();
         ModdedEvents events = new ModdedEvents(hooks);
-        modBus.addListener(RegisterConfigurationTasksEvent.class, event -> {
-            if (event.getListener() instanceof ServerConfigurationPacketListenerImpl listener) {
-                event.register(new JoinGateTask(listener, events));
-            }
-        });
+        NeoForgeJoinGate.register(modBus, new ModdedJoinGate(events));
         IEventBus bus = NeoForge.EVENT_BUS;
         bus.addListener(PermissionGatherEvent.Nodes.class, hooks::registerNodes);
         bus.addListener(RegisterCommandsEvent.class, event -> ModdedCommand.register(event.getDispatcher(), events));
