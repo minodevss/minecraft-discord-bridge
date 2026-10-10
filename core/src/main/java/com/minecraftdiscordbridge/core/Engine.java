@@ -324,7 +324,7 @@ final class Engine {
             outcome = Outcome.NO_TOKEN;
         } else {
             DiscordSettings next = DiscordPlan.settings(loaded, channels);
-            if (next.equals(settings)) {
+            if (next.equals(settings) && shared.discord().status().state() == DiscordStatus.State.READY) {
                 outcome = Outcome.APPLIED;
             } else {
                 settings = next;

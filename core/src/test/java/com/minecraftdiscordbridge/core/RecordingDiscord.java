@@ -33,6 +33,7 @@ public final class RecordingDiscord implements Discord {
     public volatile Duration shutdownTime = Duration.ZERO;
     public volatile boolean started;
     public volatile boolean shutDown;
+    public volatile DiscordStatus.State state = DiscordStatus.State.READY;
     public volatile LongFunction<CompletableFuture<MemberLookup>> members =
             userId -> CompletableFuture.completedFuture(new MemberLookup.NotMember(userId));
     public final Map<Long, RoleInfo> roles = new ConcurrentHashMap<>();
@@ -80,8 +81,7 @@ public final class RecordingDiscord implements Discord {
 
     @Override
     public DiscordStatus status() {
-        return new DiscordStatus(
-                shutDown ? DiscordStatus.State.STOPPED : DiscordStatus.State.READY, null, 42, Map.of());
+        return new DiscordStatus(shutDown ? DiscordStatus.State.STOPPED : state, null, 42, Map.of());
     }
 
     @Override

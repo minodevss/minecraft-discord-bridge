@@ -10,6 +10,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
+import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import java.io.IOException;
@@ -115,6 +116,18 @@ class BridgeLifecycleTest {
             harness.publish(new GameEvent.PlayerJoined(STEVE, false));
             Waits.nothingIn(harness.discord().sent);
             assertThat(harness.discords).hasSize(1);
+        }
+    }
+
+    @Test
+    void reconnectsOnReloadWhenDiscordStoppedEvenIfNothingChanged() throws IOException {
+        try (Harness harness = Harness.started(directory, CHANNELS)) {
+            harness.discord().state = DiscordStatus.State.STOPPED;
+
+            RecordingSource console = harness.run(RecordingSource.console(), "reload");
+
+            assertThat(console.nextPlain()).isEqualTo("Reloaded config.yml. Reconnecting to Discord.");
+            assertThat(harness.discord(2).started).isTrue();
         }
     }
 
