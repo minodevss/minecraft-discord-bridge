@@ -9,6 +9,7 @@ import java.util.function.BooleanSupplier;
 
 public final class Waits {
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration QUIET = Duration.ofMillis(300);
 
     private Waits() {}
 
@@ -27,7 +28,7 @@ public final class Waits {
 
     public static <T> void nothingIn(BlockingQueue<T> queue) {
         try {
-            T value = queue.poll(300, TimeUnit.MILLISECONDS);
+            T value = queue.poll(QUIET.toMillis(), TimeUnit.MILLISECONDS);
             if (value != null) {
                 fail("Expected nothing, got " + value);
             }
@@ -43,12 +44,26 @@ public final class Waits {
             if (System.nanoTime() > deadline) {
                 fail("Timed out waiting for " + what);
             }
-            try {
-                Thread.sleep(5);
-            } catch (InterruptedException interrupted) {
-                Thread.currentThread().interrupt();
-                fail("Interrupted waiting for " + what);
+            pause(what);
+        }
+    }
+
+    public static void stays(String what, BooleanSupplier condition) {
+        long end = System.nanoTime() + QUIET.toNanos();
+        while (System.nanoTime() < end) {
+            if (!condition.getAsBoolean()) {
+                fail("Expected " + what + " to stay true");
             }
+            pause(what);
+        }
+    }
+
+    private static void pause(String what) {
+        try {
+            Thread.sleep(5);
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            fail("Interrupted waiting for " + what);
         }
     }
 }

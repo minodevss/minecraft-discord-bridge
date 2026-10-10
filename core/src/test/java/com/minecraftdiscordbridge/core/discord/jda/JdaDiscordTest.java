@@ -11,6 +11,7 @@ import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.OTHER_
 import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.OTHER_GUILD_ID;
 import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.PLAYER_ID;
 import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.ROLE_ID;
+import static com.minecraftdiscordbridge.core.fakes.Waits.stays;
 import static com.minecraftdiscordbridge.core.fakes.Waits.take;
 import static com.minecraftdiscordbridge.core.fakes.Waits.until;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -385,9 +386,8 @@ class JdaDiscordTest {
         until(
                 "second ready",
                 () -> discord.identifies.size() == 2 && bridge.status().state() == State.READY);
-        Thread.sleep(200);
 
-        assertThat(registrations()).hasSize(1);
+        stays("one registration", () -> registrations().size() == 1);
     }
 
     @Test
@@ -574,9 +574,8 @@ class JdaDiscordTest {
         bridge.updatePresence("3 players online");
         until("presence", () -> discord.presences.size() == 1);
         bridge.updatePresence("3 players online");
-        Thread.sleep(200);
 
-        assertThat(discord.presences).hasSize(1);
+        stays("one presence update", () -> discord.presences.size() == 1);
         DataObject activity = discord.presences.get(0).getArray("activities").getObject(0);
         assertThat(activity.getString("state")).isEqualTo("3 players online");
     }
@@ -589,9 +588,8 @@ class JdaDiscordTest {
         until("topic", () -> topicEdits().size() == 1);
         bridge.updateTopic(CHANNEL, "3/20 players online");
         bridge.updateTopic(CHANNEL, "4/20 players online");
-        Thread.sleep(200);
 
-        assertThat(topicEdits()).hasSize(1);
+        stays("one topic edit", () -> topicEdits().size() == 1);
         assertThat(DiscordPayloads.body(topicEdits().get(0)).getString("topic")).isEqualTo("3/20 players online");
     }
 
