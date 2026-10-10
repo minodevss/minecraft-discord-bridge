@@ -27,9 +27,8 @@ val allNodes = listOf(
 )
 
 val requestedNodes = providers.gradleProperty("nodes").orNull
-val ci = providers.environmentVariable("CI").orNull == "true"
 val activeNodes = when {
-    ci || requestedNodes == "all" -> allNodes
+    requestedNodes == "all" -> allNodes
     requestedNodes != null -> allNodes.filterIndexed { index, (version, loader) ->
         index == 0 || requestedNodes.split(',').map(String::trim).any { it == version || it == loader || it == "$version-$loader" }
     }

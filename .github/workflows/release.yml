@@ -160,8 +160,6 @@ jobs:
         run: gh release view "$TAG" --json body --jq .body > dist/notes.md
       - name: Publish to Modrinth, CurseForge and Hangar
         env:
-          # settings.gradle.kts configures every modded node when CI is true; publishing uploads the built jars and needs none.
-          CI: "false"
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
           HANGAR_TOKEN: ${{ secrets.HANGAR_TOKEN }}
