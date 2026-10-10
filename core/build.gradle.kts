@@ -16,6 +16,7 @@ dependencies {
     implementation(libs.adventure.serializer.gson)
     implementation(libs.adventure.serializer.plain)
     implementation(libs.snakeyaml.engine)
+    implementation(libs.jackson.databind)
     compileOnly(libs.gson)
     compileOnly(libs.slf4j.api)
     compileOnly(libs.log4j.core)
