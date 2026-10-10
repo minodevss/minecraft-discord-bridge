@@ -16,7 +16,6 @@ import com.minecraftdiscordbridge.core.config.ConfigSnapshot;
 import com.minecraftdiscordbridge.core.console.ConsoleInput;
 import com.minecraftdiscordbridge.core.console.ConsoleMirror;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
-import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.events.EventPosts;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Replies;
@@ -60,7 +59,7 @@ final class Sessions {
                 shared.roster(),
                 shared.clock(),
                 replies,
-                () -> hasGuild && connected(shared.discord().status()));
+                () -> hasGuild && shared.discord().status().isConnected());
         Actions actions =
                 new Actions(config.actions(), shared.platform(), shared.loop()::control, lang, shared.actionTimeout());
         AccessContext access = shared.accessContext(stores);
@@ -97,10 +96,6 @@ final class Sessions {
                         lang,
                         shared.actionTimeout(),
                         () -> secrets(shared, snapshot)));
-    }
-
-    private static boolean connected(DiscordStatus status) {
-        return status.state() == DiscordStatus.State.READY || status.state() == DiscordStatus.State.DEGRADED;
     }
 
     private static Format chatFormat(String template) {

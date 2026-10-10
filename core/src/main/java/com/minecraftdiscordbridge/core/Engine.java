@@ -343,14 +343,10 @@ final class Engine {
         announceStart();
         refreshStatus();
         Session current = session;
-        if (current != null && connected(shared.discord().status())) {
+        if (current != null && shared.discord().status().isConnected()) {
             current.roleSync().discordReady();
         }
         return outcome;
-    }
-
-    private static boolean connected(DiscordStatus status) {
-        return status.state() == DiscordStatus.State.READY || status.state() == DiscordStatus.State.DEGRADED;
     }
 
     private void rebound() {
@@ -461,7 +457,7 @@ final class Engine {
                 refreshStatus();
             }
             Session current = session;
-            if (target == generation && current != null && connected(status)) {
+            if (target == generation && current != null && status.isConnected()) {
                 current.roleSync().discordReady();
             }
         }

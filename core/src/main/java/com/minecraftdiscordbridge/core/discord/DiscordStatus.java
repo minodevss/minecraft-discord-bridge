@@ -9,6 +9,10 @@ public record DiscordStatus(
         channels = Map.copyOf(channels);
     }
 
+    public boolean isConnected() {
+        return state == State.READY || state == State.DEGRADED;
+    }
+
     public enum State {
         CONNECTING,
         READY,
