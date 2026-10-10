@@ -4,6 +4,7 @@ import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
 import com.minecraftdiscordbridge.core.discord.CommandHashRepository;
 import com.minecraftdiscordbridge.core.discord.Discord;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordListener;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
@@ -162,7 +163,7 @@ public final class JdaDiscord implements Discord {
     public DiscordStatus status() {
         Phase current = phase;
         Session active = session;
-        Map<Long, ChannelStatus> channels = new HashMap<>();
+        Map<DiscordId, ChannelStatus> channels = new HashMap<>();
         settings.channelIds().forEach(id -> channels.put(id, ChannelStatus.IDLE));
         channels.putAll(outbox.snapshot());
         channels.replaceAll((id, channel) -> channel.withRateLimited(rateLimits.count(id)));
@@ -181,24 +182,24 @@ public final class JdaDiscord implements Discord {
     }
 
     @Override
-    public void updateTopic(long channelId, String topic) {
+    public void updateTopic(DiscordId channelId, String topic) {
         onLoop(() -> appearance.topic(channelId, topic));
     }
 
     @Override
-    public boolean isApplicationOwner(long userId) {
+    public boolean isApplicationOwner(DiscordId userId) {
         ApplicationInfo info = application;
-        return info != null && info.isOwner(userId);
+        return info != null && info.isOwner(userId.value());
     }
 
     @Override
-    public CompletableFuture<MemberLookup> member(long userId) {
+    public CompletableFuture<MemberLookup> member(DiscordId userId) {
         Guild guild = guild();
         if (guild == null) {
             return CompletableFuture.completedFuture(new MemberLookup.Unavailable(NOT_CONNECTED));
         }
         try {
-            return guild.retrieveMemberById(userId)
+            return guild.retrieveMemberById(userId.value())
                     .useCache(false)
                     .timeout(MEMBER_LOOKUP_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
                     .submit()
@@ -210,30 +211,29 @@ public final class JdaDiscord implements Discord {
     }
 
     @Override
-    public Map<Long, RoleInfo> roles() {
+    public Map<DiscordId, RoleInfo> roles() {
         Guild guild = guild();
         if (guild == null) {
             return Map.of();
         }
-        Map<Long, RoleInfo> roles = new HashMap<>();
+        Map<DiscordId, RoleInfo> roles = new HashMap<>();
         for (Role role : guild.getRoles()) {
             boolean assignable = !role.isManaged()
                     && !role.isPublicRole()
                     && guild.getSelfMember().canInteract(role);
-            roles.put(
-                    role.getIdLong(),
-                    new RoleInfo(role.getIdLong(), role.getName(), dangerous(role.getPermissions()), assignable));
+            DiscordId id = new DiscordId(role.getIdLong());
+            roles.put(id, new RoleInfo(id, role.getName(), dangerous(role.getPermissions()), assignable));
         }
         return Map.copyOf(roles);
     }
 
     @Override
-    public CompletableFuture<Void> addRole(long userId, long roleId) {
+    public CompletableFuture<Void> addRole(DiscordId userId, DiscordId roleId) {
         return changeRole(userId, roleId, true);
     }
 
     @Override
-    public CompletableFuture<Void> removeRole(long userId, long roleId) {
+    public CompletableFuture<Void> removeRole(DiscordId userId, DiscordId roleId) {
         return changeRole(userId, roleId, false);
     }
 
@@ -274,18 +274,18 @@ public final class JdaDiscord implements Discord {
         return jda == null || closing ? null : scope.current(jda);
     }
 
-    private CompletableFuture<Void> changeRole(long userId, long roleId, boolean add) {
+    private CompletableFuture<Void> changeRole(DiscordId userId, DiscordId roleId, boolean add) {
         Guild guild = guild();
         if (guild == null) {
             return CompletableFuture.failedFuture(new IllegalStateException(NOT_CONNECTED));
         }
-        Role role = guild.getRoleById(roleId);
+        Role role = guild.getRoleById(roleId.value());
         if (role == null) {
             return CompletableFuture.failedFuture(
-                    new IllegalArgumentException("Discord role " + Long.toUnsignedString(roleId) + " does not exist"));
+                    new IllegalArgumentException("Discord role " + roleId + " does not exist"));
         }
         try {
-            UserSnowflake user = UserSnowflake.fromId(userId);
+            UserSnowflake user = UserSnowflake.fromId(userId.value());
             return (add ? guild.addRoleToMember(user, role) : guild.removeRoleFromMember(user, role))
                     .reason(ROLE_SYNC_REASON)
                     .submit();
@@ -294,7 +294,7 @@ public final class JdaDiscord implements Discord {
         }
     }
 
-    private static MemberLookup lookupFailed(long userId, Throwable failure) {
+    private static MemberLookup lookupFailed(DiscordId userId, Throwable failure) {
         Throwable cause = Failures.unwrap(failure);
         if (cause instanceof ErrorResponseException error
                 && (error.getErrorResponse() == ErrorResponse.UNKNOWN_MEMBER
@@ -462,22 +462,21 @@ public final class JdaDiscord implements Discord {
         }
         Guild guild = scope.resolve(jda);
         if (guild == null) {
-            String reason = settings.guildId() == DiscordSettings.NO_GUILD
-                    ? "The bot cannot see any channel set under discord: in config.yml. Fix the channel IDs and run"
-                            + " /discord reload, or invite the bot with " + inviteUrl(jda)
-                    : "The bot is not in Discord server " + Long.toUnsignedString(settings.guildId())
-                            + ". Invite it with " + inviteUrl(jda);
+            String reason = settings.guild()
+                    .map(id -> "The bot is not in Discord server " + id + ". Invite it with " + inviteUrl(jda))
+                    .orElseGet(() -> "The bot cannot see any channel set under discord: in config.yml. Fix the"
+                            + " channel IDs and run /discord reload, or invite the bot with " + inviteUrl(jda));
             LOGGER.warn(reason);
             enter(State.DEGRADED, reason);
             return;
         }
         commands.registerIfChanged(guild, jda.getSelfUser().getApplicationIdLong());
-        for (long channelId : settings.channelIds()) {
-            if (guild.getGuildChannelById(channelId) == null) {
+        for (DiscordId channelId : settings.channelIds()) {
+            if (guild.getGuildChannelById(channelId.value()) == null) {
                 LOGGER.warn(
                         "The bot cannot see Discord channel {} in {}. Give the bot the View Channel permission there,"
                                 + " or fix the channel ID in config.yml or with /setup",
-                        Long.toUnsignedString(channelId),
+                        channelId,
                         guild.getName());
             } else {
                 webhooks.prepare(channelId);

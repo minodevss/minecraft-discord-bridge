@@ -11,16 +11,15 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class RolePlanTest {
-    private static final long USER = 666666666666666666L;
-    private static final long VIP = 777777777777777777L;
-    private static final long BOOSTER = 888888888888888888L;
-    private static final long STAFF = 999999999999999999L;
-    private static final RoleSyncRule VIP_TO_GROUP =
-            new RoleSyncRule(new DiscordId(VIP), "VIP", SyncDirection.DISCORD_TO_MINECRAFT);
+    private static final DiscordId USER = new DiscordId(666666666666666666L);
+    private static final DiscordId VIP = new DiscordId(777777777777777777L);
+    private static final DiscordId BOOSTER = new DiscordId(888888888888888888L);
+    private static final DiscordId STAFF = new DiscordId(999999999999999999L);
+    private static final RoleSyncRule VIP_TO_GROUP = new RoleSyncRule(VIP, "VIP", SyncDirection.DISCORD_TO_MINECRAFT);
     private static final RoleSyncRule BOOSTER_TO_GROUP =
-            new RoleSyncRule(new DiscordId(BOOSTER), "vip", SyncDirection.DISCORD_TO_MINECRAFT);
+            new RoleSyncRule(BOOSTER, "vip", SyncDirection.DISCORD_TO_MINECRAFT);
     private static final RoleSyncRule GROUP_TO_STAFF =
-            new RoleSyncRule(new DiscordId(STAFF), "mod", SyncDirection.MINECRAFT_TO_DISCORD);
+            new RoleSyncRule(STAFF, "mod", SyncDirection.MINECRAFT_TO_DISCORD);
 
     @Test
     void addsTheGroupWhenTheMemberHasTheRole() {
@@ -75,7 +74,7 @@ class RolePlanTest {
                 .containsExactly(new RoleChange.RemoveGroup("vip"), new RoleChange.RemoveRole(STAFF));
     }
 
-    private static MemberLookup member(Long... roles) {
+    private static MemberLookup member(DiscordId... roles) {
         return new MemberLookup.Member(USER, Set.of(roles));
     }
 

@@ -97,7 +97,10 @@ class ChatRelayTest {
                     .isEqualTo("<@100000000000000001> <@100000000000000002> <@100000000000000003> @Friend\\_4 @nobody"
                             + " mail@Friend\\_1");
             assertThat(sent.pingUserIds())
-                    .containsExactlyInAnyOrder(100000000000000001L, 100000000000000002L, 100000000000000003L);
+                    .containsExactlyInAnyOrder(
+                            new DiscordId(100000000000000001L),
+                            new DiscordId(100000000000000002L),
+                            new DiscordId(100000000000000003L));
         }
     }
 

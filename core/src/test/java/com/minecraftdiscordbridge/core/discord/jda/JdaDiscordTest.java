@@ -39,6 +39,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -53,6 +54,12 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.event.Level;
 
 class JdaDiscordTest {
+    private static final DiscordId CHANNEL = new DiscordId(CHANNEL_ID);
+    private static final DiscordId GUILD = new DiscordId(GUILD_ID);
+    private static final DiscordId PLAYER = new DiscordId(PLAYER_ID);
+    private static final DiscordId FRIEND = new DiscordId(FRIEND_ID);
+    private static final DiscordId ROLE = new DiscordId(ROLE_ID);
+    private static final DiscordId OTHER_BOT = new DiscordId(OTHER_BOT_ID);
     private static final Author STEVE = Author.player("uuid-steve", "Steve", "https://mc-heads.net/avatar/Steve");
     private static final Author SERVER = Author.server("Survival", "https://example.com/server.png");
     private static final int GUILD_MEMBERS_INTENT = 1 << 1;
@@ -217,13 +224,13 @@ class JdaDiscordTest {
         discord.sendMessage(message);
 
         DiscordMessage received = take(listener.messages);
-        assertThat(received.channelId()).isEqualTo(CHANNEL_ID);
-        assertThat(received.author()).isEqualTo(new DiscordMessage.Sender(PLAYER_ID, "Alex", 0x3498db, false, false));
+        assertThat(received.channelId()).isEqualTo(CHANNEL);
+        assertThat(received.author()).isEqualTo(new DiscordMessage.Sender(PLAYER, "Alex", 0x3498db, false, false));
         assertThat(received.content()).startsWith("hi <@" + FRIEND_ID + ">");
-        assertThat(received.mentionedUsers()).containsEntry(FRIEND_ID, "Bestie");
+        assertThat(received.mentionedUsers()).containsEntry(FRIEND, "Bestie");
         assertThat(received.mentionedRoles())
-                .containsEntry(ROLE_ID, new DiscordMessage.MentionedRole("Builders", 0x3498db));
-        assertThat(received.mentionedChannels()).containsEntry(CHANNEL_ID, "minecraft");
+                .containsEntry(ROLE, new DiscordMessage.MentionedRole("Builders", 0x3498db));
+        assertThat(received.mentionedChannels()).containsEntry(CHANNEL, "minecraft");
         assertThat(received.attachments())
                 .containsExactly(new DiscordMessage.Attachment("cat.png", "https://cdn.example.com/cat.png", true));
         assertThat(received.stickers()).containsExactly("wave");
@@ -275,7 +282,7 @@ class JdaDiscordTest {
     @Test
     void sendsMessagesQueuedBeforeDiscordWasReady() {
         bridge = start(TestSupport.settings(List.of()));
-        bridge.send(OutboundMessage.of(CHANNEL_ID, SERVER, "Server started"));
+        bridge.send(OutboundMessage.of(CHANNEL, SERVER, "Server started"));
 
         awaitState(State.READY);
         until("queued message", () -> executions().size() == 1);
@@ -288,9 +295,9 @@ class JdaDiscordTest {
     void sendsPlayerMessagesThroughOneWebhookItCreates() {
         bridge = startReady();
 
-        bridge.send(new OutboundMessage(CHANNEL_ID, STEVE, "hello <@" + FRIEND_ID + ">", Set.of(FRIEND_ID)));
+        bridge.send(new OutboundMessage(CHANNEL, STEVE, "hello <@" + FRIEND + ">", Set.of(FRIEND)));
         until("first message", () -> executions().size() == 1);
-        bridge.send(OutboundMessage.of(CHANNEL_ID, STEVE, "again"));
+        bridge.send(OutboundMessage.of(CHANNEL, STEVE, "again"));
         until("second message", () -> executions().size() == 2);
 
         List<RecordedRequest> creations = discord.requests("POST", "channels/" + CHANNEL_ID + "/webhooks");
@@ -304,22 +311,22 @@ class JdaDiscordTest {
         assertThat(mentions.getArray("parse").length()).isZero();
         assertThat(mentions.getArray("users").getString(0)).isEqualTo(Long.toString(FRIEND_ID));
         assertThat(mentions.getBoolean("replied_user")).isFalse();
-        assertThat(webhooks.stored).containsKey(CHANNEL_ID);
+        assertThat(webhooks.stored).containsKey(CHANNEL);
     }
 
     @Test
     void recreatesTheWebhookOnceWhenDiscordNoLongerKnowsIt() {
-        webhooks.stored.put(CHANNEL_ID, new WebhookCredentials(new DiscordId(777), "stale"));
+        webhooks.stored.put(CHANNEL, new WebhookCredentials(new DiscordId(777), "stale"));
         discord.webhookGoneResponses.set(1);
         bridge = startReady();
 
-        bridge.send(OutboundMessage.of(CHANNEL_ID, STEVE, "hello"));
+        bridge.send(OutboundMessage.of(CHANNEL, STEVE, "hello"));
 
         until("resent message", () -> executions().size() == 2);
         assertThat(discord.requestsStartingWith("POST", "webhooks/777/")).hasSize(1);
         assertThat(discord.requests("POST", "channels/" + CHANNEL_ID + "/webhooks"))
                 .hasSize(1);
-        assertThat(webhooks.stored.get(CHANNEL_ID).id()).isNotEqualTo(777);
+        assertThat(webhooks.stored.get(CHANNEL).id()).isNotEqualTo(new DiscordId(777));
     }
 
     @Test
@@ -327,7 +334,7 @@ class JdaDiscordTest {
         discord.everyonePermissions = FakeDiscord.NO_WEBHOOKS;
         bridge = startReady();
 
-        bridge.send(OutboundMessage.of(CHANNEL_ID, STEVE, "hi"));
+        bridge.send(OutboundMessage.of(CHANNEL, STEVE, "hi"));
 
         until("bot message", () -> botMessages().size() == 1);
         DataObject body = FakeDiscord.body(botMessages().get(0));
@@ -342,10 +349,10 @@ class JdaDiscordTest {
         discord.rateLimitedResponses.set(1);
         bridge = startReady();
 
-        bridge.send(OutboundMessage.of(CHANNEL_ID, STEVE, "hello"));
+        bridge.send(OutboundMessage.of(CHANNEL, STEVE, "hello"));
 
         until("retried message", () -> executions().size() == 2);
-        until("429 count", () -> bridge.status().channels().get(CHANNEL_ID).rateLimited() == 1);
+        until("429 count", () -> bridge.status().channels().get(CHANNEL).rateLimited() == 1);
     }
 
     @Test
@@ -364,7 +371,7 @@ class JdaDiscordTest {
         assertThat(whitelist.getArray("contexts").length()).isEqualTo(1);
         assertThat(whitelist.getArray("options").getObject(0).getBoolean("autocomplete"))
                 .isTrue();
-        until("hash saved", () -> commandHashes.stored.containsKey(GUILD_ID));
+        until("hash saved", () -> commandHashes.stored.containsKey(GUILD));
 
         bridge.shutdown(List.of(), Deadline.after(SHUTDOWN_BUDGET));
         bridge = start(TestSupport.settings(List.of(LIST, WHITELIST)));
@@ -404,11 +411,11 @@ class JdaDiscordTest {
         InteractionRequest request = take(listener.commands);
         assertThat(request.command()).isEqualTo("list");
         assertThat(request.options()).containsEntry("page", "2");
-        assertThat(request.userId()).isEqualTo(PLAYER_ID);
+        assertThat(request.userId()).isEqualTo(PLAYER);
         assertThat(request.userDisplayName()).isEqualTo("Alex");
         assertThat(request.locale()).isEqualTo("ko");
-        assertThat(request.guildId()).isEqualTo(GUILD_ID);
-        assertThat(request.channelId()).isEqualTo(CHANNEL_ID);
+        assertThat(request.guildId()).isEqualTo(GUILD);
+        assertThat(request.channelId()).isEqualTo(CHANNEL);
         assertThat(callbacks()).isEmpty();
 
         take(listener.replies).replyEphemeral("3 players online");
@@ -472,7 +479,7 @@ class JdaDiscordTest {
     void setsEveryMessageMentionPolicyExplicitlyAndNeverAllowsEveryoneOrRoles() {
         bridge = start(TestSupport.settings(List.of(LIST, WHITELIST)));
         awaitState(State.READY);
-        bridge.send(new OutboundMessage(CHANNEL_ID, STEVE, "@everyone <@&" + ROLE_ID + ">", Set.of(FRIEND_ID)));
+        bridge.send(new OutboundMessage(CHANNEL, STEVE, "@everyone <@&" + ROLE + ">", Set.of(FRIEND)));
         discord.dispatch("INTERACTION_CREATE", discord.command(GUILD_ID, "list", 2, DataArray.empty()));
         take(listener.replies).reply("@here");
         discord.dispatch("INTERACTION_CREATE", discord.command(GUILD_ID, "whitelist", 2, DataArray.empty()));
@@ -483,7 +490,7 @@ class JdaDiscordTest {
                         && callbacks().size() == 2
                         && originalEdits().size() == 1);
         bridge.shutdown(
-                List.of(OutboundMessage.of(CHANNEL_ID, SERVER, "Server stopped @everyone")),
+                List.of(OutboundMessage.of(CHANNEL, SERVER, "Server stopped @everyone")),
                 Deadline.after(SHUTDOWN_BUDGET));
         bridge = null;
 
@@ -507,11 +514,11 @@ class JdaDiscordTest {
     @Test
     void sendsTheFinalMessageBeforeDisconnecting() {
         bridge = startReady();
-        bridge.send(OutboundMessage.of(CHANNEL_ID, STEVE, "bye"));
+        bridge.send(OutboundMessage.of(CHANNEL, STEVE, "bye"));
         until("first message", () -> executions().size() == 1);
 
         bridge.shutdown(
-                List.of(OutboundMessage.of(CHANNEL_ID, SERVER, "Server stopped")), Deadline.after(SHUTDOWN_BUDGET));
+                List.of(OutboundMessage.of(CHANNEL, SERVER, "Server stopped")), Deadline.after(SHUTDOWN_BUDGET));
 
         assertThat(executions()).hasSize(2);
         DataObject last = FakeDiscord.body(executions().get(1));
@@ -523,16 +530,16 @@ class JdaDiscordTest {
     @Test
     void finishesShutdownWithinThreeSecondsWhenDiscordStopsAnswering() {
         bridge = startReady();
-        bridge.send(OutboundMessage.of(CHANNEL_ID, STEVE, "warm up"));
+        bridge.send(OutboundMessage.of(CHANNEL, STEVE, "warm up"));
         until("webhook ready", () -> executions().size() == 1);
         discord.stallMessages = true;
-        bridge.send(OutboundMessage.of(CHANNEL_ID, STEVE, "stuck"));
+        bridge.send(OutboundMessage.of(CHANNEL, STEVE, "stuck"));
         until("stuck request", () -> executions().size() == 2);
-        bridge.send(OutboundMessage.of(CHANNEL_ID, STEVE, "queued"));
+        bridge.send(OutboundMessage.of(CHANNEL, STEVE, "queued"));
 
         long started = System.nanoTime();
         bridge.shutdown(
-                List.of(OutboundMessage.of(CHANNEL_ID, SERVER, "Server stopped")), Deadline.after(SHUTDOWN_BUDGET));
+                List.of(OutboundMessage.of(CHANNEL, SERVER, "Server stopped")), Deadline.after(SHUTDOWN_BUDGET));
 
         assertThat(Duration.ofNanos(System.nanoTime() - started)).isLessThan(SHUTDOWN_LIMIT);
         assertThat(bridge.status().state()).isEqualTo(State.STOPPED);
@@ -546,7 +553,7 @@ class JdaDiscordTest {
 
         long started = System.nanoTime();
         bridge.shutdown(
-                List.of(OutboundMessage.of(CHANNEL_ID, SERVER, "Server stopped")), Deadline.after(SHUTDOWN_BUDGET));
+                List.of(OutboundMessage.of(CHANNEL, SERVER, "Server stopped")), Deadline.after(SHUTDOWN_BUDGET));
 
         assertThat(Duration.ofNanos(System.nanoTime() - started)).isLessThan(SHUTDOWN_LIMIT);
         assertThat(bridge.status().state()).isEqualTo(State.STOPPED);
@@ -571,10 +578,10 @@ class JdaDiscordTest {
     void updatesTheChannelTopicOnlyWhenItChanges() throws Exception {
         bridge = startReady();
 
-        bridge.updateTopic(CHANNEL_ID, "3/20 players online");
+        bridge.updateTopic(CHANNEL, "3/20 players online");
         until("topic", () -> topicEdits().size() == 1);
-        bridge.updateTopic(CHANNEL_ID, "3/20 players online");
-        bridge.updateTopic(CHANNEL_ID, "4/20 players online");
+        bridge.updateTopic(CHANNEL, "3/20 players online");
+        bridge.updateTopic(CHANNEL, "4/20 players online");
         Thread.sleep(200);
 
         assertThat(topicEdits()).hasSize(1);
@@ -585,7 +592,7 @@ class JdaDiscordTest {
     void setsATopicAskedForBeforeTheConnectionWasReady() throws InterruptedException {
         bridge = new JdaDiscord(
                 TestSupport.settings(List.of()), discord.endpoints(), loop, listener, webhooks, commandHashes);
-        bridge.updateTopic(CHANNEL_ID, "3/20 players online");
+        bridge.updateTopic(CHANNEL, "3/20 players online");
         CountDownLatch applied = new CountDownLatch(1);
         loop.control(applied::countDown);
         assertThat(applied.await(5, TimeUnit.SECONDS)).isTrue();
@@ -605,7 +612,7 @@ class JdaDiscordTest {
 
         try (RecordingLogs.Capture logs = RecordingLogs.capture()) {
             for (int players = 1; players <= 3; players++) {
-                appearance.topic(CHANNEL_ID, players + " players online");
+                appearance.topic(CHANNEL, players + " players online");
                 now.addAndGet(Appearance.TOPIC_INTERVAL.toNanos());
             }
 
@@ -620,10 +627,10 @@ class JdaDiscordTest {
     void knowsTheOwnerAndAcceptedAdminsOrDevelopersOfTheTeam() {
         bridge = startReady();
 
-        assertThat(bridge.isApplicationOwner(PLAYER_ID)).isTrue();
-        assertThat(bridge.isApplicationOwner(FRIEND_ID)).isTrue();
-        assertThat(bridge.isApplicationOwner(OTHER_BOT_ID)).isFalse();
-        assertThat(bridge.isApplicationOwner(12345)).isFalse();
+        assertThat(bridge.isApplicationOwner(PLAYER)).isTrue();
+        assertThat(bridge.isApplicationOwner(FRIEND)).isTrue();
+        assertThat(bridge.isApplicationOwner(OTHER_BOT)).isFalse();
+        assertThat(bridge.isApplicationOwner(new DiscordId(12345))).isFalse();
     }
 
     @Test
@@ -634,12 +641,12 @@ class JdaDiscordTest {
 
         discord.dispatch("INTERACTION_CREATE", discord.command(GUILD_ID, "list", 2, DataArray.empty()));
 
-        assertThat(take(listener.commands).guildId()).isEqualTo(GUILD_ID);
+        assertThat(take(listener.commands).guildId()).isEqualTo(GUILD);
     }
 
     @Test
     void findsTheServerThroughTheConfiguredChannel() {
-        bridge = start(unbound(Set.of(CHANNEL_ID), List.of(LIST)));
+        bridge = start(unbound(Set.of(CHANNEL), List.of(LIST)));
         awaitState(State.READY);
         until("registration", () -> registrations().size() == 1);
 
@@ -653,7 +660,7 @@ class JdaDiscordTest {
 
     @Test
     void reportsWhenNoConfiguredChannelIsVisible() {
-        bridge = start(unbound(Set.of(CHANNEL_ID + 1), List.of(LIST)));
+        bridge = start(unbound(Set.of(new DiscordId(CHANNEL_ID + 1)), List.of(LIST)));
 
         awaitState(State.DEGRADED);
         assertThat(bridge.status().reason()).contains("cannot see any channel set under discord: in config.yml");
@@ -702,8 +709,7 @@ class JdaDiscordTest {
     void allowsMentionsOfExactlyTheRequestedRoles() {
         bridge = startReady();
 
-        bridge.send(new OutboundMessage(
-                CHANNEL_ID, SERVER, "<@&" + ROLE_ID + "> Server started", Set.of(), Set.of(ROLE_ID)));
+        bridge.send(new OutboundMessage(CHANNEL, SERVER, "<@&" + ROLE + "> Server started", Set.of(), Set.of(ROLE)));
 
         until("message", () -> executions().size() == 1);
         DataObject mentions = FakeDiscord.body(executions().get(0)).getObject("allowed_mentions");
@@ -716,7 +722,7 @@ class JdaDiscordTest {
     void postsServerMessagesUnderTheBotsNameAndAvatarWhenNoneIsGiven() {
         bridge = startReady();
 
-        bridge.send(OutboundMessage.of(CHANNEL_ID, Author.server(), "Server started"));
+        bridge.send(OutboundMessage.of(CHANNEL, Author.server(), "Server started"));
 
         until("message", () -> executions().size() == 1);
         DataObject body = FakeDiscord.body(executions().get(0));
@@ -724,11 +730,11 @@ class JdaDiscordTest {
         assertThat(body.getString("avatar_url")).startsWith("https://cdn.discordapp.com/embed/avatars/");
     }
 
-    private static DiscordSettings unbound(Set<Long> channels, List<CommandSpec> commands) {
+    private static DiscordSettings unbound(Set<DiscordId> channels, List<CommandSpec> commands) {
         DiscordSettings base = TestSupport.settings(commands);
         return new DiscordSettings(
                 base.token(),
-                DiscordSettings.NO_GUILD,
+                Optional.empty(),
                 channels,
                 base.serverAuthor(),
                 base.autoEnableMessageContent(),
@@ -740,9 +746,9 @@ class JdaDiscordTest {
     void looksUpMemberRolesOverRestWithoutTheMembersIntent() throws Exception {
         bridge = startReady();
 
-        MemberLookup found = bridge.member(PLAYER_ID).get(5, TimeUnit.SECONDS);
+        MemberLookup found = bridge.member(PLAYER).get(5, TimeUnit.SECONDS);
 
-        assertThat(found).isEqualTo(new MemberLookup.Member(PLAYER_ID, Set.of(ROLE_ID)));
+        assertThat(found).isEqualTo(new MemberLookup.Member(PLAYER, Set.of(ROLE)));
         assertThat(discord.requests("GET", "guilds/" + GUILD_ID + "/members/" + PLAYER_ID))
                 .hasSize(1);
         assertThat(discord.identifies.get(0).getInt("intents") & GUILD_MEMBERS_INTENT)
@@ -753,7 +759,7 @@ class JdaDiscordTest {
     void reportsUsersWhoAreNotInTheServer() throws Exception {
         bridge = startReady();
 
-        assertThat(bridge.member(FRIEND_ID).get(5, TimeUnit.SECONDS)).isEqualTo(new MemberLookup.NotMember(FRIEND_ID));
+        assertThat(bridge.member(FRIEND).get(5, TimeUnit.SECONDS)).isEqualTo(new MemberLookup.NotMember(FRIEND));
     }
 
     @Test
@@ -761,7 +767,7 @@ class JdaDiscordTest {
         bridge = new JdaDiscord(
                 TestSupport.settings(List.of()), discord.endpoints(), loop, listener, webhooks, commandHashes);
 
-        assertThat(bridge.member(PLAYER_ID).get(5, TimeUnit.SECONDS)).isInstanceOf(MemberLookup.Unavailable.class);
+        assertThat(bridge.member(PLAYER).get(5, TimeUnit.SECONDS)).isInstanceOf(MemberLookup.Unavailable.class);
         assertThat(bridge.roles()).isEmpty();
     }
 
@@ -769,10 +775,10 @@ class JdaDiscordTest {
     void describesRolesWithModeratorPermissions() {
         bridge = startReady();
 
-        Map<Long, RoleInfo> roles = bridge.roles();
+        Map<DiscordId, RoleInfo> roles = bridge.roles();
 
-        assertThat(roles.get(GUILD_ID).dangerousPermissions()).contains("Administrator");
-        assertThat(roles.get(ROLE_ID)).isEqualTo(new RoleInfo(ROLE_ID, "Builders", Set.of(), false));
+        assertThat(roles.get(GUILD).dangerousPermissions()).contains("Administrator");
+        assertThat(roles.get(ROLE)).isEqualTo(new RoleInfo(ROLE, "Builders", Set.of(), false));
     }
 
     @Test
@@ -781,9 +787,9 @@ class JdaDiscordTest {
         bridge = startReady();
         String route = "guilds/" + GUILD_ID + "/members/" + PLAYER_ID + "/roles/" + ROLE_ID;
 
-        assertThat(bridge.roles().get(ROLE_ID).assignable()).isTrue();
-        bridge.addRole(PLAYER_ID, ROLE_ID).get(5, TimeUnit.SECONDS);
-        bridge.removeRole(PLAYER_ID, ROLE_ID).get(5, TimeUnit.SECONDS);
+        assertThat(bridge.roles().get(ROLE).assignable()).isTrue();
+        bridge.addRole(PLAYER, ROLE).get(5, TimeUnit.SECONDS);
+        bridge.removeRole(PLAYER, ROLE).get(5, TimeUnit.SECONDS);
 
         assertThat(discord.requests("PUT", route))
                 .singleElement()
@@ -807,8 +813,8 @@ class JdaDiscordTest {
                         .put("guild_id", Long.toString(GUILD_ID))
                         .put("user", DataObject.fromJson(FakeDiscord.user(FRIEND_ID, "Friend", false))));
 
-        assertThat(take(listener.memberUpdates)).isEqualTo(new MemberLookup.Member(PLAYER_ID, Set.of(ROLE_ID)));
-        assertThat(take(listener.membersLeft)).isEqualTo(FRIEND_ID);
+        assertThat(take(listener.memberUpdates)).isEqualTo(new MemberLookup.Member(PLAYER, Set.of(ROLE)));
+        assertThat(take(listener.membersLeft)).isEqualTo(FRIEND);
     }
 
     private JdaDiscord startReady() {
@@ -831,7 +837,7 @@ class JdaDiscordTest {
         DiscordSettings base = TestSupport.settings(List.of());
         return new DiscordSettings(
                 base.token(),
-                base.guildId(),
+                base.guild(),
                 base.channelIds(),
                 base.serverAuthor(),
                 autoEnable,

@@ -41,7 +41,7 @@ class BridgeLifecycleTest {
             DiscordSettings settings = harness.discord().settings;
 
             assertThat(settings.token()).isEqualTo(TOKEN);
-            assertThat(settings.guildId()).isEqualTo(DiscordSettings.NO_GUILD);
+            assertThat(settings.guild()).isEmpty();
             assertThat(settings.channelIds()).containsExactlyInAnyOrder(CHAT, EVENTS);
             assertThat(settings.requestMembersIntent()).isFalse();
             assertThat(commandNames(settings)).containsExactly("setup", "list", "link", "unlink");

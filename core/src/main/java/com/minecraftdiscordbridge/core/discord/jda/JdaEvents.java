@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.discord.jda;
 
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordListener;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
@@ -19,7 +20,6 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
@@ -58,7 +58,8 @@ final class JdaEvents {
     void onMessage(MessageReceivedEvent event) {
         if (!event.isFromGuild()
                 || !scope.accepts(event.getGuild().getIdLong())
-                || !settings.channelIds().contains(event.getChannel().getIdLong())) {
+                || !settings.channelIds()
+                        .contains(new DiscordId(event.getChannel().getIdLong()))) {
             return;
         }
         Message message = event.getMessage();
@@ -93,9 +94,9 @@ final class JdaEvents {
                 event.getName(),
                 event.getSubcommandName(),
                 options,
-                guild.getIdLong(),
-                event.getChannelIdLong(),
-                event.getUser().getIdLong(),
+                new DiscordId(guild.getIdLong()),
+                new DiscordId(event.getChannelIdLong()),
+                new DiscordId(event.getUser().getIdLong()),
                 displayName(member, event.getUser().getEffectiveName()),
                 member != null && member.hasPermission(Permission.MANAGE_SERVER),
                 event.getUserLocale().getLocale());
@@ -113,9 +114,9 @@ final class JdaEvents {
                 event.getName(),
                 event.getFocusedOption().getName(),
                 event.getFocusedOption().getValue(),
-                guild.getIdLong(),
-                event.getChannelIdLong(),
-                event.getUser().getIdLong(),
+                new DiscordId(guild.getIdLong()),
+                new DiscordId(event.getChannelIdLong()),
+                new DiscordId(event.getUser().getIdLong()),
                 event.getUserLocale().getLocale());
         loop.control(() -> listener.onAutocomplete(request, reply));
     }
@@ -129,14 +130,16 @@ final class JdaEvents {
 
     void onMemberRemove(GuildMemberRemoveEvent event) {
         if (scope.accepts(event.getGuild().getIdLong())) {
-            long userId = event.getUser().getIdLong();
+            DiscordId userId = new DiscordId(event.getUser().getIdLong());
             loop.control(() -> listener.onMemberLeft(userId));
         }
     }
 
     static MemberLookup.Member member(Member member) {
-        Set<Long> roles = member.getRoles().stream().map(Role::getIdLong).collect(Collectors.toUnmodifiableSet());
-        return new MemberLookup.Member(member.getIdLong(), roles);
+        Set<DiscordId> roles = member.getRoles().stream()
+                .map(role -> new DiscordId(role.getIdLong()))
+                .collect(Collectors.toUnmodifiableSet());
+        return new MemberLookup.Member(new DiscordId(member.getIdLong()), roles);
     }
 
     private Origin origin(Message message) {

@@ -11,5 +11,5 @@ public interface DiscordListener {
 
     void onMemberUpdated(MemberLookup.Member member);
 
-    void onMemberLeft(long userId);
+    void onMemberLeft(DiscordId userId);
 }

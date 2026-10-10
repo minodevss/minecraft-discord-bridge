@@ -2,13 +2,14 @@ package com.minecraftdiscordbridge.core.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class CommandHashStoreTest {
-    private static final String GUILD = "100000000000000000";
+    private static final DiscordId GUILD = new DiscordId(100000000000000000L);
 
     @TempDir
     Path directory;
@@ -22,6 +23,6 @@ class CommandHashStoreTest {
         CommandHashStore reopened = CommandHashStore.open(directory);
 
         assertThat(reopened.hash(GUILD)).contains("second");
-        assertThat(reopened.hash("100000000000000001")).isEmpty();
+        assertThat(reopened.hash(new DiscordId(100000000000000001L))).isEmpty();
     }
 }

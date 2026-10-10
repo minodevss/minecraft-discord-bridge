@@ -67,7 +67,7 @@ public final class ChannelSetup {
         Optional<ChannelRole> role = role(request.options().get(ROLE_OPTION));
         if (role.isEmpty()) {
             reply.replyEphemeral(reader.text("discord.setup.bad-role"));
-        } else if (config.consoleChannel().equals(Optional.of(new DiscordId(request.channelId())))) {
+        } else if (config.consoleChannel().equals(Optional.of(request.channelId()))) {
             reply.replyEphemeral(reader.text("discord.setup.console-channel"));
         } else if (authorized(request, reply, reader)) {
             save(request, reply, reader, role.get());
@@ -120,10 +120,7 @@ public final class ChannelSetup {
                 () -> bindings.save(next),
                 () -> {
                     LOGGER.info(
-                            "Discord user {} chose channel {} for {}",
-                            Long.toUnsignedString(request.userId()),
-                            Long.toUnsignedString(request.channelId()),
-                            id(role));
+                            "Discord user {} chose channel {} for {}", request.userId(), request.channelId(), id(role));
                     reply.replyEphemeral(confirmation(reader, role));
                     bound.run();
                 },
@@ -144,12 +141,11 @@ public final class ChannelSetup {
         return done + "\n" + reader.text("discord.setup.config-wins", "discord." + id(role) + "-channel");
     }
 
-    static ChannelBinding bind(Optional<ChannelBinding> current, long guildId, ChannelRole role, long channelId) {
-        DiscordId guild = new DiscordId(guildId);
+    static ChannelBinding bind(Optional<ChannelBinding> current, DiscordId guild, ChannelRole role, DiscordId channel) {
         Map<ChannelRole, DiscordId> channels = new EnumMap<>(ChannelRole.class);
         current.filter(binding -> binding.guildId().equals(guild))
                 .ifPresent(binding -> channels.putAll(binding.channels()));
-        channels.put(role, new DiscordId(channelId));
+        channels.put(role, channel);
         return new ChannelBinding(guild, channels);
     }
 

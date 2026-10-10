@@ -11,6 +11,7 @@ import com.minecraftdiscordbridge.core.config.ConfigSnapshot;
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
 import com.minecraftdiscordbridge.core.discord.Discord;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordListener;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
@@ -241,7 +242,7 @@ final class Engine {
     private void linkChanged(LinkChange change) {
         if (change instanceof LinkChange.Unlinked) {
             Link link = change.link();
-            shared.access().forget(link.minecraftId(), link.discordId().value());
+            shared.access().forget(link.minecraftId(), link.discordId());
         }
         Session current = session;
         if (current != null) {
@@ -485,7 +486,7 @@ final class Engine {
         }
 
         @Override
-        public void onMemberLeft(long userId) {
+        public void onMemberLeft(DiscordId userId) {
             if (target != generation) {
                 return;
             }

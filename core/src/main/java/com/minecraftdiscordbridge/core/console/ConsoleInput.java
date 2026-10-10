@@ -25,7 +25,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 
 public final class ConsoleInput {
@@ -35,7 +34,7 @@ public final class ConsoleInput {
     private static final Author SERVER = Author.server();
 
     private final Optional<DiscordId> channel;
-    private final Set<Long> users;
+    private final Set<DiscordId> users;
     private final Platform platform;
     private final Discord discord;
     private final Executor loop;
@@ -53,7 +52,7 @@ public final class ConsoleInput {
             Duration timeout,
             Supplier<Collection<String>> secrets) {
         this.channel = config.inputUsers().isEmpty() ? Optional.empty() : channel;
-        this.users = config.inputUsers().stream().map(DiscordId::value).collect(Collectors.toUnmodifiableSet());
+        this.users = Set.copyOf(config.inputUsers());
         this.platform = platform;
         this.discord = discord;
         this.loop = loop;
@@ -64,7 +63,7 @@ public final class ConsoleInput {
 
     public void onMessage(DiscordMessage message) {
         if (channel.isEmpty()
-                || message.channelId() != channel.get().value()
+                || !message.channelId().equals(channel.get())
                 || !allowed(message.author())
                 || message.content().isBlank()) {
             return;
@@ -74,7 +73,7 @@ public final class ConsoleInput {
             post(lang.text("discord.console.invalid", MAX_COMMAND_LENGTH));
             return;
         }
-        String user = Long.toUnsignedString(message.author().id());
+        String user = message.author().id().toString();
         LOGGER.info(
                 "Discord user {} ({}) ran the console command: {}",
                 user,
@@ -133,6 +132,6 @@ public final class ConsoleInput {
     }
 
     private void post(String text) {
-        discord.send(OutboundMessage.of(channel.get().value(), SERVER, text));
+        discord.send(OutboundMessage.of(channel.get(), SERVER, text));
     }
 }

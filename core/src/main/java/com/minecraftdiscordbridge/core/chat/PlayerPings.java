@@ -1,5 +1,6 @@
 package com.minecraftdiscordbridge.core.chat;
 
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.storage.Link;
 import com.minecraftdiscordbridge.core.text.markdown.DiscordEscaper;
 import java.util.HashMap;
@@ -18,7 +19,7 @@ final class PlayerPings {
 
     private PlayerPings() {}
 
-    record Pinged(String text, Set<Long> userIds) {
+    record Pinged(String text, Set<DiscordId> userIds) {
         Pinged {
             userIds = Set.copyOf(userIds);
         }
@@ -28,8 +29,8 @@ final class PlayerPings {
         if (message.indexOf('@') < 0 || links.isEmpty()) {
             return new Pinged(DiscordEscaper.escape(message), Set.of());
         }
-        Map<String, Long> byName = byName(links);
-        Set<Long> pinged = new LinkedHashSet<>();
+        Map<String, DiscordId> byName = byName(links);
+        Set<DiscordId> pinged = new LinkedHashSet<>();
         Matcher mention = MENTION.matcher(message).useTransparentBounds(true);
         String text = DiscordEscaper.escape(message, (source, start, out) -> {
             if (source.charAt(start) != '@') {
@@ -39,23 +40,21 @@ final class PlayerPings {
             if (!mention.lookingAt()) {
                 return DiscordEscaper.Verbatim.NONE;
             }
-            Long userId = byName.get(mention.group(1).toLowerCase(Locale.ROOT));
+            DiscordId userId = byName.get(mention.group(1).toLowerCase(Locale.ROOT));
             if (userId == null || (!pinged.contains(userId) && pinged.size() >= MAX_PINGS)) {
                 return DiscordEscaper.Verbatim.NONE;
             }
-            out.append("<@").append(Long.toUnsignedString(userId)).append('>');
+            out.append("<@").append(userId).append('>');
             pinged.add(userId);
             return mention.end();
         });
         return new Pinged(text, pinged);
     }
 
-    private static Map<String, Long> byName(List<Link> links) {
-        Map<String, Long> byName = new HashMap<>();
+    private static Map<String, DiscordId> byName(List<Link> links) {
+        Map<String, DiscordId> byName = new HashMap<>();
         for (Link link : links) {
-            byName.put(
-                    link.minecraftName().toLowerCase(Locale.ROOT),
-                    link.discordId().value());
+            byName.put(link.minecraftName().toLowerCase(Locale.ROOT), link.discordId());
         }
         return byName;
     }

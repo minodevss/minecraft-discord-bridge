@@ -82,12 +82,7 @@ public final class EventPosts {
             return;
         }
         String ping = "<@&" + role.get() + "> ";
-        discord.send(new OutboundMessage(
-                channel.get().value(),
-                SERVER,
-                ping + text,
-                Set.of(),
-                Set.of(role.get().value())));
+        discord.send(new OutboundMessage(channel.get(), SERVER, ping + text, Set.of(), Set.of(role.get())));
     }
 
     public Optional<OutboundMessage> serverStopped(boolean crashed) {
@@ -95,12 +90,12 @@ public final class EventPosts {
             return Optional.empty();
         }
         String text = lang.text(crashed ? "discord.event.server-crashed" : "discord.event.server-stopped");
-        return Optional.of(OutboundMessage.of(channel.get().value(), SERVER, text));
+        return Optional.of(OutboundMessage.of(channel.get(), SERVER, text));
     }
 
     private void post(String text) {
         if (channel.isPresent()) {
-            discord.send(OutboundMessage.of(channel.get().value(), SERVER, text));
+            discord.send(OutboundMessage.of(channel.get(), SERVER, text));
         }
     }
 

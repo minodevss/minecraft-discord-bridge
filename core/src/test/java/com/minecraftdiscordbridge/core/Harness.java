@@ -1,6 +1,7 @@
 package com.minecraftdiscordbridge.core;
 
 import com.minecraftdiscordbridge.core.codes.Codes;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.InteractionRequest;
 import com.minecraftdiscordbridge.core.discord.OfflineDiscord;
@@ -31,13 +32,13 @@ import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
 final class Harness implements AutoCloseable {
-    static final long GUILD = 111111111111111111L;
-    static final long CHAT = 222222222222222222L;
-    static final long EVENTS = 333333333333333333L;
-    static final long CONSOLE = 444444444444444444L;
-    static final long OWNER = 555555555555555555L;
-    static final long MEMBER = 666666666666666666L;
-    static final long ROLE = 777777777777777777L;
+    static final DiscordId GUILD = new DiscordId(111111111111111111L);
+    static final DiscordId CHAT = new DiscordId(222222222222222222L);
+    static final DiscordId EVENTS = new DiscordId(333333333333333333L);
+    static final DiscordId CONSOLE = new DiscordId(444444444444444444L);
+    static final DiscordId OWNER = new DiscordId(555555555555555555L);
+    static final DiscordId MEMBER = new DiscordId(666666666666666666L);
+    static final DiscordId ROLE = new DiscordId(777777777777777777L);
     static final String TOKEN = "test-token";
     static final String CHANNELS = """
             config-version: 1
@@ -134,15 +135,20 @@ final class Harness implements AutoCloseable {
     }
 
     static InteractionRequest request(
-            String command, @Nullable String subcommand, Map<String, String> options, long user, long channel) {
+            String command,
+            @Nullable String subcommand,
+            Map<String, String> options,
+            DiscordId user,
+            DiscordId channel) {
         return new InteractionRequest(command, subcommand, options, GUILD, channel, user, "Alex", false, "en-US");
     }
 
-    static InteractionRequest managerRequest(String command, Map<String, String> options, long user, long channel) {
+    static InteractionRequest managerRequest(
+            String command, Map<String, String> options, DiscordId user, DiscordId channel) {
         return new InteractionRequest(command, null, options, GUILD, channel, user, "Alex", true, "en-US");
     }
 
-    static DiscordMessage message(long channel, String content) {
+    static DiscordMessage message(DiscordId channel, String content) {
         return new DiscordMessage(
                 channel,
                 new DiscordMessage.Sender(MEMBER, "Alex", null, false, false),

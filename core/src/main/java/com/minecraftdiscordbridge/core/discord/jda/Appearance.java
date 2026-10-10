@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.discord.jda;
 
 import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.loop.Scheduler;
 import com.minecraftdiscordbridge.core.text.Graphemes;
@@ -28,8 +29,8 @@ final class Appearance {
     private final LongSupplier nanoClock;
     private final Scheduler scheduler;
     private final Throttle<String> presence;
-    private final Map<Long, Throttle<String>> topics = new HashMap<>();
-    private final Set<Long> topicLocked = new HashSet<>();
+    private final Map<DiscordId, Throttle<String>> topics = new HashMap<>();
+    private final Set<DiscordId> topicLocked = new HashSet<>();
 
     Appearance(Supplier<@Nullable JDA> jda, LongSupplier nanoClock, Scheduler scheduler) {
         this.jda = jda;
@@ -42,7 +43,7 @@ final class Appearance {
         presence.submit(text);
     }
 
-    void topic(long channelId, String topic) {
+    void topic(DiscordId channelId, String topic) {
         topics.computeIfAbsent(
                         channelId,
                         id -> new Throttle<>(TOPIC_INTERVAL, nanoClock, scheduler, text -> applyTopic(id, text)))
@@ -62,10 +63,10 @@ final class Appearance {
         }
     }
 
-    private void applyTopic(long channelId, String topic) {
+    private void applyTopic(DiscordId channelId, String topic) {
         JDA api = jda.get();
         StandardGuildMessageChannel channel =
-                api == null ? null : api.getChannelById(StandardGuildMessageChannel.class, channelId);
+                api == null ? null : api.getChannelById(StandardGuildMessageChannel.class, channelId.value());
         if (channel == null) {
             return;
         }

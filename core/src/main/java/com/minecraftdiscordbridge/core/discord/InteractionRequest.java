@@ -7,9 +7,9 @@ public record InteractionRequest(
         String command,
         @Nullable String subcommand,
         Map<String, String> options,
-        long guildId,
-        long channelId,
-        long userId,
+        DiscordId guildId,
+        DiscordId channelId,
+        DiscordId userId,
         String userDisplayName,
         boolean canManageServer,
         String locale) {

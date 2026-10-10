@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.fakes;
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
 import com.minecraftdiscordbridge.core.discord.Discord;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordListener;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
@@ -22,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.function.LongFunction;
+import java.util.function.Function;
 
 public final class RecordingDiscord implements Discord {
     public final DiscordSettings settings;
@@ -30,16 +31,16 @@ public final class RecordingDiscord implements Discord {
     public final List<String> presences = new CopyOnWriteArrayList<>();
     public final List<String> topics = new CopyOnWriteArrayList<>();
     public final List<OutboundMessage> finalMessages = new CopyOnWriteArrayList<>();
-    public volatile Set<Long> owners = Set.of();
+    public volatile Set<DiscordId> owners = Set.of();
     public volatile Duration shutdownTime = Duration.ZERO;
     public volatile boolean started;
     public volatile boolean shutDown;
     public volatile DiscordStatus.State state = DiscordStatus.State.READY;
-    public volatile LongFunction<CompletableFuture<MemberLookup>> members =
+    public volatile Function<DiscordId, CompletableFuture<MemberLookup>> members =
             userId -> CompletableFuture.completedFuture(new MemberLookup.NotMember(userId));
-    public final Map<Long, RoleInfo> roles = new ConcurrentHashMap<>();
+    public final Map<DiscordId, RoleInfo> roles = new ConcurrentHashMap<>();
     public final List<String> roleChanges = new CopyOnWriteArrayList<>();
-    public final List<Long> memberLookups = new CopyOnWriteArrayList<>();
+    public final List<DiscordId> memberLookups = new CopyOnWriteArrayList<>();
     private final CoreLoop loop;
     private final DiscordListener listener;
 
@@ -53,16 +54,16 @@ public final class RecordingDiscord implements Discord {
         this(null, null, null);
     }
 
-    public void memberWithRoles(long userId, Long... roleIds) {
+    public void memberWithRoles(DiscordId userId, DiscordId... roleIds) {
         MemberLookup.Member member = new MemberLookup.Member(userId, Set.of(roleIds));
-        members = id -> CompletableFuture.completedFuture(id == userId ? member : new MemberLookup.NotMember(id));
+        members = id -> CompletableFuture.completedFuture(id.equals(userId) ? member : new MemberLookup.NotMember(id));
     }
 
     public void unreachable() {
         members = id -> CompletableFuture.completedFuture(new MemberLookup.Unavailable("Discord is down"));
     }
 
-    public void role(long id, String name, String... dangerous) {
+    public void role(DiscordId id, String name, String... dangerous) {
         roles.put(id, new RoleInfo(id, name, Set.of(dangerous), true));
     }
 
@@ -126,34 +127,34 @@ public final class RecordingDiscord implements Discord {
     }
 
     @Override
-    public void updateTopic(long channelId, String topic) {
+    public void updateTopic(DiscordId channelId, String topic) {
         topics.add(channelId + ":" + topic);
     }
 
     @Override
-    public boolean isApplicationOwner(long userId) {
+    public boolean isApplicationOwner(DiscordId userId) {
         return owners.contains(userId);
     }
 
     @Override
-    public CompletableFuture<MemberLookup> member(long userId) {
+    public CompletableFuture<MemberLookup> member(DiscordId userId) {
         memberLookups.add(userId);
         return members.apply(userId);
     }
 
     @Override
-    public Map<Long, RoleInfo> roles() {
+    public Map<DiscordId, RoleInfo> roles() {
         return Map.copyOf(roles);
     }
 
     @Override
-    public CompletableFuture<Void> addRole(long userId, long roleId) {
+    public CompletableFuture<Void> addRole(DiscordId userId, DiscordId roleId) {
         roleChanges.add("+" + roleId + " " + userId);
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public CompletableFuture<Void> removeRole(long userId, long roleId) {
+    public CompletableFuture<Void> removeRole(DiscordId userId, DiscordId roleId) {
         roleChanges.add("-" + roleId + " " + userId);
         return CompletableFuture.completedFuture(null);
     }

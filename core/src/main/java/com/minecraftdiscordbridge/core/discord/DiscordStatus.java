@@ -4,7 +4,7 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 public record DiscordStatus(
-        State state, @Nullable String reason, long gatewayPingMillis, Map<Long, ChannelStatus> channels) {
+        State state, @Nullable String reason, long gatewayPingMillis, Map<DiscordId, ChannelStatus> channels) {
     public DiscordStatus {
         channels = Map.copyOf(channels);
     }

@@ -4,7 +4,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 public interface CommandHashRepository {
-    CompletionStage<Optional<String>> find(long guildId);
+    CompletionStage<Optional<String>> find(DiscordId guildId);
 
-    CompletionStage<Void> save(long guildId, String hash);
+    CompletionStage<Void> save(DiscordId guildId, String hash);
 }

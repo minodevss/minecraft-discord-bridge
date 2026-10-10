@@ -115,7 +115,7 @@ public final class Linking {
             return;
         }
         PendingLinks.Pending code = found.get();
-        DiscordId discordId = new DiscordId(request.userId());
+        DiscordId discordId = request.userId();
         Link link = new Link(
                 code.playerId(), discordId, code.playerName(), code.bedrock() ? Edition.BEDROCK : Edition.JAVA, now);
         io.completeOnLoop(
@@ -139,14 +139,14 @@ public final class Linking {
     public void unlink(InteractionRequest request, InteractionReply reply) {
         Lang reader = Lang.forDiscordLocale(request.locale(), replies.lang());
         io.completeOnLoop(
-                () -> store.unlinkDiscord(new DiscordId(request.userId())),
+                () -> store.unlinkDiscord(request.userId()),
                 removed -> reply.replyEphemeral(removed.map(
                                 link -> reader.text("discord.unlink.done", DiscordEscaper.escape(link.minecraftName())))
                         .orElseGet(() -> reader.text("discord.unlink.none"))),
                 failure -> {
                     LOGGER.warn(
                             "Could not unlink Discord user {}: {}. Check that the data folder is writable",
-                            Long.toUnsignedString(request.userId()),
+                            request.userId(),
                             Failures.describe(failure));
                     reply.replyEphemeral(reader.text("discord.save-failed"));
                 });

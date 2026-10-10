@@ -26,7 +26,7 @@ public final class StatusReport {
                 .forEach((channel, queue) -> replies.send(
                         source,
                         "game.status.channel",
-                        Slot.text("channel", Long.toUnsignedString(channel)),
+                        Slot.text("channel", channel.toString()),
                         Slot.text("queued", Integer.toString(queue.queued() + queue.inFlight())),
                         Slot.text("dropped", Long.toString(queue.dropped())),
                         Slot.text("limited", Long.toString(queue.rateLimited()))));

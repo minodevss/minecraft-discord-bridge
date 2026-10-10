@@ -14,17 +14,17 @@ public interface Discord {
 
     void updatePresence(String text);
 
-    void updateTopic(long channelId, String topic);
+    void updateTopic(DiscordId channelId, String topic);
 
-    boolean isApplicationOwner(long userId);
+    boolean isApplicationOwner(DiscordId userId);
 
-    CompletableFuture<MemberLookup> member(long userId);
+    CompletableFuture<MemberLookup> member(DiscordId userId);
 
-    Map<Long, RoleInfo> roles();
+    Map<DiscordId, RoleInfo> roles();
 
-    CompletableFuture<Void> addRole(long userId, long roleId);
+    CompletableFuture<Void> addRole(DiscordId userId, DiscordId roleId);
 
-    CompletableFuture<Void> removeRole(long userId, long roleId);
+    CompletableFuture<Void> removeRole(DiscordId userId, DiscordId roleId);
 
     void shutdown(List<OutboundMessage> finalMessages, Deadline deadline);
 }

@@ -59,7 +59,7 @@ public final class DiscordChat {
     public void onMessage(DiscordMessage message) {
         if (!config.discordToMinecraft()
                 || channel.isEmpty()
-                || message.channelId() != channel.get().value()) {
+                || !message.channelId().equals(channel.get())) {
             return;
         }
         if (Blocklist.blocks(config.blockedWords(), message.content())) {

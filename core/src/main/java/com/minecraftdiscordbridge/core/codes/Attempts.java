@@ -1,5 +1,6 @@
 package com.minecraftdiscordbridge.core.codes;
 
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
@@ -15,7 +16,7 @@ public final class Attempts {
     private final int perUser;
     private final int overall;
     private final Duration window;
-    private final Map<Long, Deque<Instant>> byUser = new HashMap<>();
+    private final Map<DiscordId, Deque<Instant>> byUser = new HashMap<>();
     private final Deque<Instant> all = new ArrayDeque<>();
 
     public Attempts(int perUser, int overall, Duration window) {
@@ -28,13 +29,13 @@ public final class Attempts {
         return new Attempts(PER_USER, OVERALL, WINDOW);
     }
 
-    public boolean blocked(long userId, Instant now) {
+    public boolean blocked(DiscordId userId, Instant now) {
         forgetBefore(now.minus(window));
         Deque<Instant> mine = byUser.get(userId);
         return all.size() >= overall || (mine != null && mine.size() >= perUser);
     }
 
-    public void failed(long userId, Instant now) {
+    public void failed(DiscordId userId, Instant now) {
         forgetBefore(now.minus(window));
         byUser.computeIfAbsent(userId, id -> new ArrayDeque<>()).addLast(now);
         all.addLast(now);

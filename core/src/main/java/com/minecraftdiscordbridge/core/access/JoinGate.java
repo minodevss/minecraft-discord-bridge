@@ -104,7 +104,7 @@ public final class JoinGate {
             allow(player, result);
             return;
         }
-        long userId = link.get().discordId().value();
+        DiscordId userId = link.get().discordId();
         Optional<MemberLookup> cached = context.memory().freshMember(userId, context.now());
         if (cached.isPresent()) {
             judge(player, cached.get(), result);
@@ -120,7 +120,7 @@ public final class JoinGate {
     }
 
     private void judge(PlayerProfile player, MemberLookup lookup, CompletableFuture<JoinDecision> result) {
-        long role = requiredRole.orElseThrow().value();
+        DiscordId role = requiredRole.orElseThrow();
         if (lookup instanceof MemberLookup.Member member && member.roleIds().contains(role)) {
             allow(player, result);
         } else if (lookup instanceof MemberLookup.Member) {
@@ -158,9 +158,9 @@ public final class JoinGate {
         result.complete(ALLOW);
     }
 
-    private String roleName(long role) {
+    private String roleName(DiscordId role) {
         RoleInfo info = context.discord().roles().get(role);
-        return info == null ? Long.toUnsignedString(role) : info.name();
+        return info == null ? role.toString() : info.name();
     }
 
     private JoinDecision deny(String key, Slot... slots) {

@@ -4,9 +4,9 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 public interface WebhookRepository {
-    CompletionStage<Optional<WebhookCredentials>> find(long channelId);
+    CompletionStage<Optional<WebhookCredentials>> find(DiscordId channelId);
 
-    CompletionStage<Void> save(long channelId, WebhookCredentials webhook);
+    CompletionStage<Void> save(DiscordId channelId, WebhookCredentials webhook);
 
-    CompletionStage<Void> forget(long channelId);
+    CompletionStage<Void> forget(DiscordId channelId);
 }

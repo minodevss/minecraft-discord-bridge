@@ -93,13 +93,13 @@ public final class RoleSync implements AutoCloseable {
     }
 
     public void discordReady() {
-        Map<Long, RoleInfo> roles = context.discord().roles();
+        Map<DiscordId, RoleInfo> roles = context.discord().roles();
         if (roles.isEmpty()) {
             return;
         }
         for (RuleState state : rules) {
             if (state.role != Check.REFUSED) {
-                state.role = checkRole(state.rule, roles.get(RolePlan.role(state.rule)));
+                state.role = checkRole(state.rule, roles.get(state.rule.discordRole()));
             }
         }
     }
@@ -117,13 +117,11 @@ public final class RoleSync implements AutoCloseable {
     }
 
     public void memberUpdated(MemberLookup.Member member) {
-        context.links().byDiscordId(new DiscordId(member.userId())).ifPresent(link -> sync(link, member));
+        context.links().byDiscordId(member.userId()).ifPresent(link -> sync(link, member));
     }
 
-    public void memberLeft(long userId) {
-        context.links()
-                .byDiscordId(new DiscordId(userId))
-                .ifPresent(link -> sync(link, new MemberLookup.NotMember(userId)));
+    public void memberLeft(DiscordId userId) {
+        context.links().byDiscordId(userId).ifPresent(link -> sync(link, new MemberLookup.NotMember(userId)));
     }
 
     @Override
@@ -156,7 +154,7 @@ public final class RoleSync implements AutoCloseable {
         if (activeRules().isEmpty()) {
             return;
         }
-        long userId = link.discordId().value();
+        DiscordId userId = link.discordId();
         MemberLookup recent = known != null
                 ? known
                 : context.memory().freshMember(userId, context.now()).orElse(null);
@@ -193,33 +191,35 @@ public final class RoleSync implements AutoCloseable {
                         link,
                         "remove from group " + remove.group());
             } else if (change instanceof RoleChange.AddRole add && assignable(add.roleId())) {
-                long userId = link.discordId().value();
-                report(context.discord().addRole(userId, add.roleId()), link, "give Discord role " + add.roleId());
-            } else if (change instanceof RoleChange.RemoveRole remove && assignable(remove.roleId())) {
-                long userId = link.discordId().value();
                 report(
-                        context.discord().removeRole(userId, remove.roleId()),
+                        context.discord().addRole(link.discordId(), add.roleId()),
+                        link,
+                        "give Discord role " + add.roleId());
+            } else if (change instanceof RoleChange.RemoveRole remove && assignable(remove.roleId())) {
+                report(
+                        context.discord().removeRole(link.discordId(), remove.roleId()),
                         link,
                         "take Discord role " + remove.roleId());
             }
         }
     }
 
-    private boolean assignable(long roleId) {
+    private boolean assignable(DiscordId roleId) {
         RoleInfo info = context.discord().roles().get(roleId);
         Check verdict = info == null ? Check.PENDING : checkRole(ruleFor(roleId), info);
         if (verdict == Check.REFUSED) {
             rules.stream()
-                    .filter(state -> RolePlan.role(state.rule) == roleId)
+                    .filter(state -> state.rule.discordRole().equals(roleId))
                     .forEach(state -> state.role = Check.REFUSED);
         }
         return verdict == Check.PASSED;
     }
 
-    private RoleSyncRule ruleFor(long roleId) {
+    private RoleSyncRule ruleFor(DiscordId roleId) {
         return rules.stream()
                 .map(state -> state.rule)
-                .filter(rule -> rule.direction() == SyncDirection.MINECRAFT_TO_DISCORD && RolePlan.role(rule) == roleId)
+                .filter(rule -> rule.direction() == SyncDirection.MINECRAFT_TO_DISCORD
+                        && rule.discordRole().equals(roleId))
                 .findFirst()
                 .orElseThrow();
     }
@@ -317,7 +317,7 @@ public final class RoleSync implements AutoCloseable {
     private static boolean hasReverse(List<RoleSyncRule> rules, RoleSyncRule rule) {
         return rules.stream()
                 .anyMatch(other -> other.direction() == SyncDirection.DISCORD_TO_MINECRAFT
-                        && RolePlan.role(other) == RolePlan.role(rule)
+                        && other.discordRole().equals(rule.discordRole())
                         && RolePlan.group(other).equals(RolePlan.group(rule)));
     }
 }

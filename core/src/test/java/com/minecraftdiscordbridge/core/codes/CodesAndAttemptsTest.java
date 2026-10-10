@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.codes;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
@@ -34,25 +35,27 @@ class CodesAndAttemptsTest {
     void blocksAUserAfterFiveFailuresUntilTheWindowPasses() {
         Attempts attempts = Attempts.standard();
         for (int i = 0; i < 4; i++) {
-            attempts.failed(1, NOW);
+            attempts.failed(new DiscordId(1), NOW);
         }
-        assertThat(attempts.blocked(1, NOW)).isFalse();
+        assertThat(attempts.blocked(new DiscordId(1), NOW)).isFalse();
 
-        attempts.failed(1, NOW);
+        attempts.failed(new DiscordId(1), NOW);
 
-        assertThat(attempts.blocked(1, NOW)).isTrue();
-        assertThat(attempts.blocked(2, NOW)).isFalse();
-        assertThat(attempts.blocked(1, NOW.plus(Duration.ofMinutes(10)))).isFalse();
+        assertThat(attempts.blocked(new DiscordId(1), NOW)).isTrue();
+        assertThat(attempts.blocked(new DiscordId(2), NOW)).isFalse();
+        assertThat(attempts.blocked(new DiscordId(1), NOW.plus(Duration.ofMinutes(10))))
+                .isFalse();
     }
 
     @Test
     void blocksEveryoneAfterTooManyFailuresOverall() {
         Attempts attempts = new Attempts(5, 3, Duration.ofMinutes(10));
-        attempts.failed(1, NOW);
-        attempts.failed(2, NOW);
-        attempts.failed(3, NOW.plusSeconds(1));
+        attempts.failed(new DiscordId(1), NOW);
+        attempts.failed(new DiscordId(2), NOW);
+        attempts.failed(new DiscordId(3), NOW.plusSeconds(1));
 
-        assertThat(attempts.blocked(4, NOW.plusSeconds(2))).isTrue();
-        assertThat(attempts.blocked(4, NOW.plus(Duration.ofMinutes(10)))).isFalse();
+        assertThat(attempts.blocked(new DiscordId(4), NOW.plusSeconds(2))).isTrue();
+        assertThat(attempts.blocked(new DiscordId(4), NOW.plus(Duration.ofMinutes(10))))
+                .isFalse();
     }
 }

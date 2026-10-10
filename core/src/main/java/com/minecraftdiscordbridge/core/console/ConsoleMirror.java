@@ -31,7 +31,7 @@ public final class ConsoleMirror implements AutoCloseable {
     private static final Author SERVER = Author.server();
 
     private final ConsoleBuffer buffer;
-    private final long channel;
+    private final DiscordId channel;
     private final Discord discord;
     private final Lang lang;
     private final Supplier<Collection<String>> secrets;
@@ -42,7 +42,7 @@ public final class ConsoleMirror implements AutoCloseable {
 
     ConsoleMirror(
             ConsoleBuffer buffer,
-            long channel,
+            DiscordId channel,
             Discord discord,
             Lang lang,
             Supplier<Collection<String>> secrets,
@@ -72,8 +72,7 @@ public final class ConsoleMirror implements AutoCloseable {
                     + " Set console.mirror to false to hide this warning");
             return Optional.empty();
         }
-        ConsoleMirror mirror =
-                new ConsoleMirror(buffer, channel.get().value(), discord, lang, secrets, ZoneId.systemDefault());
+        ConsoleMirror mirror = new ConsoleMirror(buffer, channel.get(), discord, lang, secrets, ZoneId.systemDefault());
         mirror.detach = detach.get();
         mirror.timer = loop.repeat(INTERVAL, mirror::flush);
         return Optional.of(mirror);

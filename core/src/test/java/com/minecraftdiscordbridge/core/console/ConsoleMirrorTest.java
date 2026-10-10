@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.console;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.Author;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
 import com.minecraftdiscordbridge.core.i18n.Lang;
@@ -16,7 +17,7 @@ import org.apache.logging.log4j.message.SimpleMessage;
 import org.junit.jupiter.api.Test;
 
 class ConsoleMirrorTest {
-    private static final long CHANNEL = 444444444444444444L;
+    private static final DiscordId CHANNEL = new DiscordId(444444444444444444L);
     private static final long NOON = 43_200_000L;
 
     private final RecordingDiscord discord = new RecordingDiscord();

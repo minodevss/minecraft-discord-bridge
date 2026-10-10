@@ -5,6 +5,7 @@ import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
 import com.minecraftdiscordbridge.core.discord.CommandHashRepository;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordListener;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
@@ -30,8 +31,8 @@ final class TestSupport {
     static DiscordSettings settings(List<CommandSpec> commands) {
         return new DiscordSettings(
                 FakeDiscord.TOKEN,
-                FakeDiscord.GUILD_ID,
-                Set.of(FakeDiscord.CHANNEL_ID),
+                Optional.of(new DiscordId(FakeDiscord.GUILD_ID)),
+                Set.of(new DiscordId(FakeDiscord.CHANNEL_ID)),
                 Author.server("Survival", "https://example.com/server.png"),
                 true,
                 false,
@@ -46,7 +47,7 @@ final class TestSupport {
         final BlockingQueue<AutocompleteRequest> autocompletes = new LinkedBlockingQueue<>();
         final BlockingQueue<AutocompleteReply> autocompleteReplies = new LinkedBlockingQueue<>();
         final BlockingQueue<MemberLookup.Member> memberUpdates = new LinkedBlockingQueue<>();
-        final BlockingQueue<Long> membersLeft = new LinkedBlockingQueue<>();
+        final BlockingQueue<DiscordId> membersLeft = new LinkedBlockingQueue<>();
 
         @Override
         public void onStatusChanged(DiscordStatus status) {
@@ -76,42 +77,42 @@ final class TestSupport {
         }
 
         @Override
-        public void onMemberLeft(long userId) {
+        public void onMemberLeft(DiscordId userId) {
             membersLeft.add(userId);
         }
     }
 
     static final class MemoryWebhooks implements WebhookRepository {
-        final Map<Long, WebhookCredentials> stored = new ConcurrentHashMap<>();
+        final Map<DiscordId, WebhookCredentials> stored = new ConcurrentHashMap<>();
 
         @Override
-        public CompletionStage<Optional<WebhookCredentials>> find(long channelId) {
+        public CompletionStage<Optional<WebhookCredentials>> find(DiscordId channelId) {
             return CompletableFuture.completedFuture(Optional.ofNullable(stored.get(channelId)));
         }
 
         @Override
-        public CompletionStage<Void> save(long channelId, WebhookCredentials webhook) {
+        public CompletionStage<Void> save(DiscordId channelId, WebhookCredentials webhook) {
             stored.put(channelId, webhook);
             return CompletableFuture.completedFuture(null);
         }
 
         @Override
-        public CompletionStage<Void> forget(long channelId) {
+        public CompletionStage<Void> forget(DiscordId channelId) {
             stored.remove(channelId);
             return CompletableFuture.completedFuture(null);
         }
     }
 
     static final class MemoryCommandHashes implements CommandHashRepository {
-        final Map<Long, String> stored = new ConcurrentHashMap<>();
+        final Map<DiscordId, String> stored = new ConcurrentHashMap<>();
 
         @Override
-        public CompletionStage<Optional<String>> find(long guildId) {
+        public CompletionStage<Optional<String>> find(DiscordId guildId) {
             return CompletableFuture.completedFuture(Optional.ofNullable(stored.get(guildId)));
         }
 
         @Override
-        public CompletionStage<Void> save(long guildId, String hash) {
+        public CompletionStage<Void> save(DiscordId guildId, String hash) {
             stored.put(guildId, hash);
             return CompletableFuture.completedFuture(null);
         }

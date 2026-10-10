@@ -38,6 +38,6 @@ public final class MinecraftChat {
         PlayerPings.Pinged text = config.pingLinkedPlayers()
                 ? PlayerPings.escape(chat.message(), links.get())
                 : PlayerPings.escape(chat.message(), List.of());
-        discord.send(new OutboundMessage(channel.get().value(), author, text.text(), text.userIds(), Set.of()));
+        discord.send(new OutboundMessage(channel.get(), author, text.text(), text.userIds(), Set.of()));
     }
 }

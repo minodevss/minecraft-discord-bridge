@@ -21,11 +21,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class ConsoleInputTest {
-    private static final long CONSOLE = 444444444444444444L;
-    private static final long CHAT = 222222222222222222L;
-    private static final long ADMIN = 555555555555555555L;
-    private static final long MEMBER = 666666666666666666L;
-    private static final ConsoleConfig ADMIN_ONLY = new ConsoleConfig(false, List.of(new DiscordId(ADMIN)));
+    private static final DiscordId CONSOLE = new DiscordId(444444444444444444L);
+    private static final DiscordId CHAT = new DiscordId(222222222222222222L);
+    private static final DiscordId ADMIN = new DiscordId(555555555555555555L);
+    private static final DiscordId MEMBER = new DiscordId(666666666666666666L);
+    private static final ConsoleConfig ADMIN_ONLY = new ConsoleConfig(false, List.of(ADMIN));
 
     @TempDir
     Path directory;
@@ -134,7 +134,7 @@ class ConsoleInputTest {
     private ConsoleInput input(ConsoleConfig config, FakePlatform platform) {
         return new ConsoleInput(
                 config,
-                Optional.of(new DiscordId(CONSOLE)),
+                Optional.of(CONSOLE),
                 platform,
                 discord,
                 Runnable::run,
@@ -149,7 +149,8 @@ class ConsoleInputTest {
         return platform;
     }
 
-    private static DiscordMessage message(long channel, long author, boolean bot, boolean webhook, String content) {
+    private static DiscordMessage message(
+            DiscordId channel, DiscordId author, boolean bot, boolean webhook, String content) {
         return new DiscordMessage(
                 channel,
                 new DiscordMessage.Sender(author, "Admin", null, bot, webhook),

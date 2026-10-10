@@ -12,8 +12,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class StoredRepositoriesTest {
-    private static final long CHANNEL = 222222222222222222L;
-    private static final long GUILD = 111111111111111111L;
+    private static final DiscordId CHANNEL = new DiscordId(222222222222222222L);
+    private static final DiscordId GUILD = new DiscordId(111111111111111111L);
     private static final long UNSIGNED_WEBHOOK = -2L;
 
     @TempDir

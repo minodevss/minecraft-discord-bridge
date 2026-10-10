@@ -39,32 +39,32 @@ public final class SwappableDiscord implements Discord {
     }
 
     @Override
-    public void updateTopic(long channelId, String topic) {
+    public void updateTopic(DiscordId channelId, String topic) {
         target.updateTopic(channelId, topic);
     }
 
     @Override
-    public boolean isApplicationOwner(long userId) {
+    public boolean isApplicationOwner(DiscordId userId) {
         return target.isApplicationOwner(userId);
     }
 
     @Override
-    public CompletableFuture<MemberLookup> member(long userId) {
+    public CompletableFuture<MemberLookup> member(DiscordId userId) {
         return target.member(userId);
     }
 
     @Override
-    public Map<Long, RoleInfo> roles() {
+    public Map<DiscordId, RoleInfo> roles() {
         return target.roles();
     }
 
     @Override
-    public CompletableFuture<Void> addRole(long userId, long roleId) {
+    public CompletableFuture<Void> addRole(DiscordId userId, DiscordId roleId) {
         return target.addRole(userId, roleId);
     }
 
     @Override
-    public CompletableFuture<Void> removeRole(long userId, long roleId) {
+    public CompletableFuture<Void> removeRole(DiscordId userId, DiscordId roleId) {
         return target.removeRole(userId, roleId);
     }
 

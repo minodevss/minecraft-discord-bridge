@@ -35,13 +35,12 @@ class RoleSyncTest {
     private static final PlatformInfo ONLINE = new PlatformInfo("Test", "1.21.1", 3955, true);
     private static final PlayerProfile STEVE =
             new PlayerProfile(UUID.fromString("00000000-0000-4000-8000-000000000001"), "Steve", "Steve", null, false);
-    private static final long USER = 666666666666666666L;
-    private static final long VIP = 777777777777777777L;
-    private static final long STAFF = 888888888888888888L;
-    private static final RoleSyncRule VIP_TO_GROUP =
-            new RoleSyncRule(new DiscordId(VIP), "vip", SyncDirection.DISCORD_TO_MINECRAFT);
+    private static final DiscordId USER = new DiscordId(666666666666666666L);
+    private static final DiscordId VIP = new DiscordId(777777777777777777L);
+    private static final DiscordId STAFF = new DiscordId(888888888888888888L);
+    private static final RoleSyncRule VIP_TO_GROUP = new RoleSyncRule(VIP, "vip", SyncDirection.DISCORD_TO_MINECRAFT);
     private static final RoleSyncRule ADMIN_TO_STAFF =
-            new RoleSyncRule(new DiscordId(STAFF), "admin", SyncDirection.MINECRAFT_TO_DISCORD);
+            new RoleSyncRule(STAFF, "admin", SyncDirection.MINECRAFT_TO_DISCORD);
 
     @TempDir
     Path directory;
@@ -65,7 +64,7 @@ class RoleSyncTest {
                 clock,
                 Runnable::run,
                 (delay, task) -> later.add(task));
-        links.link(new Link(STEVE.id(), new DiscordId(USER), "Steve", Edition.JAVA, clock.instant()));
+        links.link(new Link(STEVE.id(), USER, "Steve", Edition.JAVA, clock.instant()));
         groups.groups.put("vip", new GroupCheck.Safe());
         groups.groups.put("admin", new GroupCheck.Dangerous("*"));
         discord.role(VIP, "VIP");
@@ -118,8 +117,7 @@ class RoleSyncTest {
 
     @Test
     void refusesGroupsThatGrantOperatorPowerToDiscordRoles() {
-        RoleSyncRule adminFromDiscord =
-                new RoleSyncRule(new DiscordId(VIP), "admin", SyncDirection.DISCORD_TO_MINECRAFT);
+        RoleSyncRule adminFromDiscord = new RoleSyncRule(VIP, "admin", SyncDirection.DISCORD_TO_MINECRAFT);
         discord.memberWithRoles(USER, VIP);
         RoleSync sync = ready(adminFromDiscord);
 
@@ -200,7 +198,7 @@ class RoleSyncTest {
 
     @Test
     void refusesMissingGroupsAndRoles() {
-        RoleSyncRule missingGroup = new RoleSyncRule(new DiscordId(VIP), "nobody", SyncDirection.DISCORD_TO_MINECRAFT);
+        RoleSyncRule missingGroup = new RoleSyncRule(VIP, "nobody", SyncDirection.DISCORD_TO_MINECRAFT);
         RoleSyncRule missingRole =
                 new RoleSyncRule(new DiscordId(123456789012345678L), "vip", SyncDirection.DISCORD_TO_MINECRAFT);
 
@@ -235,7 +233,7 @@ class RoleSyncTest {
 
     @Test
     void usesOnlyOneDirectionWhenARulePairSyncsBothWays() {
-        RoleSyncRule back = new RoleSyncRule(new DiscordId(VIP), "VIP", SyncDirection.MINECRAFT_TO_DISCORD);
+        RoleSyncRule back = new RoleSyncRule(VIP, "VIP", SyncDirection.MINECRAFT_TO_DISCORD);
 
         assertThat(ready(VIP_TO_GROUP, back).activeRules()).containsExactly(VIP_TO_GROUP);
     }

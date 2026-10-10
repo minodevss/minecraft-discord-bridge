@@ -4,6 +4,7 @@ import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
 import com.minecraftdiscordbridge.core.discord.CommandHashRepository;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.log.Failures;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -35,8 +36,7 @@ final class SlashCommands {
 
     void registerIfChanged(Guild guild, long applicationId) {
         String hash = hash(applicationId);
-        long guildId = guild.getIdLong();
-        var unused = hashes.find(guildId)
+        var unused = hashes.find(new DiscordId(guild.getIdLong()))
                 .exceptionally(failure -> Optional.empty())
                 .thenAccept(stored -> {
                     if (!stored.equals(Optional.of(hash))) {
@@ -66,7 +66,7 @@ final class SlashCommands {
                 .queue(
                         registered -> {
                             LOGGER.info("Registered {} slash commands in {}", registered.size(), guild.getName());
-                            var unused = hashes.save(guild.getIdLong(), hash);
+                            var unused = hashes.save(new DiscordId(guild.getIdLong()), hash);
                         },
                         failure -> LOGGER.warn(
                                 "Could not register slash commands in {}: {}. Re-invite the bot with the"

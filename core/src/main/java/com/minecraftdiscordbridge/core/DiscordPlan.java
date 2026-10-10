@@ -11,6 +11,7 @@ import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import com.minecraftdiscordbridge.core.setup.Channels;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 final class DiscordPlan {
@@ -18,7 +19,7 @@ final class DiscordPlan {
 
     static DiscordSettings settings(ConfigSnapshot snapshot, Channels channels) {
         BridgeConfig config = snapshot.config();
-        Set<Long> channelIds = channelIds(config, channels);
+        Set<DiscordId> channelIds = channelIds(config, channels);
         List<CommandSpec> commands =
                 channelIds.isEmpty() ? SlashCommandCatalog.setupOnly() : SlashCommandCatalog.forConfig(config);
         return new DiscordSettings(
@@ -36,20 +37,20 @@ final class DiscordPlan {
                 || config.linking().requiredRole().isPresent();
     }
 
-    static Set<Long> channelIds(BridgeConfig config, Channels channels) {
-        Set<Long> ids = new LinkedHashSet<>();
-        channels.chat().ifPresent(id -> ids.add(id.value()));
-        channels.events().ifPresent(id -> ids.add(id.value()));
+    static Set<DiscordId> channelIds(BridgeConfig config, Channels channels) {
+        Set<DiscordId> ids = new LinkedHashSet<>();
+        channels.chat().ifPresent(ids::add);
+        channels.events().ifPresent(ids::add);
         if (config.console().mirror() || !config.console().inputUsers().isEmpty()) {
-            config.discord().consoleChannel().ifPresent(id -> ids.add(id.value()));
+            config.discord().consoleChannel().ifPresent(ids::add);
         }
         return ids;
     }
 
-    private static long guild(DiscordConfig config, Channels channels) {
+    private static Optional<DiscordId> guild(DiscordConfig config, Channels channels) {
         if (config.chatChannel().isPresent() || config.eventsChannel().isPresent()) {
-            return DiscordSettings.NO_GUILD;
+            return Optional.empty();
         }
-        return channels.guild().map(DiscordId::value).orElse(DiscordSettings.NO_GUILD);
+        return channels.guild();
     }
 }

@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.discord.jda;
 import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
 import com.minecraftdiscordbridge.core.discord.Author;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus.ChannelStatus;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.log.Failures;
@@ -21,8 +22,8 @@ final class Outbox {
     private final Author server;
     private final MessageSender sender;
     private final Executor serial;
-    private final Map<Long, Channel> channels = new HashMap<>();
-    private volatile Map<Long, ChannelStatus> snapshot = Map.of();
+    private final Map<DiscordId, Channel> channels = new HashMap<>();
+    private volatile Map<DiscordId, ChannelStatus> snapshot = Map.of();
     private volatile boolean closed;
     private boolean open;
 
@@ -42,7 +43,7 @@ final class Outbox {
         publish();
     }
 
-    Map<Long, ChannelStatus> snapshot() {
+    Map<DiscordId, ChannelStatus> snapshot() {
         return snapshot;
     }
 
@@ -60,7 +61,7 @@ final class Outbox {
         closed = true;
     }
 
-    private void drain(long channelId, Channel channel) {
+    private void drain(DiscordId channelId, Channel channel) {
         if (closed || !open || channel.inFlight) {
             return;
         }
@@ -75,11 +76,11 @@ final class Outbox {
                 .whenComplete((ignored, failure) -> serial.execute(() -> finish(channelId, channel, batch, failure)));
     }
 
-    private void finish(long channelId, Channel channel, Batches.Batch batch, @Nullable Throwable failure) {
+    private void finish(DiscordId channelId, Channel channel, Batches.Batch batch, @Nullable Throwable failure) {
         channel.inFlight = false;
         if (failure == null) {
             if (channel.failing) {
-                LOGGER.info("Sending to Discord channel {} works again", Long.toUnsignedString(channelId));
+                LOGGER.info("Sending to Discord channel {} works again", channelId);
             }
             channel.failing = false;
         } else {
@@ -87,7 +88,7 @@ final class Outbox {
             if (!channel.failing) {
                 LOGGER.warn(
                         "Could not send to Discord channel {}: {}. Check that the bot can see the channel and post in it",
-                        Long.toUnsignedString(channelId),
+                        channelId,
                         Failures.describe(failure));
             }
             channel.failing = true;
@@ -105,7 +106,7 @@ final class Outbox {
     }
 
     private void publish() {
-        Map<Long, ChannelStatus> next = new HashMap<>();
+        Map<DiscordId, ChannelStatus> next = new HashMap<>();
         channels.forEach((id, channel) -> next.put(id, channel.status()));
         snapshot = Map.copyOf(next);
     }

@@ -1,6 +1,7 @@
 package com.minecraftdiscordbridge.core.storage;
 
 import com.minecraftdiscordbridge.core.discord.CommandHashRepository;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
@@ -15,12 +16,12 @@ public final class StoredCommandHashes implements CommandHashRepository {
     }
 
     @Override
-    public CompletionStage<Optional<String>> find(long guildId) {
-        return io.completeOnIo(() -> store.hash(Long.toUnsignedString(guildId)));
+    public CompletionStage<Optional<String>> find(DiscordId guildId) {
+        return io.completeOnIo(() -> store.hash(guildId));
     }
 
     @Override
-    public CompletionStage<Void> save(long guildId, String hash) {
-        return io.completeOnIo(() -> store.put(Long.toUnsignedString(guildId), hash));
+    public CompletionStage<Void> save(DiscordId guildId, String hash) {
+        return io.completeOnIo(() -> store.put(guildId, hash));
     }
 }

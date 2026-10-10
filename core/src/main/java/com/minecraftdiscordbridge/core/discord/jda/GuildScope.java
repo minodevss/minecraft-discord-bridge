@@ -1,6 +1,8 @@
 package com.minecraftdiscordbridge.core.discord.jda;
 
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
+import java.util.Optional;
 import java.util.Set;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
@@ -8,45 +10,46 @@ import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import org.jspecify.annotations.Nullable;
 
 final class GuildScope {
-    private final long configured;
-    private final Set<Long> channelIds;
-    private volatile long resolved;
+    private final Optional<DiscordId> configured;
+    private final Set<DiscordId> channelIds;
+    private volatile @Nullable DiscordId resolved;
 
     GuildScope(DiscordSettings settings) {
-        this.configured = settings.guildId();
+        this.configured = settings.guild();
         this.channelIds = settings.channelIds();
-        this.resolved = configured;
+        this.resolved = configured.orElse(null);
     }
 
     boolean waitingForSetup() {
-        return configured == DiscordSettings.NO_GUILD && channelIds.isEmpty();
+        return configured.isEmpty() && channelIds.isEmpty();
     }
 
     boolean accepts(long guildId) {
-        long current = resolved;
-        return current == DiscordSettings.NO_GUILD ? waitingForSetup() : current == guildId;
+        DiscordId current = resolved;
+        return current == null ? waitingForSetup() : current.value() == guildId;
     }
 
     boolean mayResolveTo(long guildId) {
-        return waitingForSetup() || resolved == DiscordSettings.NO_GUILD || resolved == guildId;
+        DiscordId current = resolved;
+        return waitingForSetup() || current == null || current.value() == guildId;
     }
 
     @Nullable
     Guild current(JDA jda) {
-        long current = resolved;
-        return current == DiscordSettings.NO_GUILD ? null : jda.getGuildById(current);
+        DiscordId current = resolved;
+        return current == null ? null : jda.getGuildById(current.value());
     }
 
     @Nullable
     Guild resolve(JDA jda) {
-        if (configured != DiscordSettings.NO_GUILD) {
-            return jda.getGuildById(configured);
+        if (configured.isPresent()) {
+            return jda.getGuildById(configured.get().value());
         }
-        for (long channelId : channelIds) {
-            GuildChannel channel = jda.getGuildChannelById(channelId);
+        for (DiscordId channelId : channelIds) {
+            GuildChannel channel = jda.getGuildChannelById(channelId.value());
             if (channel != null) {
                 Guild guild = channel.getGuild();
-                resolved = guild.getIdLong();
+                resolved = new DiscordId(guild.getIdLong());
                 return guild;
             }
         }

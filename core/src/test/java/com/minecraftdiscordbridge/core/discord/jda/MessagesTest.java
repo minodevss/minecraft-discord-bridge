@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.discord.jda;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import java.util.Set;
 import net.dv8tion.jda.api.utils.data.DataObject;
 import org.junit.jupiter.api.Test;
@@ -9,8 +10,9 @@ import org.junit.jupiter.api.Test;
 class MessagesTest {
     @Test
     void allowsOnlyTheListedUsersToBePinged() {
-        DataObject mentions =
-                Messages.create("hi <@5> @everyone", Set.of(5L)).toData().getObject("allowed_mentions");
+        DataObject mentions = Messages.create("hi <@5> @everyone", Set.of(new DiscordId(5)))
+                .toData()
+                .getObject("allowed_mentions");
 
         assertThat(mentions.getArray("parse").length()).isZero();
         assertThat(mentions.getArray("users").getString(0)).isEqualTo("5");

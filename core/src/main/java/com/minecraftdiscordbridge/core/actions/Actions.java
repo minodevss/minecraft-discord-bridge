@@ -98,7 +98,7 @@ public final class Actions {
     private static void audit(InteractionRequest request, GameAction action, ActionOutcome outcome) {
         LOGGER.info(
                 "Discord user {} ({}) ran {} {}: {}",
-                Long.toUnsignedString(request.userId()),
+                request.userId(),
                 SafeText.strip(request.userDisplayName()).replaceAll("\\s+", " "),
                 verb(action),
                 name(action),

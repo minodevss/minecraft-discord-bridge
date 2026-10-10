@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.discord.jda;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.Author;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import java.util.ArrayList;
@@ -14,8 +15,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class OutboxTest {
-    private static final long CHANNEL = 1;
-    private static final long OTHER_CHANNEL = 2;
+    private static final DiscordId CHANNEL = new DiscordId(1);
+    private static final DiscordId OTHER_CHANNEL = new DiscordId(2);
     private static final Author SERVER = Author.server("Survival", null);
     private static final Author STEVE = Author.player("1", "Steve", null);
     private static final Author ALEX = Author.player("2", "Alex", null);
@@ -197,12 +198,12 @@ class OutboxTest {
     @Test
     void allowsEveryPingOfTheMergedLines() {
         outbox.enqueue(OutboundMessage.of(CHANNEL, STEVE, "first"));
-        outbox.enqueue(new OutboundMessage(CHANNEL, STEVE, "<@10>", Set.of(10L)));
-        outbox.enqueue(new OutboundMessage(CHANNEL, STEVE, "<@11>", Set.of(11L)));
+        outbox.enqueue(new OutboundMessage(CHANNEL, STEVE, "<@10>", Set.of(new DiscordId(10))));
+        outbox.enqueue(new OutboundMessage(CHANNEL, STEVE, "<@11>", Set.of(new DiscordId(11))));
 
         sender.complete(0);
 
-        assertThat(sender.message(1).pingUserIds()).containsExactlyInAnyOrder(10L, 11L);
+        assertThat(sender.message(1).pingUserIds()).containsExactlyInAnyOrder(new DiscordId(10), new DiscordId(11));
     }
 
     @Test

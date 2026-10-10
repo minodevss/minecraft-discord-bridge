@@ -38,9 +38,9 @@ final class WebhookSender implements MessageSender {
     private final WebhookRepository repository;
     private final RateLimitCounter rateLimits;
     private final LongSupplier nanoClock;
-    private final Map<Long, WebhookCredentials> known = new ConcurrentHashMap<>();
-    private final Map<Long, Long> botOnlyUntil = new ConcurrentHashMap<>();
-    private final Map<Long, CompletableFuture<Optional<WebhookCredentials>>> resolving = new ConcurrentHashMap<>();
+    private final Map<DiscordId, WebhookCredentials> known = new ConcurrentHashMap<>();
+    private final Map<DiscordId, Long> botOnlyUntil = new ConcurrentHashMap<>();
+    private final Map<DiscordId, CompletableFuture<Optional<WebhookCredentials>>> resolving = new ConcurrentHashMap<>();
 
     WebhookSender(
             Supplier<@Nullable JDA> jda,
@@ -55,7 +55,7 @@ final class WebhookSender implements MessageSender {
 
     @Override
     public CompletionStage<Void> send(OutboundMessage message) {
-        long channelId = message.channelId();
+        DiscordId channelId = message.channelId();
         JDA api = jda.get();
         if (api == null) {
             return CompletableFuture.failedFuture(new IllegalStateException("Discord is not connected yet"));
@@ -74,7 +74,7 @@ final class WebhookSender implements MessageSender {
         return webhook == null ? sendAsBot(api, message) : execute(api, webhook, message, false);
     }
 
-    void prepare(long channelId) {
+    void prepare(DiscordId channelId) {
         JDA api = jda.get();
         if (api != null) {
             var unused = webhookFor(api, channelId);
@@ -85,7 +85,7 @@ final class WebhookSender implements MessageSender {
         return known.values().stream().anyMatch(webhook -> webhook.id().value() == webhookId);
     }
 
-    private CompletionStage<Optional<WebhookCredentials>> webhookFor(JDA api, long channelId) {
+    private CompletionStage<Optional<WebhookCredentials>> webhookFor(JDA api, DiscordId channelId) {
         WebhookCredentials cached = known.get(channelId);
         if (cached != null) {
             return CompletableFuture.completedFuture(Optional.of(cached));
@@ -110,7 +110,7 @@ final class WebhookSender implements MessageSender {
         return started;
     }
 
-    private CompletionStage<Optional<WebhookCredentials>> resolve(JDA api, long channelId) {
+    private CompletionStage<Optional<WebhookCredentials>> resolve(JDA api, DiscordId channelId) {
         return repository
                 .find(channelId)
                 .exceptionally(failure -> Optional.empty())
@@ -119,8 +119,8 @@ final class WebhookSender implements MessageSender {
                         : discover(api, channelId));
     }
 
-    private CompletionStage<Optional<WebhookCredentials>> discover(JDA api, long channelId) {
-        IWebhookContainer channel = api.getChannelById(IWebhookContainer.class, channelId);
+    private CompletionStage<Optional<WebhookCredentials>> discover(JDA api, DiscordId channelId) {
+        IWebhookContainer channel = api.getChannelById(IWebhookContainer.class, channelId.value());
         if (channel == null) {
             return CompletableFuture.completedFuture(Optional.empty());
         }
@@ -148,7 +148,7 @@ final class WebhookSender implements MessageSender {
 
     private CompletionStage<Optional<WebhookCredentials>> useOrCreate(
             JDA api, IWebhookContainer channel, List<Webhook> webhooks) {
-        long channelId = channel.getIdLong();
+        DiscordId channelId = new DiscordId(channel.getIdLong());
         Optional<Webhook> ours =
                 webhooks.stream().filter(webhook -> isOurs(api, webhook)).findFirst();
         if (ours.isPresent()) {
@@ -167,7 +167,7 @@ final class WebhookSender implements MessageSender {
 
     private CompletableFuture<Void> execute(
             JDA api, WebhookCredentials webhook, OutboundMessage message, boolean mayRecreate) {
-        rateLimits.bindWebhook(webhook.id().value(), message.channelId());
+        rateLimits.bindWebhook(webhook.id(), message.channelId());
         try {
             return WebhookClient.createClient(api, webhook.id().toString(), webhook.token())
                     .sendMessage(Messages.create(message.text(), message.pingUserIds(), message.pingRoleIds()))
@@ -184,7 +184,7 @@ final class WebhookSender implements MessageSender {
     }
 
     private CompletableFuture<Void> recreate(JDA api, OutboundMessage message) {
-        long channelId = message.channelId();
+        DiscordId channelId = message.channelId();
         known.remove(channelId);
         return repository
                 .forget(channelId)
@@ -196,11 +196,10 @@ final class WebhookSender implements MessageSender {
     }
 
     private CompletableFuture<Void> sendAsBot(JDA api, OutboundMessage message) {
-        long channelId = message.channelId();
-        GuildMessageChannel channel = api.getChannelById(GuildMessageChannel.class, channelId);
+        DiscordId channelId = message.channelId();
+        GuildMessageChannel channel = api.getChannelById(GuildMessageChannel.class, channelId.value());
         if (channel == null) {
-            return CompletableFuture.failedFuture(
-                    new IllegalStateException("the bot cannot see channel " + Long.toUnsignedString(channelId)));
+            return CompletableFuture.failedFuture(new IllegalStateException("the bot cannot see channel " + channelId));
         }
         try {
             return channel.sendMessage(
@@ -212,7 +211,7 @@ final class WebhookSender implements MessageSender {
         }
     }
 
-    private CompletionStage<Optional<WebhookCredentials>> botOnly(long channelId, String warning) {
+    private CompletionStage<Optional<WebhookCredentials>> botOnly(DiscordId channelId, String warning) {
         Long previous = botOnlyUntil.put(channelId, nanoClock.getAsLong() + FALLBACK_RETRY.toNanos());
         if (previous == null) {
             LOGGER.warn(warning);
@@ -220,7 +219,7 @@ final class WebhookSender implements MessageSender {
         return CompletableFuture.completedFuture(Optional.empty());
     }
 
-    private WebhookCredentials store(long channelId, Webhook webhook) {
+    private WebhookCredentials store(DiscordId channelId, Webhook webhook) {
         WebhookCredentials credentials = new WebhookCredentials(new DiscordId(webhook.getIdLong()), webhook.getToken());
         remember(channelId, credentials);
         var unused = repository.save(channelId, credentials).exceptionally(failure -> {
@@ -233,10 +232,10 @@ final class WebhookSender implements MessageSender {
         return credentials;
     }
 
-    private WebhookCredentials remember(long channelId, WebhookCredentials credentials) {
+    private WebhookCredentials remember(DiscordId channelId, WebhookCredentials credentials) {
         known.put(channelId, credentials);
         botOnlyUntil.remove(channelId);
-        rateLimits.bindWebhook(credentials.id().value(), channelId);
+        rateLimits.bindWebhook(credentials.id(), channelId);
         return credentials;
     }
 

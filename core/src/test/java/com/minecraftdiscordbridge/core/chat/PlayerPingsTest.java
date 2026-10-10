@@ -21,7 +21,7 @@ class PlayerPingsTest {
         PlayerPings.Pinged pinged = PlayerPings.escape("# hi @.bedrock_kid, *you*", List.of(BEDROCK));
 
         assertThat(pinged.text()).isEqualTo("\\# hi <@100000000000000001>, \\*you\\*");
-        assertThat(pinged.userIds()).containsExactly(100000000000000001L);
+        assertThat(pinged.userIds()).containsExactly(new DiscordId(100000000000000001L));
     }
 
     @Test

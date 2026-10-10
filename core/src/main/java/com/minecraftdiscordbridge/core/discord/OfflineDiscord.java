@@ -44,30 +44,30 @@ public final class OfflineDiscord implements Discord {
     public void updatePresence(String text) {}
 
     @Override
-    public void updateTopic(long channelId, String topic) {}
+    public void updateTopic(DiscordId channelId, String topic) {}
 
     @Override
-    public boolean isApplicationOwner(long userId) {
+    public boolean isApplicationOwner(DiscordId userId) {
         return false;
     }
 
     @Override
-    public CompletableFuture<MemberLookup> member(long userId) {
+    public CompletableFuture<MemberLookup> member(DiscordId userId) {
         return CompletableFuture.completedFuture(new MemberLookup.Unavailable(reason));
     }
 
     @Override
-    public Map<Long, RoleInfo> roles() {
+    public Map<DiscordId, RoleInfo> roles() {
         return Map.of();
     }
 
     @Override
-    public CompletableFuture<Void> addRole(long userId, long roleId) {
+    public CompletableFuture<Void> addRole(DiscordId userId, DiscordId roleId) {
         return CompletableFuture.failedFuture(new IllegalStateException(reason));
     }
 
     @Override
-    public CompletableFuture<Void> removeRole(long userId, long roleId) {
+    public CompletableFuture<Void> removeRole(DiscordId userId, DiscordId roleId) {
         return CompletableFuture.failedFuture(new IllegalStateException(reason));
     }
 

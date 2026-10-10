@@ -1,6 +1,7 @@
 package com.minecraftdiscordbridge.core.discord.jda;
 
 import com.minecraftdiscordbridge.core.discord.Author;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.text.Graphemes;
 import java.util.Deque;
@@ -14,7 +15,7 @@ final class Batches {
 
     private Batches() {}
 
-    static Optional<Batch> take(long channelId, Deque<OutboundMessage> queue, long skipped, Author server) {
+    static Optional<Batch> take(DiscordId channelId, Deque<OutboundMessage> queue, long skipped, Author server) {
         if (skipped > 0 || isCrowded(queue)) {
             return Optional.of(digest(channelId, queue, skipped, server));
         }
@@ -46,7 +47,7 @@ final class Batches {
         return lines.batch(first.channelId(), first.author());
     }
 
-    private static Batch digest(long channelId, Deque<OutboundMessage> queue, long skipped, Author server) {
+    private static Batch digest(DiscordId channelId, Deque<OutboundMessage> queue, long skipped, Author server) {
         Lines lines = new Lines();
         if (skipped > 0) {
             lines.add(skipped == 1 ? "(1 message skipped)" : "(" + skipped + " messages skipped)");
@@ -64,8 +65,8 @@ final class Batches {
 
     private static final class Lines {
         private final StringBuilder content = new StringBuilder();
-        private final Set<Long> pings = new LinkedHashSet<>();
-        private final Set<Long> rolePings = new LinkedHashSet<>();
+        private final Set<DiscordId> pings = new LinkedHashSet<>();
+        private final Set<DiscordId> rolePings = new LinkedHashSet<>();
         private int messages;
 
         boolean isEmpty() {
@@ -94,15 +95,15 @@ final class Batches {
             content.append(Graphemes.fit(line, OutboundMessage.MAX_LENGTH - content.length(), Graphemes.ELLIPSIS));
         }
 
-        private static void collect(Set<Long> from, Set<Long> into) {
-            for (Long ping : from) {
+        private static void collect(Set<DiscordId> from, Set<DiscordId> into) {
+            for (DiscordId ping : from) {
                 if (into.size() < MAX_PINGS) {
                     into.add(ping);
                 }
             }
         }
 
-        Batch batch(long channelId, Author author) {
+        Batch batch(DiscordId channelId, Author author) {
             return new Batch(new OutboundMessage(channelId, author, content.toString(), pings, rolePings), messages);
         }
     }

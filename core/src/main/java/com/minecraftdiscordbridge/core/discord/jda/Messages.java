@@ -1,5 +1,6 @@
 package com.minecraftdiscordbridge.core.discord.jda;
 
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.text.Graphemes;
 import java.util.EnumSet;
@@ -22,7 +23,7 @@ final class Messages {
 
     private Messages() {}
 
-    static MessageCreateData create(String content, Set<Long> pingUserIds, Set<Long> pingRoleIds) {
+    static MessageCreateData create(String content, Set<DiscordId> pingUserIds, Set<DiscordId> pingRoleIds) {
         MessageCreateBuilder message = new MessageCreateBuilder()
                 .setContent(Graphemes.fit(content, OutboundMessage.MAX_LENGTH, Graphemes.ELLIPSIS))
                 .setAllowedMentions(NO_MENTIONS)
@@ -34,7 +35,7 @@ final class Messages {
         return message.build();
     }
 
-    static MessageCreateData create(String content, Set<Long> pingUserIds) {
+    static MessageCreateData create(String content, Set<DiscordId> pingUserIds) {
         return create(content, pingUserIds, Set.of());
     }
 
@@ -42,8 +43,8 @@ final class Messages {
         return create(content, Set.of(), Set.of());
     }
 
-    private static List<String> ids(Set<Long> ids) {
-        return ids.stream().map(Long::toUnsignedString).toList();
+    private static List<String> ids(Set<DiscordId> ids) {
+        return ids.stream().map(DiscordId::toString).toList();
     }
 
     static MessageEditData edit(String content) {

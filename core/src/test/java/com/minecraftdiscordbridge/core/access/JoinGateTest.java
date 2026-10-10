@@ -41,8 +41,8 @@ class JoinGateTest {
     private static final PlatformInfo ONLINE = new PlatformInfo("Test", "1.21.1", 3955, true);
     private static final PlayerProfile STEVE =
             new PlayerProfile(UUID.fromString("00000000-0000-4000-8000-000000000001"), "Steve", "Steve", null, false);
-    private static final long STEVE_DISCORD = 666666666666666666L;
-    private static final long VIP = 777777777777777777L;
+    private static final DiscordId STEVE_DISCORD = new DiscordId(666666666666666666L);
+    private static final DiscordId VIP = new DiscordId(777777777777777777L);
     private static final Pattern CODE = Pattern.compile("/link ([" + Codes.ALPHABET + "]{" + Codes.LENGTH + "})");
 
     @TempDir
@@ -106,7 +106,7 @@ class JoinGateTest {
     @Test
     void namesTheMissingRoleOnTheKickScreen() throws IOException {
         link();
-        discord.memberWithRoles(STEVE_DISCORD, 1L);
+        discord.memberWithRoles(STEVE_DISCORD, new DiscordId(1));
         discord.role(VIP, "VIP");
 
         assertThat(denied(decide(roleGate(UnreachablePolicy.DENY), STEVE)))
@@ -239,7 +239,7 @@ class JoinGateTest {
     }
 
     private JoinGate roleGate(UnreachablePolicy policy) {
-        return gate(required(Optional.of(new DiscordId(VIP)), policy));
+        return gate(required(Optional.of(VIP), policy));
     }
 
     private JoinGate gate(LinkingConfig config) {
@@ -255,7 +255,7 @@ class JoinGateTest {
     }
 
     private void link() throws IOException {
-        links.link(new Link(STEVE.id(), new DiscordId(STEVE_DISCORD), "Steve", Edition.JAVA, clock.instant()));
+        links.link(new Link(STEVE.id(), STEVE_DISCORD, "Steve", Edition.JAVA, clock.instant()));
     }
 
     private static JoinDecision decide(JoinGate gate, PlayerProfile player) {

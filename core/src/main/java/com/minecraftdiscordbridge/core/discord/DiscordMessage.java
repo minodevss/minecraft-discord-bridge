@@ -5,12 +5,12 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 public record DiscordMessage(
-        long channelId,
+        DiscordId channelId,
         Sender author,
         String content,
-        Map<Long, String> mentionedUsers,
-        Map<Long, MentionedRole> mentionedRoles,
-        Map<Long, String> mentionedChannels,
+        Map<DiscordId, String> mentionedUsers,
+        Map<DiscordId, MentionedRole> mentionedRoles,
+        Map<DiscordId, String> mentionedChannels,
         List<Attachment> attachments,
         @Nullable Reply reply,
         List<String> stickers,
@@ -26,7 +26,7 @@ public record DiscordMessage(
     }
 
     public record Sender(
-            long id, String displayName, @Nullable Integer roleColor, boolean bot, boolean webhook) {}
+            DiscordId id, String displayName, @Nullable Integer roleColor, boolean bot, boolean webhook) {}
 
     public record MentionedRole(String name, @Nullable Integer color) {}
 
