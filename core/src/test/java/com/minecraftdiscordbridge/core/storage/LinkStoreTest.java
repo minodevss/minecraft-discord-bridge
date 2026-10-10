@@ -8,7 +8,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -39,6 +41,29 @@ class LinkStoreTest {
         assertThat(store.byMinecraftId(STEVE.minecraftId())).contains(STEVE);
         assertThat(store.byDiscordId(STEVE.discordId())).contains(STEVE);
         assertThat(store.byDiscordId(ALEX.discordId())).isEmpty();
+    }
+
+    @Test
+    void tellsListenersAboutLinksAndTheLinksTheyReplace() throws IOException {
+        LinkStore store = LinkStore.open(directory);
+        List<LinkChange> changes = new CopyOnWriteArrayList<>();
+        store.onChange(changes::add);
+        Link steveToAlexDiscord =
+                new Link(STEVE.minecraftId(), ALEX.discordId(), "Steve", Edition.JAVA, NOW.plusSeconds(60));
+
+        store.link(STEVE);
+        store.link(STEVE);
+        store.link(steveToAlexDiscord);
+        store.unlinkDiscord(ALEX.discordId());
+        store.unlinkDiscord(ALEX.discordId());
+
+        assertThat(changes)
+                .containsExactly(
+                        new LinkChange.Linked(STEVE),
+                        new LinkChange.Linked(STEVE),
+                        new LinkChange.Unlinked(STEVE),
+                        new LinkChange.Linked(steveToAlexDiscord),
+                        new LinkChange.Unlinked(steveToAlexDiscord));
     }
 
     @Test

@@ -10,10 +10,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public final class LinkStore {
     private final StoreFile file;
+    private final List<Consumer<LinkChange>> listeners = new CopyOnWriteArrayList<>();
     private volatile Index index;
 
     private LinkStore(StoreFile file) {
@@ -41,13 +44,19 @@ public final class LinkStore {
         return index.links();
     }
 
+    public void onChange(Consumer<LinkChange> listener) {
+        listeners.add(listener);
+    }
+
     public synchronized void link(Link link) throws IOException {
-        List<Link> kept = without(
-                index.links(),
-                existing -> existing.minecraftId().equals(link.minecraftId())
-                        || existing.discordId().equals(link.discordId()));
+        Predicate<Link> replaced = existing -> existing.minecraftId().equals(link.minecraftId())
+                || existing.discordId().equals(link.discordId());
+        List<Link> previous = index.links().stream().filter(replaced).toList();
+        List<Link> kept = without(index.links(), replaced);
         kept.add(link);
         replace(kept);
+        previous.stream().filter(old -> !samePair(old, link)).forEach(old -> notify(new LinkChange.Unlinked(old)));
+        notify(new LinkChange.Linked(link));
     }
 
     public synchronized Optional<Link> unlinkMinecraft(UUID minecraftId) throws IOException {
@@ -62,8 +71,18 @@ public final class LinkStore {
         if (found.isPresent()) {
             Link removed = found.get();
             replace(without(index.links(), removed::equals));
+            notify(new LinkChange.Unlinked(removed));
         }
         return found;
+    }
+
+    private void notify(LinkChange change) {
+        listeners.forEach(listener -> listener.accept(change));
+    }
+
+    private static boolean samePair(Link first, Link second) {
+        return first.minecraftId().equals(second.minecraftId())
+                && first.discordId().equals(second.discordId());
     }
 
     private void replace(List<Link> links) throws IOException {
