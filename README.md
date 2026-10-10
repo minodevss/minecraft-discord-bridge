@@ -105,7 +105,7 @@ The bridge folder holds three things:
 
 | Section | What it controls |
 | --- | --- |
-| `language` | `en` or `ko` for the bridge's messages, and for deaths and advancements on Discord |
+| `language` | `en` or `ko` for in-game messages and Discord posts, including deaths and advancements. Replies to Discord slash commands follow each user's Discord language. |
 | `chat` | The chat channel, both directions, the in-game format in MiniMessage, avatars, `@name` pings for linked players, blocked words |
 | `events` | The events channel, which events to post, and a role to ping when the server starts |
 | `player-count` | The player count as the bot's status and in the chat channel's topic |
