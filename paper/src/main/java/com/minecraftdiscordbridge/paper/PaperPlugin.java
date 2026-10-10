@@ -35,7 +35,7 @@ public final class PaperPlugin extends JavaPlugin {
         bridge = started;
         started.start();
         getServer().getPluginManager().registerEvents(new PaperEvents(started, profiles), this);
-        getServer().getPluginManager().registerEvents(new PaperJoinGate(started, profiles, getSLF4JLogger()), this);
+        getServer().getPluginManager().registerEvents(new PaperJoinGate(started, profiles), this);
         getLifecycleManager()
                 .registerEventHandler(
                         LifecycleEvents.COMMANDS,

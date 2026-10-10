@@ -155,13 +155,24 @@ public final class Bridge {
 
     public CompletableFuture<JoinDecision> checkJoin(PlayerProfile player, boolean bypass) {
         if (stopped.get()) {
-            return CompletableFuture.completedFuture(activator.joins().fallback(player, bypass));
+            return CompletableFuture.completedFuture(fallback(player, bypass));
         }
         CompletableFuture<JoinDecision> decision = new CompletableFuture<>();
         loop.control(() -> activator.joins().check(player, bypass, decision));
         return decision.orTimeout(JoinGate.BUDGET.toMillis(), TimeUnit.MILLISECONDS)
-                .handle((done, failure) ->
-                        done != null ? done : activator.joins().fallback(player, bypass));
+                .handle((done, failure) -> done != null ? done : fallback(player, bypass));
+    }
+
+    private JoinDecision fallback(PlayerProfile player, boolean bypass) {
+        try {
+            return activator.joins().fallback(player, bypass);
+        } catch (RuntimeException failure) {
+            LOGGER.warn(
+                    "Let {} join because the join check failed: {}. Report this bug",
+                    player.name(),
+                    Failures.describe(failure));
+            return new JoinDecision.Allow();
+        }
     }
 
     public void stop() {

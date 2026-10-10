@@ -4,7 +4,6 @@ import com.minecraftdiscordbridge.core.platform.JoinDecision;
 import com.mojang.authlib.GameProfile;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 //? if >=1.21.11 {
@@ -12,11 +11,9 @@ import net.minecraft.server.players.NameAndId;
 //?}
 
 public final class ModdedJoinGate {
-    private static final long GATE_WAIT_SECONDS = 4;
     private static final String REFUSED = "You cannot join this server right now.";
 
     private final ModdedEvents events;
-    private final RateLimitedWarning failures = new RateLimitedWarning();
 
     public ModdedJoinGate(ModdedEvents events) {
         this.events = events;
@@ -28,15 +25,9 @@ public final class ModdedJoinGate {
             return CompletableFuture.completedFuture(Optional.empty());
         }
         MinecraftServer server = current.server();
-        try {
-            return current.bridge()
-                    .checkJoin(current.profiles().of(profile), isOperator(server, profile))
-                    .completeOnTimeout(new JoinDecision.Allow(), GATE_WAIT_SECONDS, TimeUnit.SECONDS)
-                    .thenApplyAsync(decision -> kickMessage(decision, server), server);
-        } catch (RuntimeException | LinkageError error) {
-            failures.warn("Could not check a joining player with Minecraft Discord Bridge; report this bug", error);
-            return CompletableFuture.completedFuture(Optional.empty());
-        }
+        return current.bridge()
+                .checkJoin(current.profiles().of(profile), isOperator(server, profile))
+                .thenApplyAsync(decision -> kickMessage(decision, server), server);
     }
 
     private static Optional<Component> kickMessage(JoinDecision decision, MinecraftServer server) {

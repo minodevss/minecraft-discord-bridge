@@ -11,12 +11,9 @@ import com.velocitypowered.api.event.connection.LoginEvent;
 import com.velocitypowered.api.permission.Tristate;
 import com.velocitypowered.api.proxy.Player;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 
 public final class VelocityJoinGate {
-    private static final long GATE_WAIT_SECONDS = 4;
-
     private final Bridge bridge;
     private final VelocityProfiles profiles;
 
@@ -34,7 +31,6 @@ public final class VelocityJoinGate {
         Player player = event.getPlayer();
         boolean bypass = player.getPermissionValue(Permission.GATE_BYPASS.node()) == Tristate.TRUE;
         CompletableFuture<Void> gate = bridge.checkJoin(profiles.of(player), bypass)
-                .completeOnTimeout(new JoinDecision.Allow(), GATE_WAIT_SECONDS, TimeUnit.SECONDS)
                 .thenAccept(decision -> {
                     if (decision instanceof JoinDecision.Deny deny) {
                         event.setResult(ResultedEvent.ComponentResult.denied(
