@@ -17,6 +17,10 @@ import com.minecraftdiscordbridge.core.platform.Permission;
 import com.minecraftdiscordbridge.core.platform.Platform;
 import com.minecraftdiscordbridge.core.setup.SetupCodes;
 import com.minecraftdiscordbridge.core.status.Roster;
+import com.minecraftdiscordbridge.core.vanilla.Fetcher;
+import com.minecraftdiscordbridge.core.vanilla.HttpFetcher;
+import com.minecraftdiscordbridge.core.vanilla.LanguageFiles;
+import com.minecraftdiscordbridge.core.vanilla.VanillaTranslations;
 import java.time.Duration;
 import java.time.InstantSource;
 import java.util.EnumSet;
@@ -52,7 +56,8 @@ public final class Bridge {
             Map<String, String> environment,
             InstantSource clock,
             Codes codes,
-            Duration actionTimeout) {
+            Duration actionTimeout,
+            Fetcher fetcher) {
         this.loop = new CoreLoop();
         this.io = IoExecutor.forLoop(loop);
         this.lifecycle = Executors.newSingleThreadExecutor(Threads.named("Reconnect"));
@@ -66,7 +71,11 @@ public final class Bridge {
                 new PendingLinks(codes),
                 new SetupCodes(codes),
                 Attempts.standard(),
-                actionTimeout);
+                actionTimeout,
+                new VanillaTranslations(
+                        new LanguageFiles(platform.dataDirectory(), fetcher),
+                        io,
+                        platform.info().minecraftVersion()));
         this.engine = new Engine(
                 shared,
                 lifecycle,
@@ -78,7 +87,13 @@ public final class Bridge {
 
     public static Bridge create(Platform platform) {
         return new Bridge(
-                platform, JdaDiscord::create, System.getenv(), InstantSource.system(), Codes.secure(), Actions.TIMEOUT);
+                platform,
+                JdaDiscord::create,
+                System.getenv(),
+                InstantSource.system(),
+                Codes.secure(),
+                Actions.TIMEOUT,
+                new HttpFetcher());
     }
 
     public void start() {

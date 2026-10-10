@@ -76,7 +76,8 @@ final class Sessions {
                         lang,
                         shared.platform(),
                         stores.preferences()::hidingDiscord),
-                new EventPosts(config.events(), events, lang, shared.discord()),
+                new EventPosts(
+                        config.events(), events, lang, shared.vanilla().use(config.language()), shared.discord()),
                 new StatusBoard(config.status(), chat, lang, shared.discord(), shared.roster()),
                 new SlashRouter(setup, linking, actions, shared.roster(), lang),
                 new GameCommands(replies, linking, new ChatToggle(stores.preferences(), shared.io(), replies), setup),

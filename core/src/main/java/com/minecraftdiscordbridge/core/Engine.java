@@ -163,6 +163,7 @@ final class Engine {
         if (current != null) {
             current.close();
         }
+        shared.vanilla().close();
         return shared.discord().swap(OfflineDiscord.stopped(OfflineDiscord.STOPPED));
     }
 

@@ -7,8 +7,11 @@ import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.platform.AdvancementFrame;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
+import com.minecraftdiscordbridge.core.platform.RichText;
 import com.minecraftdiscordbridge.core.text.DiscordEscaper;
 import com.minecraftdiscordbridge.core.text.SafeText;
+import com.minecraftdiscordbridge.core.text.TextRenderer;
+import com.minecraftdiscordbridge.core.text.Translations;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -20,12 +23,15 @@ public final class EventPosts {
     private final EventsConfig config;
     private final OptionalLong channel;
     private final Lang lang;
+    private final Optional<Translations> gameText;
     private final Discord discord;
 
-    public EventPosts(EventsConfig config, OptionalLong channel, Lang lang, Discord discord) {
+    public EventPosts(
+            EventsConfig config, OptionalLong channel, Lang lang, Optional<Translations> gameText, Discord discord) {
         this.config = config;
         this.channel = channel;
         this.lang = lang;
+        this.gameText = gameText;
         this.discord = discord;
     }
 
@@ -42,14 +48,14 @@ public final class EventPosts {
     }
 
     public void died(GameEvent.PlayerDied event) {
-        String message = SafeText.strip(event.message().plain()).strip();
+        String message = flatten(event.message());
         if (config.death() && !message.isEmpty()) {
             post(DiscordEscaper.escape(message));
         }
     }
 
     public void advanced(GameEvent.AdvancementEarned event) {
-        String title = SafeText.strip(event.title().plain()).strip();
+        String title = flatten(event.title());
         if (config.advancement() && !title.isEmpty()) {
             post(lang.text(advancementKey(event.frame()), name(event.player().name()), DiscordEscaper.escape(title)));
         }
@@ -81,6 +87,12 @@ public final class EventPosts {
         if (channel.isPresent()) {
             discord.send(OutboundMessage.of(channel.getAsLong(), SERVER, text));
         }
+    }
+
+    private String flatten(RichText text) {
+        String plain = gameText.map(translations -> TextRenderer.plain(text, translations))
+                .orElse(text.plain());
+        return SafeText.strip(plain).strip();
     }
 
     private static String advancementKey(AdvancementFrame frame) {

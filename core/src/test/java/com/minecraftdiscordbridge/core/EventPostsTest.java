@@ -139,6 +139,33 @@ class EventPostsTest {
     }
 
     @Test
+    void postsDeathsAndAdvancementsInMinecraftsOwnKorean() throws IOException {
+        try (Harness harness = Harness.create(directory, "language: ko\n" + CHANNELS)) {
+            harness.mojang.serve("1.21.1", "ko_kr", """
+                    {"death.attack.fall": "%1$s이(가) 땅바닥으로 곤두박질쳤습니다",
+                     "advancements.story.mine_stone.title": "석기 시대"}
+                    """);
+            harness.bridge.start();
+            harness.discord();
+            harness.run(RecordingSource.console(), "reload").nextPlain();
+
+            harness.publish(new GameEvent.PlayerDied(
+                    STEVE, new RichText("{\"translate\":\"death.attack.fall\",\"with\":[\"Steve\"]}", "Steve fell")));
+            harness.publish(new GameEvent.AdvancementEarned(
+                    STEVE,
+                    new RichText("{\"translate\":\"advancements.story.mine_stone.title\"}", "Stone Age"),
+                    AdvancementFrame.TASK));
+            harness.publish(new GameEvent.PlayerDied(
+                    STEVE, new RichText("{\"translate\":\"death.attack.mymod.wisp\"}", "Steve met a wisp")));
+
+            RecordingDiscord discord = harness.discord();
+            assertThat(discord.nextSent().text()).isEqualTo("Steve이\\(가\\) 땅바닥으로 곤두박질쳤습니다");
+            assertThat(discord.nextSent().text()).isEqualTo("**Steve**님이 발전 과제 **석기 시대**을(를) 달성했습니다");
+            assertThat(discord.nextSent().text()).isEqualTo("Steve met a wisp");
+        }
+    }
+
+    @Test
     void escapesMarkdownInDeathMessagesAndTitles() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             harness.publish(new GameEvent.PlayerDied(STEVE, new RichText("{}", "Steve was slain by **Boss**")));
