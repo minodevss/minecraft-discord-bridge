@@ -2,10 +2,13 @@ package com.minecraftdiscordbridge.paper;
 
 import com.minecraftdiscordbridge.core.Bridge;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
+import com.minecraftdiscordbridge.core.platform.Permission;
 import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import java.util.List;
 import org.bukkit.Bukkit;
+import org.bukkit.permissions.PermissionDefault;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.Nullable;
 
@@ -24,6 +27,7 @@ public final class PaperPlugin extends JavaPlugin {
             return;
         }
         System.setProperty(LOADED_MARKER, "true");
+        registerPermissions();
 
         PaperProfiles profiles = new PaperProfiles(Floodgate.bedrockCheck());
         Bridge started = Bridge.create(new PaperPlatform(info(), getDataFolder().toPath(), new PaperActions(this)));
@@ -47,6 +51,16 @@ public final class PaperPlugin extends JavaPlugin {
         bridge = null;
         running.publish(new GameEvent.ServerStopping());
         running.stop();
+    }
+
+    private void registerPermissions() {
+        PluginManager plugins = getServer().getPluginManager();
+        for (Permission permission : Permission.values()) {
+            plugins.addPermission(new org.bukkit.permissions.Permission(
+                    permission.node(),
+                    permission.description(),
+                    permission.everyoneByDefault() ? PermissionDefault.TRUE : PermissionDefault.OP));
+        }
     }
 
     @SuppressWarnings("deprecation")
