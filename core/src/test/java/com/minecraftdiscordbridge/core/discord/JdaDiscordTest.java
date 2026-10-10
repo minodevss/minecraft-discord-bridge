@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
@@ -559,6 +560,21 @@ class JdaDiscordTest {
         Thread.sleep(200);
 
         assertThat(topicEdits()).hasSize(1);
+        assertThat(FakeDiscord.body(topicEdits().get(0)).getString("topic")).isEqualTo("3/20 players online");
+    }
+
+    @Test
+    void setsATopicAskedForBeforeTheConnectionWasReady() throws InterruptedException {
+        bridge = new JdaDiscord(
+                TestSupport.settings(List.of()), discord.endpoints(), loop, listener, webhooks, commandHashes);
+        bridge.updateTopic(CHANNEL_ID, "3/20 players online");
+        CountDownLatch applied = new CountDownLatch(1);
+        loop.control(applied::countDown);
+        assertThat(applied.await(5, TimeUnit.SECONDS)).isTrue();
+
+        bridge.start();
+
+        await("topic", () -> topicEdits().size() == 1);
         assertThat(FakeDiscord.body(topicEdits().get(0)).getString("topic")).isEqualTo("3/20 players online");
     }
 

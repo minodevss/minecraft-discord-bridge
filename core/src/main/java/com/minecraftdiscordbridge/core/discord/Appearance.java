@@ -47,8 +47,9 @@ final class Appearance {
                 .submit(topic);
     }
 
-    void reapplyPresence() {
+    void reapply() {
         presence.reapply();
+        topics.values().forEach(Throttle::reapply);
     }
 
     private void applyPresence(String text) {
@@ -76,8 +77,12 @@ final class Appearance {
         if (topicLocked.remove(channelId)) {
             LOGGER.info("The bot can update the topic of #{} again", channel.getName());
         }
+        String fitted = DiscordText.fit(topic, MAX_TOPIC_LENGTH);
+        if (fitted.equals(channel.getTopic())) {
+            return;
+        }
         channel.getManager()
-                .setTopic(DiscordText.fit(topic, MAX_TOPIC_LENGTH))
+                .setTopic(fitted)
                 .queue(
                         null,
                         failure -> LOGGER.warn(

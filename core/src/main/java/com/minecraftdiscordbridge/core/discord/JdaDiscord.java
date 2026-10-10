@@ -470,7 +470,7 @@ public final class JdaDiscord implements Discord {
                 webhooks.prepare(channelId);
             }
         }
-        appearance.reapplyPresence();
+        appearance.reapply();
         outbox.open();
         LOGGER.info("Connected to Discord as {} in {}", jda.getSelfUser().getName(), guild.getName());
         if (warnings.isEmpty()) {
@@ -490,7 +490,7 @@ public final class JdaDiscord implements Discord {
         }
         long applicationId = jda.getSelfUser().getApplicationIdLong();
         guilds.forEach(guild -> commands.registerIfChanged(guild, applicationId));
-        appearance.reapplyPresence();
+        appearance.reapply();
         outbox.open();
         LOGGER.info(
                 "Connected to Discord as {}. Run /setup in the Discord channel that should show the chat",
