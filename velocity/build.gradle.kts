@@ -11,6 +11,7 @@ dependencies {
     compileOnly(libs.velocity.api)
     implementation(project(":core", "shadowRuntimeElements"))
     "bundle"(project(":core", "shadowRuntimeElements"))
+    testImplementation(libs.gson)
 }
 
 tasks.withType<JavaCompile>().configureEach {
