@@ -63,4 +63,18 @@ class PlayerPingsTest {
         assertThat(Avatars.url(chat, new PlayerProfile(id, ".Kid Two", ".Kid Two", null, true)))
                 .isEqualTo("https://example.com/.Kid%20Two/" + id);
     }
+
+    @Test
+    void trustsOnlyHttpsDiscordAttachmentHosts() {
+        assertThat(DiscordChat.fromDiscord("https://cdn.discordapp.com/attachments/1/2/a.png"))
+                .isTrue();
+        assertThat(DiscordChat.fromDiscord("https://media.discordapp.net/attachments/1/2/a.png"))
+                .isTrue();
+        assertThat(DiscordChat.fromDiscord("http://cdn.discordapp.com/a.png")).isFalse();
+        assertThat(DiscordChat.fromDiscord("https://cdn.discordapp.com.evil.example/a.png"))
+                .isFalse();
+        assertThat(DiscordChat.fromDiscord("https://user@cdn.discordapp.com/a.png"))
+                .isFalse();
+        assertThat(DiscordChat.fromDiscord("not a url")).isFalse();
+    }
 }
