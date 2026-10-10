@@ -15,6 +15,17 @@ class ArchitectureTest {
             .importPackages(CORE);
 
     @Test
+    void onlyTheStoragePackageUsesJackson() {
+        noClasses()
+                .that()
+                .resideOutsideOfPackage(CORE + ".storage..")
+                .should()
+                .dependOnClassesThat()
+                .resideInAPackage("com.fasterxml.jackson..")
+                .check(PRODUCTION);
+    }
+
+    @Test
     void coreNeverTouchesGameOrLoaderApis() {
         noClasses()
                 .should()
