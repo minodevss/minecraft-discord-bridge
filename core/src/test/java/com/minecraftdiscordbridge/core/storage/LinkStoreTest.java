@@ -143,6 +143,15 @@ class LinkStoreTest {
     }
 
     @Test
+    void writesKeysWithoutASpaceBeforeTheColon() throws IOException {
+        LinkStore.open(directory).link(STEVE);
+
+        assertThat(Files.readString(directory.resolve("data").resolve("links.json")))
+                .contains("\"version\": 1")
+                .doesNotContain("\" :");
+    }
+
+    @Test
     void keepsTheLastThreeVersionsAsBackupsInTheirOwnFolder() throws IOException {
         LinkStore store = LinkStore.open(directory);
         Path file = directory.resolve("data").resolve("links.json");

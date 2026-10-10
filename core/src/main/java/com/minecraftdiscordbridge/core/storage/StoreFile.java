@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
 import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.fasterxml.jackson.core.util.Separators;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -28,6 +30,8 @@ final class StoreFile {
                     DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
             .defaultSetterInfo(JsonSetter.Value.construct(Nulls.FAIL, Nulls.FAIL))
             .enable(SerializationFeature.INDENT_OUTPUT)
+            .defaultPrettyPrinter(new DefaultPrettyPrinter(
+                    Separators.createDefaultInstance().withObjectFieldValueSpacing(Separators.Spacing.AFTER)))
             .build();
 
     private final Path path;
