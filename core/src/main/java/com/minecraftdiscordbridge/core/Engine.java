@@ -75,7 +75,7 @@ final class Engine {
     private final BooleanSupplier stopping;
     private final Object lock = new Object();
     private final List<WaitingJoin> waitingJoins = new ArrayList<>();
-    private volatile @Nullable Session session;
+    private volatile @Nullable Features features;
     private volatile boolean closed;
     private volatile boolean booting = true;
     private @Nullable Stores stores;
@@ -119,7 +119,7 @@ final class Engine {
     }
 
     void onGameEvent(GameEvent event) {
-        Session current = session;
+        Features current = features;
         if (event instanceof GameEvent.ServerStarted started) {
             services.roster().reset(started.online());
             serverStarted = true;
@@ -157,7 +157,7 @@ final class Engine {
 
     void command(CommandSource source, Set<Permission> granted, List<String> arguments) {
         String subcommand = arguments.isEmpty() ? "" : arguments.get(0).toLowerCase(Locale.ROOT);
-        Session current = session;
+        Features current = features;
         Replies replies = current == null ? replies() : current.replies();
         if (subcommand.equals(GameCommands.STATUS)) {
             if (GameCommands.allowed(replies, source, granted, Permission.STATUS)) {
@@ -177,7 +177,7 @@ final class Engine {
     }
 
     void checkJoin(PlayerProfile player, boolean bypass, CompletableFuture<JoinDecision> result) {
-        Session current = session;
+        Features current = features;
         if (current != null) {
             current.gate().decide(player, bypass, result);
         } else if (booting) {
@@ -188,7 +188,7 @@ final class Engine {
     }
 
     JoinDecision joinFallback(PlayerProfile player, boolean bypass) {
-        Session current = session;
+        Features current = features;
         if (current != null) {
             return current.gate().fallback(player, bypass);
         }
@@ -202,7 +202,7 @@ final class Engine {
     }
 
     List<OutboundMessage> farewell(boolean crashed) {
-        Session current = session;
+        Features current = features;
         if (current == null) {
             return List.of();
         }
@@ -210,10 +210,10 @@ final class Engine {
     }
 
     Discord close() {
-        Session current;
+        Features current;
         synchronized (lock) {
             closed = true;
-            current = session;
+            current = features;
         }
         if (current != null) {
             current.close();
@@ -244,7 +244,7 @@ final class Engine {
             Link link = change.link();
             services.access().forget(link.minecraftId(), link.discordId());
         }
-        Session current = session;
+        Features current = features;
         if (current != null) {
             current.roleSync().linkChanged(change);
         }
@@ -320,11 +320,11 @@ final class Engine {
             if (closed) {
                 return Outcome.APPLIED;
             }
-            Session previous = session;
+            Features previous = features;
             if (previous != null) {
                 previous.close();
             }
-            session = Sessions.build(services, ready, loaded, channels, this::rebound);
+            features = Features.build(services, ready, loaded, channels, this::rebound);
         }
         Outcome outcome;
         if (!loaded.secrets().hasDiscordToken()) {
@@ -344,7 +344,7 @@ final class Engine {
         }
         announceStart();
         refreshStatus();
-        Session current = session;
+        Features current = features;
         if (current != null && services.discord().status().isConnected()) {
             current.roleSync().discordReady();
         }
@@ -412,7 +412,7 @@ final class Engine {
     }
 
     private void announceStart() {
-        Session current = session;
+        Features current = features;
         if (serverStarted && !startAnnounced && current != null) {
             startAnnounced = true;
             current.events().serverStarted(recovered);
@@ -420,7 +420,7 @@ final class Engine {
     }
 
     private void refreshStatus() {
-        Session current = session;
+        Features current = features;
         if (current != null) {
             current.status().refresh();
         }
@@ -458,7 +458,7 @@ final class Engine {
             if (target == generation && status.state() == DiscordStatus.State.READY) {
                 refreshStatus();
             }
-            Session current = session;
+            Features current = features;
             if (target == generation && current != null && status.isConnected()) {
                 current.roleSync().discordReady();
             }
@@ -466,7 +466,7 @@ final class Engine {
 
         @Override
         public void onMessage(DiscordMessage message) {
-            Session current = session;
+            Features current = features;
             if (target == generation && current != null) {
                 current.discordChat().onMessage(message);
                 current.consoleInput().onMessage(message);
@@ -479,7 +479,7 @@ final class Engine {
                 return;
             }
             services.access().remember(member, services.clock().instant());
-            Session current = session;
+            Features current = features;
             if (current != null) {
                 current.roleSync().memberUpdated(member);
             }
@@ -493,7 +493,7 @@ final class Engine {
             services.access()
                     .remember(
                             new MemberLookup.NotMember(userId), services.clock().instant());
-            Session current = session;
+            Features current = features;
             if (current != null) {
                 current.roleSync().memberLeft(userId);
             }
@@ -501,7 +501,7 @@ final class Engine {
 
         @Override
         public void onCommand(CommandRequest request, CommandReply reply) {
-            Session current = session;
+            Features current = features;
             if (target != generation || current == null) {
                 reply.replyEphemeral(
                         Lang.forDiscordLocale(request.locale(), lang).text("discord.not-ready"));
@@ -512,7 +512,7 @@ final class Engine {
 
         @Override
         public void onAutocomplete(AutocompleteRequest request, AutocompleteReply reply) {
-            Session current = session;
+            Features current = features;
             if (target != generation || current == null) {
                 reply.respond(List.of());
                 return;

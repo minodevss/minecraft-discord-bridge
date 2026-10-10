@@ -31,10 +31,19 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-final class Sessions {
-    private Sessions() {}
-
-    static Session build(
+record Features(
+        Replies replies,
+        MinecraftChat minecraftChat,
+        DiscordChat discordChat,
+        EventPosts events,
+        StatusBoard status,
+        SlashRouter slash,
+        GameCommands commands,
+        Optional<ConsoleMirror> consoleMirror,
+        JoinGate gate,
+        RoleSync roleSync,
+        ConsoleInput consoleInput) {
+    static Features build(
             Services services, Stores stores, ConfigSnapshot snapshot, Channels channels, Runnable rebound) {
         BridgeConfig config = snapshot.config();
         Lang lang = Lang.of(config.language());
@@ -66,7 +75,7 @@ final class Sessions {
                 new GameActions(services.platform(), services.loop()::control, services.actionTimeout());
         Actions actions = new Actions(config.actions(), gameActions, lang);
         AccessContext access = services.accessContext(stores);
-        return new Session(
+        return new Features(
                 replies,
                 new MinecraftChat(config.chat(), chat, services.discord(), stores.links()::all),
                 new DiscordChat(
@@ -120,5 +129,10 @@ final class Sessions {
         services.setupCodes().active(services.clock().instant()).ifPresent(secrets::add);
         secrets.addAll(services.pendingLinks().codes(services.clock().instant()));
         return secrets;
+    }
+
+    void close() {
+        consoleMirror.ifPresent(ConsoleMirror::close);
+        roleSync.close();
     }
 }
