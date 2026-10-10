@@ -30,7 +30,7 @@ val bridgeVersion = version.toString()
 val paperJar = "minecraft-discord-bridge-paper-$bridgeVersion.jar"
 val velocityJar = "minecraft-discord-bridge-velocity-$bridgeVersion.jar"
 val dist = layout.projectDirectory.dir("dist")
-val dryRunOnly = providers.gradleProperty("publish.dryRun").isPresent
+val dryRunOnly = providers.gradleProperty("publish.dryRun").map { it != "false" }.getOrElse(false)
 val releaseType = when {
     "alpha" in bridgeVersion -> ReleaseType.ALPHA
     '-' in bridgeVersion -> ReleaseType.BETA
