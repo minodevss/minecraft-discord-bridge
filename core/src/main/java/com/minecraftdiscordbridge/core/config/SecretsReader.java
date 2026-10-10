@@ -27,6 +27,9 @@ final class SecretsReader {
             discord-token: ""
             """;
 
+    private static final String DETAILS_HIDDEN = "is not written as discord-token: \"your token\". Fix it; the"
+            + " details are not shown because this file holds the token.";
+
     private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private SecretsReader() {}
@@ -98,7 +101,8 @@ final class SecretsReader {
                             + "). Check the file permissions and that it is saved as UTF-8.");
             return Secrets.none();
         }
-        RawConfig raw = RawConfig.parse(text, Set.of(TOKEN_KEY), problems).orElse(null);
+        Problems hidden = problems.hidingDetails(DETAILS_HIDDEN);
+        RawConfig raw = RawConfig.parse(text, Set.of(TOKEN_KEY), hidden).orElse(null);
         if (raw == null) {
             return Secrets.none();
         }
@@ -112,7 +116,7 @@ final class SecretsReader {
         if (entry.isEmpty()) {
             return Secrets.none();
         }
-        String token = ValueTypes.TEXT_OR_NOTHING.read(entry.get().value(), TOKEN_KEY, problems);
+        String token = ValueTypes.TEXT_OR_NOTHING.read(entry.get().value(), TOKEN_KEY, hidden);
         return token == null ? Secrets.none() : Secrets.of(token.strip(), FILE);
     }
 }

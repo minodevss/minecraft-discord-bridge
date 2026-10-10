@@ -100,6 +100,23 @@ class SecretsTest {
     }
 
     @Test
+    void keepsAPastedTokenOutOfParseErrors() throws IOException {
+        for (String pasted :
+                new String[] {TOKEN + "\n", "discord-token: \"" + TOKEN + "\n", "discord-token: [" + TOKEN + "]\n"}) {
+            writeSecrets(pasted);
+
+            ConfigResult result = new ConfigLoader(directory, Map.of()).load();
+
+            assertThat(errors(result))
+                    .isNotEmpty()
+                    .allSatisfy(error -> assertThat(error)
+                            .startsWith("secrets.yml")
+                            .contains("discord-token: \"your token\"")
+                            .doesNotContain("MTIz", "secret-part"));
+        }
+    }
+
+    @Test
     void refusesToHandOutAMissingToken() {
         Secrets secrets = Secrets.none();
 
