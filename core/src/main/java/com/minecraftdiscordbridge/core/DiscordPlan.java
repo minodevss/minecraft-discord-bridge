@@ -32,7 +32,8 @@ final class DiscordPlan {
     }
 
     static boolean needsMembers(BridgeConfig config) {
-        return config.linking().requiredRole().isPresent();
+        return !config.roleSync().rules().isEmpty()
+                || config.linking().requiredRole().isPresent();
     }
 
     static Set<Long> channelIds(BridgeConfig config, Channels channels) {

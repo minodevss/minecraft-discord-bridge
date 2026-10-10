@@ -3,14 +3,20 @@ package com.minecraftdiscordbridge.core;
 import static com.minecraftdiscordbridge.core.Harness.CHANNELS;
 import static com.minecraftdiscordbridge.core.Harness.CHAT;
 import static com.minecraftdiscordbridge.core.Harness.MEMBER;
+import static com.minecraftdiscordbridge.core.Harness.ROLE;
 import static com.minecraftdiscordbridge.core.Harness.STEVE;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.minecraftdiscordbridge.core.access.GroupCheck;
+import com.minecraftdiscordbridge.core.discord.MemberLookup;
+import com.minecraftdiscordbridge.core.discord.RoleInfo;
+import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.JoinDecision;
 import com.minecraftdiscordbridge.core.text.TextRenderer;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
@@ -72,6 +78,37 @@ class AccessTest {
             harness.settledStatus();
 
             assertThat(join(harness)).isInstanceOf(JoinDecision.Allow.class);
+        }
+    }
+
+    @Test
+    void syncsTheGroupOnLinkJoinAndDiscordRoleChanges() throws Exception {
+        try (Harness harness = Harness.create(directory, CHANNELS + """
+                role-sync:
+                  rules:
+                    - discord-role: "777777777777777777"
+                      group: "vip"
+                      direction: "discord-to-minecraft"
+                """)) {
+            harness.groups.groups.put("vip", new GroupCheck.Safe());
+            harness.bridge.start();
+            RecordingDiscord discord = harness.discord();
+            discord.roles.put(ROLE, new RoleInfo(ROLE, "VIP", Set.of(), true));
+            discord.statusChanged();
+            discord.members =
+                    userId -> CompletableFuture.completedFuture(new MemberLookup.Member(userId, Set.of(ROLE)));
+            String given = "+vip " + STEVE.id();
+
+            linkSteve(harness);
+            Waits.until("the group to be given on link", () -> harness.groups.changes.contains(given));
+            harness.groups.members.remove(STEVE.id());
+            harness.groups.changes.clear();
+
+            harness.publish(new GameEvent.PlayerJoined(STEVE, false));
+            Waits.until("the group to be given on join", () -> harness.groups.changes.contains(given));
+
+            discord.memberUpdated(new MemberLookup.Member(MEMBER, Set.of()));
+            Waits.until("the group to be taken", () -> harness.groups.changes.contains("-vip " + STEVE.id()));
         }
     }
 
