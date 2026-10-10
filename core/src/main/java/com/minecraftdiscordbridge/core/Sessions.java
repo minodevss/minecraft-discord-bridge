@@ -9,6 +9,7 @@ import com.minecraftdiscordbridge.core.commands.SlashRouter;
 import com.minecraftdiscordbridge.core.config.BridgeConfig;
 import com.minecraftdiscordbridge.core.config.Channels;
 import com.minecraftdiscordbridge.core.config.ConfigSnapshot;
+import com.minecraftdiscordbridge.core.console.ConsoleMirror;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.events.EventPosts;
@@ -18,6 +19,9 @@ import com.minecraftdiscordbridge.core.linking.Linking;
 import com.minecraftdiscordbridge.core.setup.ChannelSetup;
 import com.minecraftdiscordbridge.core.status.StatusBoard;
 import com.minecraftdiscordbridge.core.text.Format;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,7 +74,14 @@ final class Sessions {
                         config.events(), events, lang, shared.vanilla().use(config.language()), shared.discord()),
                 new StatusBoard(config.status(), chat, lang, shared.discord(), shared.roster()),
                 new SlashRouter(setup, linking, actions, shared.roster(), lang),
-                new GameCommands(replies, linking, new ChatToggle(stores.preferences(), shared.io(), replies), setup));
+                new GameCommands(replies, linking, new ChatToggle(stores.preferences(), shared.io(), replies), setup),
+                ConsoleMirror.start(
+                        config.console(),
+                        snapshot.secrets().hasDiscordToken() ? config.discord().consoleChannel() : Optional.empty(),
+                        shared.discord(),
+                        lang,
+                        shared.loop(),
+                        () -> secrets(shared, snapshot)));
     }
 
     private static boolean connected(DiscordStatus status) {
@@ -88,5 +99,15 @@ final class Sessions {
                     invalid.getMessage());
             return DiscordChat.compileFormat(BridgeConfig.defaults().chat().format());
         }
+    }
+
+    private static Collection<String> secrets(Shared shared, ConfigSnapshot snapshot) {
+        List<String> secrets = new ArrayList<>();
+        if (snapshot.secrets().hasDiscordToken()) {
+            secrets.add(snapshot.secrets().discordToken());
+        }
+        shared.setupCodes().active(shared.clock().instant()).ifPresent(secrets::add);
+        secrets.addAll(shared.pendingLinks().codes(shared.clock().instant()));
+        return secrets;
     }
 }

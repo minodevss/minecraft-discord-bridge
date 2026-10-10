@@ -162,8 +162,13 @@ final class Engine {
     }
 
     Discord close() {
+        Session current;
         synchronized (lock) {
             closed = true;
+            current = session;
+        }
+        if (current != null) {
+            current.close();
         }
         shared.vanilla().close();
         return shared.discord().swap(OfflineDiscord.stopped(OfflineDiscord.STOPPED));
@@ -244,6 +249,10 @@ final class Engine {
         synchronized (lock) {
             if (closed) {
                 return Outcome.APPLIED;
+            }
+            Session previous = session;
+            if (previous != null) {
+                previous.close();
             }
             session = Sessions.build(shared, ready, loaded, channels, this::rebound);
         }
