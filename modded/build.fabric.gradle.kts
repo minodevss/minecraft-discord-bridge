@@ -3,7 +3,7 @@ import net.fabricmc.loom.api.LoomGradleExtensionAPI
 import net.fabricmc.loom.task.RemapJarTask
 
 plugins {
-    id("bridge.adapter")
+    id("bridge.modded")
 }
 
 val minecraft = sc.current.version
@@ -17,13 +17,6 @@ val javaVersion = when {
 apply(plugin = if (unobfuscated) "net.fabricmc.fabric-loom" else "net.fabricmc.fabric-loom-remap")
 val loom = the<LoomGradleExtensionAPI>()
 
-base.archivesName = "minecraft-discord-bridge-fabric"
-version = "${rootProject.version}+$minecraft"
-
-repositories {
-    mavenCentral()
-}
-
 val modConfiguration = if (unobfuscated) "implementation" else "modImplementation"
 val permissionsApi = "me.lucko:fabric-permissions-api:${sc.properties.get<String>("deps.fabric_permissions")}"
 
@@ -35,12 +28,6 @@ dependencies {
     modConfiguration(permissionsApi)
     "include"(permissionsApi)
     "compileOnly"(libs.jspecify)
-}
-
-sourceSets.named("main") {
-    java {
-        exclude("com/minecraftdiscordbridge/modded/neoforge/**", "com/minecraftdiscordbridge/modded/forge/**")
-    }
 }
 
 extensions.configure<JavaPluginExtension> {
@@ -62,7 +49,6 @@ tasks.named<ProcessResources>("processResources") {
     )
     inputs.properties(props)
     filesMatching(listOf("fabric.mod.json", "minecraftdiscordbridge.mixins.json")) { expand(props) }
-    exclude("META-INF/neoforge.mods.toml", "META-INF/mods.toml", "pack.mcmeta")
 }
 
 if (unobfuscated) {

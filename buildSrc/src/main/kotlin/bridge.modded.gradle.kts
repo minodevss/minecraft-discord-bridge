@@ -1,0 +1,23 @@
+plugins {
+    id("bridge.adapter")
+}
+
+val (minecraft, loader) = name.split('-', limit = 2)
+val moddedPackage = "com/minecraftdiscordbridge/modded"
+val loaderResources = mapOf(
+    "fabric" to listOf("fabric.mod.json", "minecraftdiscordbridge.mixins.json"),
+    "neoforge" to listOf("META-INF/neoforge.mods.toml"),
+    "forge" to listOf("META-INF/mods.toml", "pack.mcmeta"),
+)
+
+base.archivesName = "minecraft-discord-bridge-$loader"
+version = "${rootProject.version}+$minecraft"
+
+repositories {
+    mavenCentral()
+}
+
+sourceSets.main {
+    java.include("$moddedPackage/common/**", "$moddedPackage/$loader/**")
+    resources.include(loaderResources.getValue(loader))
+}

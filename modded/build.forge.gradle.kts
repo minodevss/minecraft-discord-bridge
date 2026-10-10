@@ -2,17 +2,8 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     id("net.neoforged.moddev.legacyforge")
-    id("bridge.adapter")
+    id("bridge.modded")
     id("bridge.moddev-mutex")
-}
-
-val minecraft = sc.current.version
-
-base.archivesName = "minecraft-discord-bridge-forge"
-version = "${rootProject.version}+$minecraft"
-
-repositories {
-    mavenCentral()
 }
 
 legacyForge {
@@ -21,12 +12,6 @@ legacyForge {
 
 dependencies {
     compileOnly(libs.jspecify)
-}
-
-sourceSets.main {
-    java {
-        exclude("com/minecraftdiscordbridge/modded/fabric/**", "com/minecraftdiscordbridge/modded/neoforge/**")
-    }
 }
 
 java {
@@ -45,7 +30,6 @@ tasks.processResources {
     )
     inputs.properties(props)
     filesMatching("META-INF/mods.toml") { expand(props) }
-    exclude("fabric.mod.json", "minecraftdiscordbridge.mixins.json", "META-INF/neoforge.mods.toml")
 }
 
 val shadowJar = tasks.named<ShadowJar>("shadowJar") {

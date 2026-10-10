@@ -1,18 +1,10 @@
 plugins {
     id("net.neoforged.moddev")
-    id("bridge.adapter")
+    id("bridge.modded")
     id("bridge.moddev-mutex")
 }
 
-val minecraft = sc.current.version
 val javaVersion = if (sc.current.parsed >= "26.1") 25 else 21
-
-base.archivesName = "minecraft-discord-bridge-neoforge"
-version = "${rootProject.version}+$minecraft"
-
-repositories {
-    mavenCentral()
-}
 
 neoForge {
     version = sc.properties.get<String>("deps.neoforge")
@@ -20,12 +12,6 @@ neoForge {
 
 dependencies {
     if (sc.current.parsed < "26.1") compileOnly(libs.jspecify)
-}
-
-sourceSets.main {
-    java {
-        exclude("com/minecraftdiscordbridge/modded/fabric/**", "com/minecraftdiscordbridge/modded/forge/**")
-    }
 }
 
 java {
@@ -44,5 +30,4 @@ tasks.processResources {
     )
     inputs.properties(props)
     filesMatching("META-INF/neoforge.mods.toml") { expand(props) }
-    exclude("fabric.mod.json", "minecraftdiscordbridge.mixins.json", "META-INF/mods.toml", "pack.mcmeta")
 }
