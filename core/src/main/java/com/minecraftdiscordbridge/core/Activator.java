@@ -18,6 +18,7 @@ import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
 import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
+import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import com.minecraftdiscordbridge.core.setup.Channels;
 import com.minecraftdiscordbridge.core.setup.SetupGuide;
 import com.minecraftdiscordbridge.core.status.StatusReport;
@@ -207,7 +208,9 @@ final class Activator implements BridgeCommand.Callbacks {
             joins.release();
             return;
         }
-        DiscordConnection.Outcome outcome = activate(((ConfigResult.Loaded) result).snapshot());
+        ConfigSnapshot loaded = ((ConfigResult.Loaded) result).snapshot();
+        warnAboutUnsupported(loaded.config());
+        DiscordConnection.Outcome outcome = activate(loaded);
         joins.release();
         if (source != null) {
             replies()
@@ -260,6 +263,15 @@ final class Activator implements BridgeCommand.Callbacks {
             current.roleSync().discordReady();
         }
         return outcome;
+    }
+
+    private void warnAboutUnsupported(BridgeConfig config) {
+        PlatformInfo platform = services.platform().info();
+        if (config.actions().whitelist() && !platform.supportsWhitelist()) {
+            LOGGER.warn(
+                    "actions.whitelist has no effect on {}, which has no whitelist; set it to false in config.yml",
+                    platform.software());
+        }
     }
 
     private void rebound() {

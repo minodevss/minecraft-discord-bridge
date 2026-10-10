@@ -26,6 +26,7 @@ import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
 import com.minecraftdiscordbridge.core.loop.Deadline;
+import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import com.minecraftdiscordbridge.core.setup.Channels;
 import com.minecraftdiscordbridge.core.setup.SetupGuide;
 import com.minecraftdiscordbridge.core.storage.StoredCommandHashes;
@@ -97,7 +98,7 @@ final class DiscordConnection {
             replace(OfflineDiscord.stopped(OfflineDiscord.NO_TOKEN));
             return Outcome.NO_TOKEN;
         }
-        DiscordSettings next = settings(loaded, channels);
+        DiscordSettings next = settings(loaded, channels, services.platform().info());
         if (next.equals(settings) && services.discord().status().state() == DiscordStatus.State.READY) {
             return Outcome.APPLIED;
         }
@@ -120,11 +121,11 @@ final class DiscordConnection {
         return services.discord().swap(OfflineDiscord.stopped(OfflineDiscord.STOPPED));
     }
 
-    private static DiscordSettings settings(ConfigSnapshot snapshot, Channels channels) {
+    private static DiscordSettings settings(ConfigSnapshot snapshot, Channels channels, PlatformInfo platform) {
         BridgeConfig config = snapshot.config();
         Set<DiscordId> channelIds = channelIds(config, channels);
         List<CommandSpec> commands =
-                channelIds.isEmpty() ? DiscordCommands.setupOnly() : DiscordCommands.forConfig(config);
+                channelIds.isEmpty() ? DiscordCommands.setupOnly() : DiscordCommands.forConfig(config, platform);
         return new DiscordSettings(
                 snapshot.secrets().discordToken(),
                 guild(config.discord(), channels),

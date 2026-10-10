@@ -10,11 +10,14 @@ import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
 import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
+import com.minecraftdiscordbridge.core.fakes.FakePlatform;
+import com.minecraftdiscordbridge.core.fakes.RecordingLogs;
 import com.minecraftdiscordbridge.core.fakes.RecordingReply;
 import com.minecraftdiscordbridge.core.fakes.Waits;
 import com.minecraftdiscordbridge.core.platform.ActionOutcome;
 import com.minecraftdiscordbridge.core.platform.GameAction;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
+import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -26,6 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.event.Level;
 
 class ActionsTest {
     private static final String ACTIONS_ON = CHANNELS + """
@@ -36,6 +40,26 @@ class ActionsTest {
 
     @TempDir
     Path directory;
+
+    @Test
+    void offersNoWhitelistWhereThePlatformHasNoneAndSaysSo() throws IOException {
+        try (RecordingLogs.Capture logs = RecordingLogs.capture();
+                Harness harness = Harness.create(directory, ACTIONS_ON)) {
+            harness.platform.info =
+                    new PlatformInfo("Velocity 3.4.0", "1.21.1", FakePlatform.DATA_VERSION, true, false, false);
+            harness.bridge.start();
+
+            assertThat(harness.discord().settings.commands())
+                    .extracting(CommandSpec::name)
+                    .contains("kick")
+                    .doesNotContain("whitelist");
+            assertThat(logs.lines(Level.WARN))
+                    .filteredOn(line -> line.contains("whitelist"))
+                    .singleElement()
+                    .asString()
+                    .contains("has no effect on Velocity 3.4.0");
+        }
+    }
 
     @Test
     void offersWhitelistAndKickOnlyWhenTurnedOnAndOnlyToAdmins() throws IOException {

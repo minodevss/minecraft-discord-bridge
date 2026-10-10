@@ -15,6 +15,7 @@ import com.minecraftdiscordbridge.core.discord.CommandSpec.Subcommand;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.linking.Linking;
+import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import com.minecraftdiscordbridge.core.setup.ChannelSetup;
 import com.minecraftdiscordbridge.core.status.Roster;
 import com.minecraftdiscordbridge.core.storage.ChannelRole;
@@ -69,7 +70,7 @@ public final class DiscordCommands {
         }
     }
 
-    public static List<CommandSpec> forConfig(BridgeConfig config) {
+    public static List<CommandSpec> forConfig(BridgeConfig config, PlatformInfo platform) {
         List<CommandSpec> commands = new ArrayList<>();
         commands.add(setupCommand());
         commands.add(command(LIST, List.of(), Access.EVERYONE, false, false));
@@ -82,7 +83,7 @@ public final class DiscordCommands {
                     true));
             commands.add(command(UNLINK, List.of(), Access.EVERYONE, true, true));
         }
-        if (config.actions().whitelist()) {
+        if (config.actions().whitelist() && platform.supportsWhitelist()) {
             commands.add(new CommandSpec(
                     WHITELIST,
                     english("command.whitelist"),

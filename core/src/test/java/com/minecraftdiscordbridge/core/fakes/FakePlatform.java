@@ -18,6 +18,7 @@ public final class FakePlatform implements Platform {
 
     public final BlockingQueue<Delivery> deliveries = new LinkedBlockingQueue<>();
     public final List<GameAction> actions = new CopyOnWriteArrayList<>();
+    public volatile PlatformInfo info = new PlatformInfo("Fake 1.0", "1.21.1", DATA_VERSION, true);
     public volatile Function<GameAction, CompletableFuture<ActionOutcome>> outcomes =
             action -> CompletableFuture.completedFuture(new ActionOutcome.Done());
     private final Path dataDirectory;
@@ -28,7 +29,7 @@ public final class FakePlatform implements Platform {
 
     @Override
     public PlatformInfo info() {
-        return new PlatformInfo("Fake 1.0", "1.21.1", DATA_VERSION, true);
+        return info;
     }
 
     @Override
