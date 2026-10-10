@@ -122,7 +122,7 @@ final class StoreFile {
     }
 
     private Path backup(int index) {
-        return path.resolveSibling(path.getFileName() + "." + index + ".bak");
+        return path.resolveSibling("backups").resolve(path.getFileName() + "." + index + ".bak");
     }
 
     private <T> T damaged(String reason, T empty) {
