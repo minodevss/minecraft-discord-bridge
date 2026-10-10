@@ -47,6 +47,7 @@ final class Harness implements AutoCloseable {
     final FakePlatform platform;
     final MutableClock clock = new MutableClock(Instant.parse("2026-10-10T00:00:00Z"));
     final List<RecordingDiscord> discords = new CopyOnWriteArrayList<>();
+    final FakeGroups groups = new FakeGroups();
     final Bridge bridge;
 
     private Harness(Path directory, Map<String, String> environment, Duration actionTimeout) {
@@ -62,7 +63,8 @@ final class Harness implements AutoCloseable {
                 environment,
                 clock,
                 new Codes(new Random(7)),
-                actionTimeout);
+                actionTimeout,
+                groups);
     }
 
     static Harness create(Path directory, String config) throws IOException {

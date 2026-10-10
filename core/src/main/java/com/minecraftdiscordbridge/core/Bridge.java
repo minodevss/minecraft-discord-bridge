@@ -1,5 +1,8 @@
 package com.minecraftdiscordbridge.core;
 
+import com.minecraftdiscordbridge.core.access.AccessMemory;
+import com.minecraftdiscordbridge.core.access.JoinGate;
+import com.minecraftdiscordbridge.core.access.PermissionGroups;
 import com.minecraftdiscordbridge.core.actions.Actions;
 import com.minecraftdiscordbridge.core.config.ConfigLoader;
 import com.minecraftdiscordbridge.core.discord.Discord;
@@ -13,8 +16,10 @@ import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.loop.Threads;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
+import com.minecraftdiscordbridge.core.platform.JoinDecision;
 import com.minecraftdiscordbridge.core.platform.Permission;
 import com.minecraftdiscordbridge.core.platform.Platform;
+import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.minecraftdiscordbridge.core.setup.SetupCodes;
 import com.minecraftdiscordbridge.core.status.Roster;
 import java.time.Duration;
@@ -52,7 +57,8 @@ public final class Bridge {
             Map<String, String> environment,
             InstantSource clock,
             Codes codes,
-            Duration actionTimeout) {
+            Duration actionTimeout,
+            PermissionGroups groups) {
         this.loop = new CoreLoop();
         this.io = IoExecutor.forLoop(loop);
         this.lifecycle = Executors.newSingleThreadExecutor(Threads.named("Reconnect"));
@@ -66,7 +72,9 @@ public final class Bridge {
                 new PendingLinks(codes),
                 new SetupCodes(codes),
                 Attempts.standard(),
-                actionTimeout);
+                actionTimeout,
+                groups,
+                new AccessMemory());
         this.engine = new Engine(
                 shared,
                 lifecycle,
@@ -78,7 +86,13 @@ public final class Bridge {
 
     public static Bridge create(Platform platform) {
         return new Bridge(
-                platform, JdaDiscord::create, System.getenv(), InstantSource.system(), Codes.secure(), Actions.TIMEOUT);
+                platform,
+                JdaDiscord::create,
+                System.getenv(),
+                InstantSource.system(),
+                Codes.secure(),
+                Actions.TIMEOUT,
+                PermissionGroups.detect());
     }
 
     public void start() {
@@ -107,6 +121,16 @@ public final class Bridge {
         }
         List<String> copy = List.copyOf(arguments);
         loop.control(() -> engine.command(source, granted, copy));
+    }
+
+    public CompletableFuture<JoinDecision> checkJoin(PlayerProfile player, boolean bypass) {
+        if (stopped.get()) {
+            return CompletableFuture.completedFuture(engine.joinFallback(player, bypass));
+        }
+        CompletableFuture<JoinDecision> decision = new CompletableFuture<>();
+        loop.control(() -> engine.checkJoin(player, bypass, decision));
+        return decision.orTimeout(JoinGate.BUDGET.toMillis(), TimeUnit.MILLISECONDS)
+                .handle((done, failure) -> done != null ? done : engine.joinFallback(player, bypass));
     }
 
     public void stop() {

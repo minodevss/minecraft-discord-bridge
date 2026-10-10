@@ -1,5 +1,6 @@
 package com.minecraftdiscordbridge.core;
 
+import com.minecraftdiscordbridge.core.access.JoinGate;
 import com.minecraftdiscordbridge.core.chat.DiscordChat;
 import com.minecraftdiscordbridge.core.chat.MinecraftChat;
 import com.minecraftdiscordbridge.core.commands.GameCommands;
@@ -18,7 +19,8 @@ record Session(
         StatusBoard status,
         SlashRouter slash,
         GameCommands commands,
-        Optional<ConsoleMirror> console) {
+        Optional<ConsoleMirror> console,
+        JoinGate gate) {
     void close() {
         console.ifPresent(ConsoleMirror::close);
     }
