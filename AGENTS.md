@@ -13,15 +13,16 @@ Runs inside the server as a Paper or Velocity plugin, or a Fabric, NeoForge or F
 
 ## Architecture
 The Gradle project graph is the architecture. Do not add edges.
-- `core`: everything that does not need the game: Discord, config, storage, text, features. No `net.minecraft`, Bukkit, Paper, Velocity, Fabric or Forge imports. Ships with its libraries relocated as `core-all`.
-- `paper`, `velocity`, `modded`: thin adapters. They implement core's platform interfaces and publish game events. No feature logic.
+- `core`: everything that does not need the game: Discord, config, storage, text, features. No `net.minecraft`, Bukkit, Paper, Velocity, Fabric, NeoForge or Forge imports. Ships with its libraries relocated as `core-all`.
+- In `core`, `platform` holds the interfaces and events adapters use. Only `discord.jda` touches JDA and OkHttp, only `config` reads YAML, only `storage` uses Jackson, only `console` uses Log4j, and only `access.LuckPermsGroups` uses LuckPerms. Packages have no cycles. `ArchitectureTest` enforces this.
+- `paper`, `velocity`, `modded`: thin adapters. They implement core's platform interfaces and publish game events. No feature logic. Classes are named platform first, then role: `PaperPlatform`, `VelocityJoinGate`, `ModdedEvents` in modded's `common`. Entry points are `PaperPlugin`, `VelocityPlugin`, `FabricMod`, `NeoForgeMod` and `ForgeMod`.
 - `modded` is one Stonecutter tree. Loader code lives in the `fabric`, `neoforge` and `forge` packages under `modded/src`; the `bridge.modded` plugin compiles `common` plus the node's loader. Version differences use Stonecutter comments, never copies.
 - Each table in `modded/stonecutter.properties.toml` is one modded node. The build and publishing read the node list from there.
 
 Threads:
 - Game threads only hand events to core. Never block them and never do I/O on them.
 - Core logic runs on the single core loop. Never block it: no `join`, `get`, `complete`, `sleep` or file/network calls.
-- Blocking Discord work (login, shutdown) runs on the lifecycle thread. File I/O runs on the I/O executor.
+- Blocking Discord work (login, shutdown) runs on the lifecycle thread. File I/O and downloads run on an `IoExecutor`.
 - Game state is touched only through the platform scheduler.
 
 Discord must never hurt the server: startup never waits for Discord, and shutdown finishes within 3 seconds.
