@@ -4,6 +4,7 @@ plugins {
 
 val (minecraft, loader) = name.split('-', limit = 2)
 val javaRelease = property("mod.java").toString().toInt()
+val minecraftRange = property("mod.mc_compat").toString()
 val moddedPackage = "com/minecraftdiscordbridge/modded"
 val loaderResources = mapOf(
     "fabric" to listOf("fabric.mod.json", "minecraftdiscordbridge.mixins.json"),
@@ -30,4 +31,14 @@ tasks.withType<JavaCompile>().configureEach {
 sourceSets.main {
     java.include("$moddedPackage/common/**", "$moddedPackage/$loader/**")
     resources.include(loaderResources.getValue(loader))
+}
+
+tasks.named<ProcessResources>("processResources") {
+    val props = mapOf(
+        "version" to project.version.toString(),
+        "minecraft" to minecraftRange,
+        "java" to javaRelease.toString(),
+    )
+    inputs.properties(props)
+    filesMatching(loaderResources.getValue(loader)) { expand(props) }
 }

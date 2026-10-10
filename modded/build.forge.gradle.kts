@@ -14,15 +14,6 @@ dependencies {
     compileOnly(libs.jspecify)
 }
 
-tasks.processResources {
-    val props = mapOf(
-        "version" to project.version.toString(),
-        "minecraft" to sc.properties.get<String>("mod.mc_compat"),
-    )
-    inputs.properties(props)
-    filesMatching("META-INF/mods.toml") { expand(props) }
-}
-
 val shadowJar = tasks.named<ShadowJar>("shadowJar") {
     archiveClassifier = "dev-shadow"
 }

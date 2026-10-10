@@ -27,16 +27,6 @@ dependencies {
 
 loom.serverOnlyMinecraftJar()
 
-tasks.named<ProcessResources>("processResources") {
-    val props = mapOf(
-        "version" to project.version.toString(),
-        "minecraft" to sc.properties.get<String>("mod.mc_compat"),
-        "java" to sc.properties.get<Int>("mod.java").toString(),
-    )
-    inputs.properties(props)
-    filesMatching(listOf("fabric.mod.json", "minecraftdiscordbridge.mixins.json")) { expand(props) }
-}
-
 if (unobfuscated) {
     loom.nestJars(tasks.named<ShadowJar>("shadowJar"), configurations.named("include"))
 } else {
