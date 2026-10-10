@@ -15,6 +15,17 @@ class ArchitectureTest {
             .importPackages(CORE);
 
     @Test
+    void onlyTheDiscordPackageTalksToJdaOrOkHttp() {
+        noClasses()
+                .that()
+                .resideOutsideOfPackage(CORE + ".discord..")
+                .should()
+                .dependOnClassesThat()
+                .resideInAnyPackage("net.dv8tion..", "okhttp3..", "okio..")
+                .check(PRODUCTION);
+    }
+
+    @Test
     void onlyTheConfigPackageReadsYaml() {
         noClasses()
                 .that()
