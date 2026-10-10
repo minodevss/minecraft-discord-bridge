@@ -270,7 +270,8 @@ class DiscordMarkdownTest {
     void doesNotSplitSurrogatePairWhenTruncating() {
         String input = "a".repeat(DiscordMarkdown.MAX_LENGTH - 2) + "😀" + "b".repeat(10);
 
-        assertThat(DiscordMarkdown.truncate(input)).isEqualTo("a".repeat(DiscordMarkdown.MAX_LENGTH - 2) + "…");
+        assertThat(Markup.plain(DiscordMarkdown.parse(input)))
+                .isEqualTo("a".repeat(DiscordMarkdown.MAX_LENGTH - 2) + "…");
     }
 
     @Test

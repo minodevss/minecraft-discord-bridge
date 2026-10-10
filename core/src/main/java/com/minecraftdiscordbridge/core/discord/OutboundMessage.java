@@ -4,6 +4,8 @@ import java.util.Set;
 
 public record OutboundMessage(
         long channelId, Author author, String text, Set<Long> pingUserIds, Set<Long> pingRoleIds) {
+    public static final int MAX_LENGTH = 2000;
+
     public OutboundMessage {
         pingUserIds = Set.copyOf(pingUserIds);
         pingRoleIds = Set.copyOf(pingRoleIds);

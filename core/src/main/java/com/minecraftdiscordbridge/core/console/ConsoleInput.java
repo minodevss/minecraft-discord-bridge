@@ -120,7 +120,7 @@ public final class ConsoleInput {
 
     private String block(String output) {
         String body = DiscordEscaper.escapeCodeBlock(ConsoleRedactor.redact(output.strip(), secrets.get()));
-        return FENCE + "\n" + Graphemes.fit(body, MAX_OUTPUT_LENGTH, "…") + "\n" + FENCE;
+        return FENCE + "\n" + Graphemes.fit(body, MAX_OUTPUT_LENGTH, Graphemes.ELLIPSIS) + "\n" + FENCE;
     }
 
     private String describe(@Nullable Throwable failure) {

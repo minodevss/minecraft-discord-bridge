@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.console;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.Author;
+import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Language;
@@ -71,7 +72,7 @@ class ConsoleMirrorTest {
         assertThat(discord.sent).hasSizeGreaterThan(1);
         assertThat(discord.sent)
                 .allSatisfy(message -> assertThat(message.text())
-                        .hasSizeLessThanOrEqualTo(ConsoleMirror.MAX_MESSAGE_LENGTH)
+                        .hasSizeLessThanOrEqualTo(OutboundMessage.MAX_LENGTH)
                         .startsWith("```\n")
                         .endsWith("\n```"));
     }
@@ -79,7 +80,7 @@ class ConsoleMirrorTest {
     @Test
     void shortensLongLinesWithoutSplittingAnEmoji() {
         String prefix = "[12:00:00 INFO] ";
-        int highSurrogateAt = ConsoleMirror.MAX_MESSAGE_LENGTH - 10;
+        int highSurrogateAt = OutboundMessage.MAX_LENGTH - 10;
         buffer.offer(new ConsoleLine(NOON, "INFO", "x".repeat(highSurrogateAt - prefix.length()) + "😀 tail", null));
 
         mirror.flush();

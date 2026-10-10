@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.discord.jda;
 
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
+import com.minecraftdiscordbridge.core.text.Graphemes;
 import java.util.Set;
 
 record Post(Author author, String content, Set<Long> pingUserIds, Set<Long> pingRoleIds) {
@@ -17,7 +18,7 @@ record Post(Author author, String content, Set<Long> pingUserIds, Set<Long> ping
     static Post of(OutboundMessage message) {
         return new Post(
                 message.author(),
-                DiscordText.fit(message.text(), DiscordText.MAX_MESSAGE_LENGTH),
+                Graphemes.fit(message.text(), OutboundMessage.MAX_LENGTH, Graphemes.ELLIPSIS),
                 message.pingUserIds(),
                 message.pingRoleIds());
     }

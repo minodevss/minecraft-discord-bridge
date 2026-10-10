@@ -1,6 +1,7 @@
 package com.minecraftdiscordbridge.core.discord.jda;
 
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
+import com.minecraftdiscordbridge.core.text.Graphemes;
 import java.util.HashMap;
 import java.util.Map;
 import net.dv8tion.jda.api.entities.Member;
@@ -85,7 +86,7 @@ final class MessageMapper {
                 displayName(referenced.getAuthor(), referenced.getMember()),
                 excerpt.length() <= REPLY_EXCERPT_LENGTH
                         ? excerpt
-                        : DiscordText.fit(excerpt, REPLY_EXCERPT_LENGTH + 1));
+                        : Graphemes.fit(excerpt, REPLY_EXCERPT_LENGTH + 1, Graphemes.ELLIPSIS));
     }
 
     private static String displayName(User user, @Nullable Member member) {

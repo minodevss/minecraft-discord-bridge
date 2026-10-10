@@ -4,6 +4,7 @@ import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
 import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.loop.Scheduler;
+import com.minecraftdiscordbridge.core.text.Graphemes;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,7 +57,8 @@ final class Appearance {
     private void applyPresence(String text) {
         JDA api = jda.get();
         if (api != null) {
-            api.getPresence().setActivity(Activity.customStatus(DiscordText.fit(text, MAX_STATUS_LENGTH)));
+            api.getPresence()
+                    .setActivity(Activity.customStatus(Graphemes.fit(text, MAX_STATUS_LENGTH, Graphemes.ELLIPSIS)));
         }
     }
 
@@ -78,7 +80,7 @@ final class Appearance {
         if (topicLocked.remove(channelId)) {
             LOGGER.info("The bot can update the topic of #{} again", channel.getName());
         }
-        String fitted = DiscordText.fit(topic, MAX_TOPIC_LENGTH);
+        String fitted = Graphemes.fit(topic, MAX_TOPIC_LENGTH, Graphemes.ELLIPSIS);
         if (fitted.equals(channel.getTopic())) {
             return;
         }

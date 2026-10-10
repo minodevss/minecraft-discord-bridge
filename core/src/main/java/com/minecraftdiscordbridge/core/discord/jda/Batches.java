@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.discord.jda;
 
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
+import com.minecraftdiscordbridge.core.text.Graphemes;
 import java.util.Deque;
 import java.util.LinkedHashSet;
 import java.util.Optional;
@@ -78,7 +79,7 @@ final class Batches {
         }
 
         boolean fits(String line) {
-            return content.length() + 1 + line.length() <= DiscordText.MAX_MESSAGE_LENGTH;
+            return content.length() + 1 + line.length() <= OutboundMessage.MAX_LENGTH;
         }
 
         void addMessage(OutboundMessage message) {
@@ -96,7 +97,7 @@ final class Batches {
             if (!isEmpty()) {
                 content.append('\n');
             }
-            content.append(DiscordText.fit(line, DiscordText.MAX_MESSAGE_LENGTH - content.length()));
+            content.append(Graphemes.fit(line, OutboundMessage.MAX_LENGTH - content.length(), Graphemes.ELLIPSIS));
         }
 
         private static void collect(Set<Long> from, Set<Long> into) {

@@ -25,10 +25,9 @@ import org.jspecify.annotations.Nullable;
 
 public final class ConsoleMirror implements AutoCloseable {
     public static final Duration INTERVAL = Duration.ofSeconds(2);
-    static final int MAX_MESSAGE_LENGTH = 2000;
     static final int MAX_MESSAGES_PER_FLUSH = 5;
     private static final String FENCE = "```";
-    private static final int BODY_LENGTH = MAX_MESSAGE_LENGTH - 2 * FENCE.length() - 2;
+    private static final int BODY_LENGTH = OutboundMessage.MAX_LENGTH - 2 * FENCE.length() - 2;
     private static final Author SERVER = Author.server();
 
     private final ConsoleBuffer buffer;
@@ -121,7 +120,7 @@ public final class ConsoleMirror implements AutoCloseable {
             text.append('\n').append(thrown);
         }
         String redacted = DiscordEscaper.escapeCodeBlock(ConsoleRedactor.redact(text.toString(), hidden));
-        return Graphemes.fit(redacted, BODY_LENGTH, "…");
+        return Graphemes.fit(redacted, BODY_LENGTH, Graphemes.ELLIPSIS);
     }
 
     private static final class Blocks {

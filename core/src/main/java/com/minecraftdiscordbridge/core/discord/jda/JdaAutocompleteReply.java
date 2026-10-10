@@ -4,6 +4,7 @@ import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.log.Failures;
+import com.minecraftdiscordbridge.core.text.Graphemes;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.dv8tion.jda.api.interactions.callbacks.IAutoCompleteCallback;
@@ -28,8 +29,8 @@ final class JdaAutocompleteReply implements AutocompleteReply {
                 .filter(choice -> !choice.name().isBlank() && !choice.value().isBlank())
                 .limit(MAX_CHOICES)
                 .map(choice -> new Command.Choice(
-                        DiscordText.fit(choice.name(), MAX_CHOICE_LENGTH),
-                        DiscordText.fit(choice.value(), MAX_CHOICE_LENGTH)))
+                        Graphemes.fit(choice.name(), MAX_CHOICE_LENGTH, Graphemes.ELLIPSIS),
+                        Graphemes.fit(choice.value(), MAX_CHOICE_LENGTH, Graphemes.ELLIPSIS)))
                 .toList();
         interaction
                 .replyChoices(limited)

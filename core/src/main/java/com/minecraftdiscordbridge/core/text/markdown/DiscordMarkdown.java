@@ -1,5 +1,6 @@
 package com.minecraftdiscordbridge.core.text.markdown;
 
+import com.minecraftdiscordbridge.core.text.Graphemes;
 import com.minecraftdiscordbridge.core.text.SafeText;
 import net.kyori.adventure.text.Component;
 
@@ -18,17 +19,8 @@ public final class DiscordMarkdown {
     }
 
     static Component parse(String markdown, MentionResolver mentions, int maxDepth) {
-        return new MarkdownParser(SafeText.strip(truncate(markdown)), mentions, maxDepth).parse();
-    }
-
-    static String truncate(String markdown) {
-        if (markdown.length() <= MAX_LENGTH) {
-            return markdown;
-        }
-        int cut = MAX_LENGTH - 1;
-        if (Character.isHighSurrogate(markdown.charAt(cut - 1))) {
-            cut--;
-        }
-        return markdown.substring(0, cut) + "…";
+        return new MarkdownParser(
+                        SafeText.strip(Graphemes.fit(markdown, MAX_LENGTH, Graphemes.ELLIPSIS)), mentions, maxDepth)
+                .parse();
     }
 }
