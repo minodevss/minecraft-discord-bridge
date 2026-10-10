@@ -16,6 +16,7 @@ import static com.minecraftdiscordbridge.core.discord.TestSupport.take;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
+import com.minecraftdiscordbridge.core.RecordingLogs;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus.State;
 import com.minecraftdiscordbridge.core.discord.TestSupport.MemoryCommandHashes;
 import com.minecraftdiscordbridge.core.discord.TestSupport.MemoryWebhooks;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 import mockwebserver3.RecordedRequest;
 import net.dv8tion.jda.api.utils.data.DataArray;
@@ -34,6 +36,7 @@ import net.dv8tion.jda.api.utils.data.DataObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.event.Level;
 
 class JdaDiscordTest {
     private static final Author STEVE = Author.player("uuid-steve", "Steve", "https://mc-heads.net/avatar/Steve");
@@ -557,6 +560,26 @@ class JdaDiscordTest {
 
         assertThat(topicEdits()).hasSize(1);
         assertThat(FakeDiscord.body(topicEdits().get(0)).getString("topic")).isEqualTo("3/20 players online");
+    }
+
+    @Test
+    void warnsOnceWhileTheBotCannotChangeTheTopic() {
+        discord.everyonePermissions = FakeDiscord.NO_WEBHOOKS;
+        bridge = startReady();
+        AtomicLong now = new AtomicLong();
+        Appearance appearance = new Appearance(bridge::currentJda, now::get, (delay, task) -> {});
+
+        try (RecordingLogs.Capture logs = RecordingLogs.capture()) {
+            for (int players = 1; players <= 3; players++) {
+                appearance.topic(CHANNEL_ID, players + " players online");
+                now.addAndGet(Appearance.TOPIC_INTERVAL.toNanos());
+            }
+
+            assertThat(logs.lines(Level.WARN))
+                    .filteredOn(line -> line.contains("Manage Channel"))
+                    .hasSize(1);
+        }
+        assertThat(topicEdits()).isEmpty();
     }
 
     @Test
