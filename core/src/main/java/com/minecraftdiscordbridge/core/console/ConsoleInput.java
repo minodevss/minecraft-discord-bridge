@@ -11,6 +11,7 @@ import com.minecraftdiscordbridge.core.platform.ActionOutcome;
 import com.minecraftdiscordbridge.core.platform.GameAction;
 import com.minecraftdiscordbridge.core.platform.Platform;
 import com.minecraftdiscordbridge.core.text.DiscordEscaper;
+import com.minecraftdiscordbridge.core.text.Graphemes;
 import com.minecraftdiscordbridge.core.text.SafeText;
 import java.time.Duration;
 import java.util.Collection;
@@ -120,10 +121,7 @@ public final class ConsoleInput {
 
     private String block(String output) {
         String body = DiscordEscaper.escapeCodeBlock(ConsoleRedactor.redact(output.strip(), secrets.get()));
-        if (body.length() > MAX_OUTPUT_LENGTH) {
-            body = body.substring(0, MAX_OUTPUT_LENGTH - 1) + "…";
-        }
-        return FENCE + "\n" + body + "\n" + FENCE;
+        return FENCE + "\n" + Graphemes.fit(body, MAX_OUTPUT_LENGTH, "…") + "\n" + FENCE;
     }
 
     private String describe(@Nullable Throwable failure) {

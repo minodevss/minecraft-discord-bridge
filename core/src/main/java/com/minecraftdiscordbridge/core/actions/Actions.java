@@ -8,6 +8,7 @@ import com.minecraftdiscordbridge.core.platform.ActionOutcome;
 import com.minecraftdiscordbridge.core.platform.GameAction;
 import com.minecraftdiscordbridge.core.platform.Platform;
 import com.minecraftdiscordbridge.core.text.DiscordEscaper;
+import com.minecraftdiscordbridge.core.text.Graphemes;
 import com.minecraftdiscordbridge.core.text.SafeText;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -73,10 +74,7 @@ public final class Actions {
         if (reason.isEmpty()) {
             reason = lang.text("plain.kick-reason", SafeText.strip(request.userDisplayName()));
         }
-        if (reason.length() > MAX_REASON_LENGTH) {
-            reason = reason.substring(0, MAX_REASON_LENGTH);
-        }
-        perform(request, reply, reader, new GameAction.Kick(player(request), reason));
+        perform(request, reply, reader, new GameAction.Kick(player(request), Graphemes.fit(reason, MAX_REASON_LENGTH)));
     }
 
     private void perform(InteractionRequest request, InteractionReply reply, Lang reader, GameAction action) {

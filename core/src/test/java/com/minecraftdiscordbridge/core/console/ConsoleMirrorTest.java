@@ -81,6 +81,20 @@ class ConsoleMirrorTest {
     }
 
     @Test
+    void shortensLongLinesWithoutSplittingAnEmoji() {
+        String prefix = "[12:00:00 INFO] ";
+        int highSurrogateAt = ConsoleMirror.MAX_MESSAGE_LENGTH - 10;
+        buffer.offer(new ConsoleLine(NOON, "INFO", "x".repeat(highSurrogateAt - prefix.length()) + "😀 tail", null));
+
+        mirror.flush();
+
+        String text = discord.sent.get(0).text();
+        assertThat(text).endsWith("x…\n```");
+        assertThat(text.codePoints().filter(c -> c >= Character.MIN_SURROGATE && c <= Character.MAX_SURROGATE))
+                .isEmpty();
+    }
+
+    @Test
     void countsLinesDroppedWhileTheBufferWasFull() {
         for (int i = 0; i < 13; i++) {
             buffer.offer(new ConsoleLine(NOON, "INFO", "line " + i, null));

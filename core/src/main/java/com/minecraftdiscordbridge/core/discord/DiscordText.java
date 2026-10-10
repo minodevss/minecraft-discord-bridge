@@ -1,5 +1,6 @@
 package com.minecraftdiscordbridge.core.discord;
 
+import com.minecraftdiscordbridge.core.text.Graphemes;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -11,14 +12,7 @@ final class DiscordText {
     private DiscordText() {}
 
     static String fit(String text, int maxLength) {
-        if (text.length() <= maxLength) {
-            return text;
-        }
-        int end = maxLength - ELLIPSIS.length();
-        if (Character.isHighSurrogate(text.charAt(end - 1))) {
-            end--;
-        }
-        return text.substring(0, end) + ELLIPSIS;
+        return Graphemes.fit(text, maxLength, ELLIPSIS);
     }
 
     static String speakerLine(String name, String text) {

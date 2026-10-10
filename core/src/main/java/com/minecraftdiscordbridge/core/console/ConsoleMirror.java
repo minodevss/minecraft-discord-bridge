@@ -8,6 +8,7 @@ import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
 import com.minecraftdiscordbridge.core.text.DiscordEscaper;
+import com.minecraftdiscordbridge.core.text.Graphemes;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -123,7 +124,7 @@ public final class ConsoleMirror implements AutoCloseable {
             text.append('\n').append(thrown);
         }
         String redacted = DiscordEscaper.escapeCodeBlock(ConsoleRedactor.redact(text.toString(), hidden));
-        return redacted.length() <= BODY_LENGTH ? redacted : redacted.substring(0, BODY_LENGTH - 1) + "…";
+        return Graphemes.fit(redacted, BODY_LENGTH, "…");
     }
 
     static List<String> blocks(List<String> lines) {
