@@ -5,11 +5,14 @@ import com.minecraftdiscordbridge.core.discord.DiscordStatus.State;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
 import com.minecraftdiscordbridge.core.loop.Threads;
 import java.time.Duration;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -23,15 +26,21 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.UserSnowflake;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.events.session.ShutdownEvent;
+import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.exceptions.InvalidTokenException;
 import net.dv8tion.jda.api.requests.CloseCode;
+import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.requests.RestConfig;
 import net.dv8tion.jda.api.utils.ConcurrentSessionController;
@@ -58,6 +67,9 @@ public final class JdaDiscord implements Discord {
         Permission.MANAGE_WEBHOOKS,
         Permission.MANAGE_CHANNEL
     };
+    private static final Duration MEMBER_LOOKUP_TIMEOUT = Duration.ofSeconds(5);
+    private static final String ROLE_SYNC_REASON = "Minecraft Discord Bridge role sync";
+    private static final Map<Permission, String> DANGEROUS_PERMISSIONS = dangerousPermissions();
     private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     record Endpoints(String restBaseUrl, @Nullable String gatewayUrl) {
@@ -170,6 +182,52 @@ public final class JdaDiscord implements Discord {
     }
 
     @Override
+    public CompletableFuture<MemberLookup> member(long userId) {
+        Guild guild = guild();
+        if (guild == null) {
+            return CompletableFuture.completedFuture(new MemberLookup.Unavailable(NOT_CONNECTED));
+        }
+        try {
+            return guild.retrieveMemberById(userId)
+                    .useCache(false)
+                    .timeout(MEMBER_LOOKUP_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
+                    .submit()
+                    .handle((member, failure) ->
+                            failure == null ? JdaEvents.member(member) : lookupFailed(userId, failure));
+        } catch (RuntimeException failure) {
+            return CompletableFuture.completedFuture(new MemberLookup.Unavailable(Failures.describe(failure)));
+        }
+    }
+
+    @Override
+    public Map<Long, RoleInfo> roles() {
+        Guild guild = guild();
+        if (guild == null) {
+            return Map.of();
+        }
+        Map<Long, RoleInfo> roles = new HashMap<>();
+        for (Role role : guild.getRoles()) {
+            boolean assignable = !role.isManaged()
+                    && !role.isPublicRole()
+                    && guild.getSelfMember().canInteract(role);
+            roles.put(
+                    role.getIdLong(),
+                    new RoleInfo(role.getIdLong(), role.getName(), dangerous(role.getPermissions()), assignable));
+        }
+        return Map.copyOf(roles);
+    }
+
+    @Override
+    public CompletableFuture<Void> addRole(long userId, long roleId) {
+        return changeRole(userId, roleId, true);
+    }
+
+    @Override
+    public CompletableFuture<Void> removeRole(long userId, long roleId) {
+        return changeRole(userId, roleId, false);
+    }
+
+    @Override
     public void shutdown(List<OutboundMessage> finalMessages) {
         if (!stopped.compareAndSet(false, true)) {
             return;
@@ -199,6 +257,62 @@ public final class JdaDiscord implements Discord {
     JDA currentJda() {
         Session active = session;
         return active == null ? null : active.jda();
+    }
+
+    private @Nullable Guild guild() {
+        JDA jda = currentJda();
+        return jda == null || closing ? null : scope.current(jda);
+    }
+
+    private CompletableFuture<Void> changeRole(long userId, long roleId, boolean add) {
+        Guild guild = guild();
+        if (guild == null) {
+            return Failures.failed(new IllegalStateException(NOT_CONNECTED));
+        }
+        Role role = guild.getRoleById(roleId);
+        if (role == null) {
+            return Failures.failed(
+                    new IllegalArgumentException("Discord role " + Long.toUnsignedString(roleId) + " does not exist"));
+        }
+        try {
+            UserSnowflake user = UserSnowflake.fromId(userId);
+            return (add ? guild.addRoleToMember(user, role) : guild.removeRoleFromMember(user, role))
+                    .reason(ROLE_SYNC_REASON)
+                    .submit();
+        } catch (RuntimeException failure) {
+            return Failures.failed(failure);
+        }
+    }
+
+    private static MemberLookup lookupFailed(long userId, Throwable failure) {
+        Throwable cause = Failures.unwrap(failure);
+        if (cause instanceof ErrorResponseException error
+                && (error.getErrorResponse() == ErrorResponse.UNKNOWN_MEMBER
+                        || error.getErrorResponse() == ErrorResponse.UNKNOWN_USER)) {
+            return new MemberLookup.NotMember(userId);
+        }
+        return new MemberLookup.Unavailable(Failures.describe(failure));
+    }
+
+    private static Set<String> dangerous(Set<Permission> granted) {
+        Set<String> found = new LinkedHashSet<>();
+        DANGEROUS_PERMISSIONS.forEach((permission, name) -> {
+            if (granted.contains(permission)) {
+                found.add(name);
+            }
+        });
+        return found;
+    }
+
+    private static Map<Permission, String> dangerousPermissions() {
+        Map<Permission, String> names = new EnumMap<>(Permission.class);
+        names.put(Permission.ADMINISTRATOR, "Administrator");
+        names.put(Permission.MANAGE_SERVER, "Manage Server");
+        names.put(Permission.MANAGE_ROLES, "Manage Roles");
+        names.put(Permission.BAN_MEMBERS, "Ban Members");
+        names.put(Permission.KICK_MEMBERS, "Kick Members");
+        names.put(Permission.MESSAGE_MENTION_EVERYONE, "Mention @everyone");
+        return names;
     }
 
     private void connect() {
@@ -312,6 +426,10 @@ public final class JdaDiscord implements Discord {
             events.onCommand(command);
         } else if (event instanceof CommandAutoCompleteInteractionEvent autocomplete) {
             events.onAutocomplete(autocomplete);
+        } else if (event instanceof GuildMemberUpdateEvent updated) {
+            events.onMemberUpdate(updated);
+        } else if (event instanceof GuildMemberRemoveEvent removed) {
+            events.onMemberRemove(removed);
         } else if (event instanceof ReadyEvent) {
             loop.control(() -> onReady(generation, event.getJDA()));
         } else if (event instanceof GuildJoinEvent joined

@@ -26,6 +26,7 @@ final class FakeDiscord implements AutoCloseable {
     static final long OTHER_GUILD_ID = 200000000000000099L;
     static final long CHANNEL_ID = 300000000000000003L;
     static final long ROLE_ID = 500000000000000005L;
+    static final long BOT_ROLE_ID = 500000000000000055L;
     static final long PLAYER_ID = 400000000000000004L;
     static final long FRIEND_ID = 400000000000000044L;
     static final long OTHER_BOT_ID = 400000000000000444L;
@@ -48,6 +49,7 @@ final class FakeDiscord implements AutoCloseable {
     volatile boolean guildMember = true;
     volatile String everyonePermissions = ADMINISTRATOR;
     volatile boolean stallLogin;
+    volatile boolean botManagesRoles;
     final AtomicInteger webhookGoneResponses = new AtomicInteger();
     final AtomicInteger rateLimitedResponses = new AtomicInteger();
     private final MockWebServer server = new MockWebServer();
@@ -156,6 +158,20 @@ final class FakeDiscord implements AutoCloseable {
         }
         if (method.equals("PATCH") && route.equals("channels/" + CHANNEL_ID)) {
             return json(channel().toString());
+        }
+        String members = "guilds/" + GUILD_ID + "/members/";
+        if (method.equals("GET") && route.equals(members + PLAYER_ID)) {
+            return json(member("Alex")
+                    .put("user", DataObject.fromJson(user(PLAYER_ID, "Alex", false)))
+                    .toString());
+        }
+        if (method.equals("GET") && route.startsWith(members)) {
+            return error(404, 10007, "Unknown Member");
+        }
+        if ((method.equals("PUT") || method.equals("DELETE"))
+                && route.startsWith(members)
+                && route.contains("/roles/")) {
+            return new MockResponse.Builder().code(204).build();
         }
         return error(404, 0, "Not found");
     }
@@ -308,9 +324,16 @@ final class FakeDiscord implements AutoCloseable {
     }
 
     private DataObject guild() {
+        DataArray botRoles = botManagesRoles ? DataArray.empty().add(Long.toString(BOT_ROLE_ID)) : DataArray.empty();
+        DataArray roles = DataArray.empty()
+                .add(role(GUILD_ID, "@everyone", 0, everyonePermissions))
+                .add(role(ROLE_ID, "Builders", 0x3498db, "0"));
+        if (botManagesRoles) {
+            roles.add(role(BOT_ROLE_ID, "Bridge", 0, Long.toString(1L << 28)));
+        }
         DataObject bot = DataObject.empty()
                 .put("user", DataObject.fromJson(user(BOT_ID, "Bridge", true)))
-                .put("roles", DataArray.empty())
+                .put("roles", botRoles)
                 .put("joined_at", TIMESTAMP)
                 .put("deaf", false)
                 .put("mute", false)
@@ -323,11 +346,7 @@ final class FakeDiscord implements AutoCloseable {
                 .put("unavailable", false)
                 .put("member_count", 2)
                 .put("large", false)
-                .put(
-                        "roles",
-                        DataArray.empty()
-                                .add(role(GUILD_ID, "@everyone", 0, everyonePermissions))
-                                .add(role(ROLE_ID, "Builders", 0x3498db, "0")))
+                .put("roles", roles)
                 .put("channels", DataArray.empty().add(channel()))
                 .put("threads", DataArray.empty())
                 .put("guild_scheduled_events", DataArray.empty())
@@ -362,7 +381,7 @@ final class FakeDiscord implements AutoCloseable {
                                 .put("secondary_color", null)
                                 .put("tertiary_color", null))
                 .put("hoist", false)
-                .put("position", id == GUILD_ID ? 0 : 1)
+                .put("position", id == GUILD_ID ? 0 : id == BOT_ROLE_ID ? 2 : 1)
                 .put("permissions", permissions)
                 .put("managed", false)
                 .put("mentionable", true)

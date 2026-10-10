@@ -31,6 +31,12 @@ final class GuildScope {
     }
 
     @Nullable
+    Guild current(JDA jda) {
+        long current = resolved;
+        return current == DiscordSettings.NO_GUILD ? null : jda.getGuildById(current);
+    }
+
+    @Nullable
     Guild resolve(JDA jda) {
         if (configured != DiscordSettings.NO_GUILD) {
             return jda.getGuildById(configured);

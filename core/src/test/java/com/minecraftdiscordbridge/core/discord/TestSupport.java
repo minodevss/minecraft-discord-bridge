@@ -63,6 +63,8 @@ final class TestSupport {
         final BlockingQueue<InteractionReply> replies = new LinkedBlockingQueue<>();
         final BlockingQueue<AutocompleteRequest> autocompletes = new LinkedBlockingQueue<>();
         final BlockingQueue<AutocompleteReply> autocompleteReplies = new LinkedBlockingQueue<>();
+        final BlockingQueue<MemberLookup.Member> memberUpdates = new LinkedBlockingQueue<>();
+        final BlockingQueue<Long> membersLeft = new LinkedBlockingQueue<>();
 
         @Override
         public void onStatusChanged(DiscordStatus status) {
@@ -84,6 +86,16 @@ final class TestSupport {
         public void onAutocomplete(AutocompleteRequest request, AutocompleteReply reply) {
             autocompletes.add(request);
             autocompleteReplies.add(reply);
+        }
+
+        @Override
+        public void onMemberUpdated(MemberLookup.Member member) {
+            memberUpdates.add(member);
+        }
+
+        @Override
+        public void onMemberLeft(long userId) {
+            membersLeft.add(userId);
         }
     }
 
