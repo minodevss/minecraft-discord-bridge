@@ -7,7 +7,18 @@ public final class DiscordEscaper {
 
     private DiscordEscaper() {}
 
+    @FunctionalInterface
+    public interface Verbatim {
+        int NONE = -1;
+
+        int write(String text, int start, StringBuilder out);
+    }
+
     public static String escape(String text) {
+        return escape(text, (source, start, out) -> Verbatim.NONE);
+    }
+
+    public static String escape(String text, Verbatim verbatim) {
         StringBuilder out = new StringBuilder(text.length() + 16);
         int end = text.length();
         int i = 0;
@@ -21,6 +32,11 @@ public final class DiscordEscaper {
             int urlEnd = Urls.bareUrlEnd(text, i, end);
             if (urlEnd > i) {
                 i = copyUrl(text, i, urlEnd, out);
+                continue;
+            }
+            int written = verbatim.write(text, i, out);
+            if (written > i) {
+                i = written;
                 continue;
             }
             char c = text.charAt(i);
