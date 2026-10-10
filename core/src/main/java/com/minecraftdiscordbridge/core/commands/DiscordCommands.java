@@ -2,6 +2,10 @@ package com.minecraftdiscordbridge.core.commands;
 
 import com.minecraftdiscordbridge.core.actions.Actions;
 import com.minecraftdiscordbridge.core.config.BridgeConfig;
+import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
+import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
+import com.minecraftdiscordbridge.core.discord.CommandReply;
+import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import com.minecraftdiscordbridge.core.discord.CommandSpec.Localized;
 import com.minecraftdiscordbridge.core.discord.CommandSpec.Option;
@@ -11,11 +15,14 @@ import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.linking.Linking;
 import com.minecraftdiscordbridge.core.setup.ChannelSetup;
+import com.minecraftdiscordbridge.core.status.Roster;
+import com.minecraftdiscordbridge.core.text.markdown.DiscordEscaper;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
-public final class SlashCommandCatalog {
+public final class DiscordCommands {
     public static final String SETUP = "setup";
     public static final String LIST = "list";
     public static final String LINK = "link";
@@ -26,11 +33,45 @@ public final class SlashCommandCatalog {
     private static final Lang ENGLISH = Lang.of(Language.EN);
     private static final Lang KOREAN = Lang.of(Language.KO);
 
-    private SlashCommandCatalog() {}
+    private final ChannelSetup setup;
+    private final Linking linking;
+    private final Actions actions;
+    private final Roster roster;
+    private final Lang lang;
+
+    public DiscordCommands(ChannelSetup setup, Linking linking, Actions actions, Roster roster, Lang lang) {
+        this.setup = setup;
+        this.linking = linking;
+        this.actions = actions;
+        this.roster = roster;
+        this.lang = lang;
+    }
+
+    public void onCommand(CommandRequest request, CommandReply reply) {
+        switch (request.command()) {
+            case SETUP -> setup.handle(request, reply);
+            case LIST -> list(request, reply);
+            case LINK -> linking.link(request, reply);
+            case UNLINK -> linking.unlink(request, reply);
+            case WHITELIST -> actions.whitelist(request, reply);
+            case KICK -> actions.kick(request, reply);
+            default -> reply.replyEphemeral(userLang(request.locale()).text("discord.unknown-command"));
+        }
+    }
+
+    public void onAutocomplete(AutocompleteRequest request, AutocompleteReply reply) {
+        if (request.command().equals(SETUP) && request.option().equals(ChannelSetup.ROLE_OPTION)) {
+            setup.autocomplete(request.typed(), userLang(request.locale()), reply);
+        } else if (request.command().equals(KICK) && request.option().equals(Actions.PLAYER_OPTION)) {
+            reply.respond(onlineNamesStartingWith(request.typed()));
+        } else {
+            reply.respond(List.of());
+        }
+    }
 
     public static List<CommandSpec> forConfig(BridgeConfig config) {
         List<CommandSpec> commands = new ArrayList<>();
-        commands.add(setup());
+        commands.add(setupCommand());
         commands.add(command(LIST, List.of(), false, false, false));
         if (config.linking().enabled()) {
             commands.add(command(
@@ -66,10 +107,35 @@ public final class SlashCommandCatalog {
     }
 
     public static List<CommandSpec> setupOnly() {
-        return List.of(setup());
+        return List.of(setupCommand());
     }
 
-    private static CommandSpec setup() {
+    private void list(CommandRequest request, CommandReply reply) {
+        Lang userLang = userLang(request.locale());
+        List<String> names = roster.visibleNames();
+        if (names.isEmpty()) {
+            reply.reply(userLang.text("discord.list.empty"));
+            return;
+        }
+        String joined =
+                String.join(", ", names.stream().map(DiscordEscaper::escape).toList());
+        reply.reply(userLang.text("discord.list.players", names.size(), joined));
+    }
+
+    private List<AutocompleteReply.Choice> onlineNamesStartingWith(String typed) {
+        String prefix = typed.strip().toLowerCase(Locale.ROOT);
+        return roster.visibleNames().stream()
+                .filter(name -> name.toLowerCase(Locale.ROOT).startsWith(prefix))
+                .limit(AutocompleteReply.MAX_CHOICES)
+                .map(name -> new AutocompleteReply.Choice(name, name))
+                .toList();
+    }
+
+    private Lang userLang(String locale) {
+        return Lang.forDiscordLocale(locale, lang);
+    }
+
+    private static CommandSpec setupCommand() {
         return command(
                 SETUP,
                 List.of(

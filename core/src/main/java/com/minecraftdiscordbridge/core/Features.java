@@ -10,8 +10,8 @@ import com.minecraftdiscordbridge.core.actions.GameActions;
 import com.minecraftdiscordbridge.core.chat.ChatToggle;
 import com.minecraftdiscordbridge.core.chat.DiscordChat;
 import com.minecraftdiscordbridge.core.chat.MinecraftChat;
+import com.minecraftdiscordbridge.core.commands.DiscordCommands;
 import com.minecraftdiscordbridge.core.commands.GameCommands;
-import com.minecraftdiscordbridge.core.commands.SlashRouter;
 import com.minecraftdiscordbridge.core.config.BridgeConfig;
 import com.minecraftdiscordbridge.core.config.ConfigSnapshot;
 import com.minecraftdiscordbridge.core.console.ConsoleInput;
@@ -38,7 +38,7 @@ record Features(
         DiscordChat discordChat,
         EventPosts events,
         StatusBoard status,
-        SlashRouter slash,
+        DiscordCommands discordCommands,
         GameCommands commands,
         Optional<ConsoleMirror> consoleMirror,
         JoinGate gate,
@@ -79,7 +79,7 @@ record Features(
                 new EventPosts(
                         config.events(), events, lang, services.vanilla().use(config.language()), services.discord()),
                 new StatusBoard(config.status(), chat, lang, services.discord(), services.roster()),
-                new SlashRouter(setup, linking, actions, services.roster(), lang),
+                new DiscordCommands(setup, linking, actions, services.roster(), lang),
                 new GameCommands(replies, linking, new ChatToggle(stores.preferences(), services.io(), replies), setup),
                 ConsoleMirror.start(
                         config.console(),

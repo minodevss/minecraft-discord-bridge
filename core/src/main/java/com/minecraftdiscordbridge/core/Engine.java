@@ -507,7 +507,7 @@ final class Engine {
                         Lang.forDiscordLocale(request.locale(), lang).text("discord.not-ready"));
                 return;
             }
-            current.slash().onCommand(request, reply);
+            current.discordCommands().onCommand(request, reply);
         }
 
         @Override
@@ -517,7 +517,7 @@ final class Engine {
                 reply.respond(List.of());
                 return;
             }
-            current.slash().onAutocomplete(request, reply);
+            current.discordCommands().onAutocomplete(request, reply);
         }
     }
 }

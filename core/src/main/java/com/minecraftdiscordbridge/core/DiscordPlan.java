@@ -1,6 +1,6 @@
 package com.minecraftdiscordbridge.core;
 
-import com.minecraftdiscordbridge.core.commands.SlashCommandCatalog;
+import com.minecraftdiscordbridge.core.commands.DiscordCommands;
 import com.minecraftdiscordbridge.core.config.BridgeConfig;
 import com.minecraftdiscordbridge.core.config.ConfigSnapshot;
 import com.minecraftdiscordbridge.core.config.DiscordConfig;
@@ -21,7 +21,7 @@ final class DiscordPlan {
         BridgeConfig config = snapshot.config();
         Set<DiscordId> channelIds = channelIds(config, channels);
         List<CommandSpec> commands =
-                channelIds.isEmpty() ? SlashCommandCatalog.setupOnly() : SlashCommandCatalog.forConfig(config);
+                channelIds.isEmpty() ? DiscordCommands.setupOnly() : DiscordCommands.forConfig(config);
         return new DiscordSettings(
                 snapshot.secrets().discordToken(),
                 guild(config.discord(), channels),
