@@ -4,9 +4,10 @@ Connects one Minecraft server (or one Velocity network) to one Discord server: c
 Runs inside the server as a Paper or Velocity plugin, or a Fabric, NeoForge or Forge mod. Every owner runs their own bot.
 
 ## Commands
-- `./gradlew build` builds core, paper, velocity and the active modded node.
+- `./gradlew build` builds core, paper, velocity and the first node in `modded/stonecutter.properties.toml`. `-Pnodes=forge,1.21.1` adds the nodes that match a loader, Minecraft version or node name.
 - `./gradlew build -Pnodes=all` builds every modded node. Run it before finishing any change under `modded/` or `core/`.
 - `./gradlew :core:test` while working on core.
+- `build` runs Spotless, Error Prone with NullAway, and javac with `-Werror` on every module, modded nodes included. The `bridge.*` convention plugins in `buildSrc` set this up.
 - `./gradlew spotlessApply` before committing. It leaves Stonecutter `//?` regions as written, so wrap those by hand.
 - All must pass before a commit. Never assume a failure is pre-existing.
 
