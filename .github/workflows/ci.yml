@@ -51,7 +51,6 @@ jobs:
             modded/versions/*/build/libs/minecraft-discord-bridge-*.jar
             !**/*-slim.jar
             !**/*-dev-shadow.jar
-            !**/*-sources.jar
           if-no-files-found: error
 
   smoke:
