@@ -1,0 +1,46 @@
+package com.minecraftdiscordbridge.velocity;
+
+import com.minecraftdiscordbridge.core.Bridge;
+import com.minecraftdiscordbridge.core.platform.JoinDecision;
+import com.minecraftdiscordbridge.core.platform.Permission;
+import com.velocitypowered.api.event.EventTask;
+import com.velocitypowered.api.event.PostOrder;
+import com.velocitypowered.api.event.ResultedEvent;
+import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.connection.LoginEvent;
+import com.velocitypowered.api.permission.Tristate;
+import com.velocitypowered.api.proxy.Player;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+
+public final class VelocityJoinGate {
+    private static final long GATE_WAIT_SECONDS = 4;
+
+    private final Bridge bridge;
+    private final VelocityProfiles profiles;
+
+    VelocityJoinGate(Bridge bridge, VelocityProfiles profiles) {
+        this.bridge = bridge;
+        this.profiles = profiles;
+    }
+
+    @SuppressWarnings("deprecation")
+    @Subscribe(order = PostOrder.LATE)
+    public EventTask onLogin(LoginEvent event) {
+        if (!event.getResult().isAllowed()) {
+            return EventTask.resumeWhenComplete(CompletableFuture.completedFuture(null));
+        }
+        Player player = event.getPlayer();
+        boolean bypass = player.getPermissionValue(Permission.GATE_BYPASS.node()) == Tristate.TRUE;
+        CompletableFuture<Void> gate = bridge.checkJoin(profiles.of(player), bypass)
+                .completeOnTimeout(new JoinDecision.Allow(), GATE_WAIT_SECONDS, TimeUnit.SECONDS)
+                .thenAccept(decision -> {
+                    if (decision instanceof JoinDecision.Deny deny) {
+                        event.setResult(ResultedEvent.ComponentResult.denied(
+                                GsonComponentSerializer.gson().deserialize(deny.json())));
+                    }
+                });
+        return EventTask.resumeWhenComplete(gate);
+    }
+}

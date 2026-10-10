@@ -14,16 +14,16 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 
 final class VelocityPlatform implements Platform {
-    private static final String NO_WHITELIST = "Whitelisting is not supported on a proxy";
-
     private final ProxyServer proxy;
     private final PlatformInfo info;
     private final Path dataDirectory;
+    private final VelocityActions actions;
 
-    VelocityPlatform(ProxyServer proxy, PlatformInfo info, Path dataDirectory) {
+    VelocityPlatform(ProxyServer proxy, PlatformInfo info, Path dataDirectory, VelocityActions actions) {
         this.proxy = proxy;
         this.info = info;
         this.dataDirectory = dataDirectory;
+        this.actions = actions;
     }
 
     @Override
@@ -48,32 +48,7 @@ final class VelocityPlatform implements Platform {
 
     @Override
     public CompletableFuture<ActionOutcome> perform(GameAction action) {
-        return switch (action) {
-            case GameAction.WhitelistAdd add ->
-                CompletableFuture.completedFuture(new ActionOutcome.Failed(NO_WHITELIST));
-            case GameAction.WhitelistRemove remove ->
-                CompletableFuture.completedFuture(new ActionOutcome.Failed(NO_WHITELIST));
-            case GameAction.Kick kick -> CompletableFuture.completedFuture(kick(kick.playerName(), kick.reason()));
-            case GameAction.RunConsoleCommand run -> runConsoleCommand(run.command());
-        };
-    }
-
-    private CompletableFuture<ActionOutcome> runConsoleCommand(String command) {
-        FeedbackSource source = new FeedbackSource();
-        return proxy.getCommandManager()
-                .executeAsync(source, command)
-                .thenApply(known -> known || source.hasFeedback()
-                        ? new ActionOutcome.Output(source.feedback())
-                        : new ActionOutcome.Failed("Unknown command"));
-    }
-
-    private ActionOutcome kick(String name, String reason) {
-        return proxy.getPlayer(name)
-                .<ActionOutcome>map(player -> {
-                    player.disconnect(Component.text(reason));
-                    return new ActionOutcome.Done();
-                })
-                .orElseGet(() -> new ActionOutcome.NoSuchPlayer(name));
+        return actions.perform(action);
     }
 
     private static boolean seesChat(Player player) {

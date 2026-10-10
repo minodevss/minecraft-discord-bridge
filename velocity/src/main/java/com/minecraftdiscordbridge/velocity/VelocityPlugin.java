@@ -34,11 +34,12 @@ public final class VelocityPlugin {
 
     @Subscribe
     public void onInitialize(ProxyInitializeEvent event) {
-        Bridge started = Bridge.create(new VelocityPlatform(proxy, info(), dataDirectory));
+        Bridge started = Bridge.create(new VelocityPlatform(proxy, info(), dataDirectory, new VelocityActions(proxy)));
         bridge.set(started);
         started.start();
-        proxy.getEventManager()
-                .register(this, new VelocityEvents(started, new VelocityProfiles(Floodgate.bedrockCheck())));
+        VelocityProfiles profiles = new VelocityProfiles(Floodgate.bedrockCheck());
+        proxy.getEventManager().register(this, new VelocityEvents(started, profiles));
+        proxy.getEventManager().register(this, new VelocityJoinGate(started, profiles));
         BrigadierCommand command = VelocityCommand.create(started);
         CommandManager commands = proxy.getCommandManager();
         commands.register(commands.metaBuilder(command).plugin(this).build(), command);
