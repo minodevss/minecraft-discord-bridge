@@ -31,7 +31,7 @@ class JdaCommandsTest extends JdaTestBase {
         DataArray commands = DataArray.fromJson(registrations().get(0).getBody().utf8());
         DataObject list = commands.getObject(0);
         DataObject whitelist = commands.getObject(1);
-        assertThat(list.getObject("name_localizations").getString("ko")).isEqualTo("목록");
+        assertThat(list.getObject("description_localizations").getString("ko")).isEqualTo("접속 중인 플레이어");
         assertThat(list.isNull("default_member_permissions")).isTrue();
         assertThat(list.getArray("contexts").getInt(0)).isZero();
         assertThat(whitelist.getString("default_member_permissions")).isEqualTo("0");
@@ -50,7 +50,7 @@ class JdaCommandsTest extends JdaTestBase {
     }
 
     @Test
-    void refusesCommandsFromServersItIsNotSetUpFor() {
+    void refusesCommandsFromServersItIsNotSetUpForInTheUsersLanguage() {
         bridge = start(TestSupport.settings(List.of(LIST)));
         awaitState(State.READY);
 
@@ -59,8 +59,7 @@ class JdaCommandsTest extends JdaTestBase {
         until("refusal", () -> callbacks().size() == 1);
         DataObject callback = DiscordPayloads.body(callbacks().get(0));
         assertThat(callback.getInt("type")).isEqualTo(4);
-        assertThat(callback.getObject("data").getString("content"))
-                .isEqualTo("This bot is not set up for this server.");
+        assertThat(callback.getObject("data").getString("content")).isEqualTo("이 봇은 이 디스코드 서버용으로 설정되지 않았습니다.");
         assertThat(callback.getObject("data").getInt("flags") & 64).isNotZero();
         assertThat(listener.commands).isEmpty();
     }
@@ -82,6 +81,7 @@ class JdaCommandsTest extends JdaTestBase {
         assertThat(request.locale()).isEqualTo("ko");
         assertThat(request.guildId()).isEqualTo(GUILD);
         assertThat(request.channelId()).isEqualTo(CHANNEL);
+        assertThat(request.channelName()).isEqualTo("minecraft");
         assertThat(callbacks()).isEmpty();
 
         take(listener.replies).replyEphemeral("3 players online");
@@ -165,7 +165,7 @@ class JdaCommandsTest extends JdaTestBase {
                         Optional.empty(),
                         List.of(new CommandSpec.Option(
                                 CommandSpec.OptionType.STRING, "player", "Player", Optional.empty(), true, false)))),
-                true,
+                CommandSpec.Access.ADMINS,
                 false,
                 false);
         bridge = start(TestSupport.settings(List.of(whitelist)));

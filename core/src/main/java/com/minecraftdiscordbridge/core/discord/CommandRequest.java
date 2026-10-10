@@ -9,6 +9,7 @@ public record CommandRequest(
         Map<String, String> options,
         DiscordId guildId,
         DiscordId channelId,
+        String channelName,
         DiscordId userId,
         String userDisplayName,
         boolean canManageServer,

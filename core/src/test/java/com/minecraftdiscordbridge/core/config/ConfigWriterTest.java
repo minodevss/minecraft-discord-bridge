@@ -4,9 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class ConfigWriterTest {
@@ -28,9 +26,14 @@ class ConfigWriterTest {
                 .set(ConfigSchema.FORMAT, "\"quoted\" \\ back\nnew line\ttab é 한글 😀 \u0007   # not a comment")
                 .set(ConfigSchema.BLOCKED_WORDS, List.of("(?i)bad\\s+word", "[a-z]+: x"))
                 .set(
-                        ConfigSchema.ROLE_SYNC_RULES,
-                        List.of(new RoleSyncRule(
-                                new DiscordId(123456789012345678L), "vip: gold", SyncDirection.MINECRAFT_TO_DISCORD)))
+                        ConfigSchema.ROLE_SYNC,
+                        List.of(
+                                new RoleSyncRule(
+                                        new DiscordId(123456789012345678L),
+                                        "vip: gold",
+                                        SyncDirection.MINECRAFT_TO_DISCORD),
+                                new RoleSyncRule(
+                                        new DiscordId(223456789012345678L), "vip", SyncDirection.DISCORD_TO_MINECRAFT)))
                 .set(ConfigSchema.INPUT_USERS, List.of("12345678901234567890"))
                 .set(ConfigSchema.CHAT_CHANNEL, "123456789012345678")
                 .build();
@@ -44,29 +47,37 @@ class ConfigWriterTest {
                 .setDefaultsForAll()
                 .set(ConfigSchema.INPUT_USERS, List.of("123456789012345678"))
                 .set(
-                        ConfigSchema.ROLE_SYNC_RULES,
-                        List.of(new RoleSyncRule(
-                                new DiscordId(223456789012345678L), "vip", SyncDirection.DISCORD_TO_MINECRAFT)))
+                        ConfigSchema.ROLE_SYNC,
+                        List.of(
+                                new RoleSyncRule(
+                                        new DiscordId(223456789012345678L), "vip", SyncDirection.DISCORD_TO_MINECRAFT),
+                                new RoleSyncRule(
+                                        new DiscordId(323456789012345678L),
+                                        "staff",
+                                        SyncDirection.MINECRAFT_TO_DISCORD)))
                 .build();
 
         assertThat(ConfigWriter.render(values))
                 .contains("  input-users:\n    - \"123456789012345678\"\n")
                 .contains("""
-                          rules:
-                            - discord-role: "223456789012345678"
-                              group: "vip"
-                              direction: "discord-to-minecraft"
+                        role-sync:
+                          - discord-role: "223456789012345678"
+                            group: "vip"
+                          - discord-role: "323456789012345678"
+                            group: "staff"
+                            direction: "minecraft-to-discord"
                         """);
     }
 
     @Test
-    void everyOptionHasACommentAndAKnownSection() {
-        Set<String> sections = new HashSet<>(Set.of(""));
-        ConfigSchema.SECTIONS.forEach(section -> sections.add(section.name()));
-        for (Option<?> option : ConfigSchema.OPTIONS) {
-            assertThat(option.section()).isIn(sections);
-            assertThat(option.comment()).isNotEmpty();
+    void everyOptionSitsInTheSectionItsPathNames() {
+        for (Section section : ConfigSchema.SECTIONS) {
+            assertThat(section.options())
+                    .allSatisfy(option -> assertThat(option.path()).isEqualTo(section.name() + "." + option.key()));
         }
+        assertThat(ConfigSchema.LAYOUT)
+                .filteredOn(block -> block instanceof Option<?>)
+                .allSatisfy(option -> assertThat(((Option<?>) option).path()).doesNotContain("."));
     }
 
     private static boolean readsBackAs(String text, ConfigValues expected) {

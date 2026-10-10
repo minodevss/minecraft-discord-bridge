@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
 import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.fasterxml.jackson.core.util.Separators;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -28,6 +30,8 @@ final class StoreFile {
                     DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
             .defaultSetterInfo(JsonSetter.Value.construct(Nulls.FAIL, Nulls.FAIL))
             .enable(SerializationFeature.INDENT_OUTPUT)
+            .defaultPrettyPrinter(new DefaultPrettyPrinter(
+                    Separators.createDefaultInstance().withObjectFieldValueSpacing(Separators.Spacing.AFTER)))
             .build();
 
     private final Path path;
@@ -53,6 +57,10 @@ final class StoreFile {
 
     static StoreFile ownerOnly(Path dataDirectory, String fileName, String contents) {
         return new StoreFile(locate(dataDirectory, fileName), contents, 0, true);
+    }
+
+    static StoreFile cache(Path dataDirectory, String fileName, String contents) {
+        return new StoreFile(locate(dataDirectory, "cache").resolve(fileName), contents, 0, false);
     }
 
     private static Path locate(Path dataDirectory, String fileName) {
@@ -97,7 +105,7 @@ final class StoreFile {
     void save(Versioned document) throws IOException {
         if (readOnly) {
             throw new ReadOnlyStoreException(contents + " were not saved because " + path
-                    + " could not be read at startup. Fix or delete that file, then restart the server.");
+                    + " could not be read at startup. Fix or delete that file, then restart the server");
         }
         byte[] bytes = JSON.writeValueAsBytes(document);
         keepBackup();
@@ -122,13 +130,13 @@ final class StoreFile {
     }
 
     private Path backup(int index) {
-        return path.resolveSibling(path.getFileName() + "." + index + ".bak");
+        return path.resolveSibling("backups").resolve(path.getFileName() + "." + index + ".bak");
     }
 
     private <T> T damaged(String reason, T empty) {
         readOnly = true;
         LOGGER.error(
-                "{} is damaged: {}. {} are read-only until you fix or delete the file and restart the server.",
+                "{} is damaged: {}. {} are read-only until you fix or delete the file and restart the server",
                 path,
                 reason,
                 contents);

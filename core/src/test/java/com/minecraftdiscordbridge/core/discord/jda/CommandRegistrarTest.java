@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import java.util.List;
 import java.util.Optional;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.utils.data.DataObject;
 import org.junit.jupiter.api.Test;
 
@@ -12,19 +13,14 @@ class CommandRegistrarTest {
     private static final CommandSpec KICK = new CommandSpec(
             "kick",
             "Kick a player",
-            Optional.of(new CommandSpec.Localized("추방", "플레이어를 추방합니다")),
+            Optional.of("플레이어를 추방합니다"),
             List.of(new CommandSpec.Option(
-                    CommandSpec.OptionType.STRING,
-                    "player",
-                    "Player name",
-                    Optional.of(new CommandSpec.Localized("플레이어", "플레이어 이름")),
-                    true,
-                    true)),
-            true,
+                    CommandSpec.OptionType.STRING, "player", "Player name", Optional.of("플레이어 이름"), true, true)),
+            CommandSpec.Access.ADMINS,
             false,
             true);
-    private static final CommandSpec LINK =
-            new CommandSpec("link", "Link your account", Optional.empty(), List.of(), false, false, true);
+    private static final CommandSpec LINK = new CommandSpec(
+            "link", "Link your account", Optional.empty(), List.of(), CommandSpec.Access.EVERYONE, false, true);
 
     @Test
     void limitsAdminCommandsToAdministratorsByDefault() {
@@ -36,6 +32,15 @@ class CommandRegistrarTest {
     }
 
     @Test
+    void limitsManageServerCommandsToThatPermissionByDefault() {
+        CommandSpec setup = new CommandSpec(
+                "setup", "Set up", Optional.empty(), List.of(), CommandSpec.Access.MANAGE_SERVER, true, true);
+
+        assertThat(CommandRegistrar.toData(setup).toData().getString("default_member_permissions"))
+                .isEqualTo(Long.toString(Permission.MANAGE_SERVER.getRawValue()));
+    }
+
+    @Test
     void offersCommandsOnlyInsideServers() {
         DataObject kick = CommandRegistrar.toData(KICK).toData();
 
@@ -44,15 +49,45 @@ class CommandRegistrarTest {
     }
 
     @Test
-    void carriesKoreanNamesAndAutocomplete() {
+    void carriesKoreanDescriptionsButKeepsTheEnglishNames() {
         DataObject kick = CommandRegistrar.toData(KICK).toData();
         DataObject option = kick.getArray("options").getObject(0);
 
-        assertThat(kick.getObject("name_localizations").getString("ko")).isEqualTo("추방");
+        assertThat(kick.getObject("name_localizations").keys()).isEmpty();
         assertThat(kick.getObject("description_localizations").getString("ko")).isEqualTo("플레이어를 추방합니다");
-        assertThat(option.getObject("name_localizations").getString("ko")).isEqualTo("플레이어");
+        assertThat(option.getObject("name_localizations").keys()).isEmpty();
+        assertThat(option.getObject("description_localizations").getString("ko"))
+                .isEqualTo("플레이어 이름");
         assertThat(option.getBoolean("autocomplete")).isTrue();
         assertThat(option.getBoolean("required")).isTrue();
+    }
+
+    @Test
+    void carriesFixedChoicesWithKoreanNames() {
+        CommandSpec setup = new CommandSpec(
+                "setup",
+                "Set up",
+                Optional.empty(),
+                List.of(new CommandSpec.Option(
+                        CommandSpec.OptionType.STRING,
+                        "as",
+                        "What this channel shows",
+                        Optional.empty(),
+                        false,
+                        false,
+                        List.of(new CommandSpec.Choice("events", "events", Optional.of("게임 소식"))))),
+                CommandSpec.Access.MANAGE_SERVER,
+                true,
+                true);
+
+        DataObject option =
+                CommandRegistrar.toData(setup).toData().getArray("options").getObject(0);
+        DataObject choice = option.getArray("choices").getObject(0);
+
+        assertThat(option.getBoolean("autocomplete")).isFalse();
+        assertThat(choice.getString("name")).isEqualTo("events");
+        assertThat(choice.getString("value")).isEqualTo("events");
+        assertThat(choice.getObject("name_localizations").getString("ko")).isEqualTo("게임 소식");
     }
 
     @Test
@@ -65,7 +100,7 @@ class CommandRegistrarTest {
                 List.of(new CommandSpec.Subcommand(
                         "add",
                         "Add a player",
-                        Optional.of(new CommandSpec.Localized("add", "플레이어를 추가합니다")),
+                        Optional.of("플레이어를 추가합니다"),
                         List.of(new CommandSpec.Option(
                                 CommandSpec.OptionType.STRING,
                                 "player",
@@ -73,7 +108,7 @@ class CommandRegistrarTest {
                                 Optional.empty(),
                                 true,
                                 false)))),
-                true,
+                CommandSpec.Access.ADMINS,
                 true,
                 false);
 

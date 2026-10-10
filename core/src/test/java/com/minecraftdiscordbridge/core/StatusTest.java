@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core;
 import static com.minecraftdiscordbridge.core.Harness.ALEX;
 import static com.minecraftdiscordbridge.core.Harness.CHANNELS;
 import static com.minecraftdiscordbridge.core.Harness.CHAT;
+import static com.minecraftdiscordbridge.core.Harness.EVENTS;
 import static com.minecraftdiscordbridge.core.Harness.MEMBER;
 import static com.minecraftdiscordbridge.core.Harness.STEVE;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -11,6 +12,7 @@ import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
 import com.minecraftdiscordbridge.core.fakes.RecordingReply;
 import com.minecraftdiscordbridge.core.fakes.RecordingSource;
 import com.minecraftdiscordbridge.core.fakes.Waits;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import java.io.IOException;
@@ -43,9 +45,9 @@ class StatusTest {
     @Test
     void updatesTheTopicWhenAsked() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS + """
-                status:
-                  presence: false
-                  topic: true
+                player-count:
+                  bot-status: false
+                  channel-topic: true
                 """)) {
             RecordingDiscord discord = harness.discord();
             harness.publish(new GameEvent.ServerStarted(List.of(STEVE, ALEX)));
@@ -92,31 +94,42 @@ class StatusTest {
 
             assertThat(status)
                     .contains("Discord: connected")
+                    .contains("Bot token: from MCDB_DISCORD_TOKEN")
                     .contains("Gateway ping: 42 ms")
                     .contains("Linked accounts: 0");
         }
     }
 
     @Test
-    void refusesStatusAndReloadWithoutPermission() throws IOException {
+    void namesTheChannelsItKnowsAndShowsTheIdOfTheOthers() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
-            RecordingSource player = RecordingSource.player(STEVE.id(), "Steve");
+            harness.discord().channelNames.put(CHAT, "minecraft");
 
-            assertThat(harness.run(player, "status").nextPlain()).isEqualTo("You do not have permission to do that.");
-            assertThat(harness.run(player, "reload").nextPlain()).isEqualTo("You do not have permission to do that.");
+            assertThat(harness.settledStatus())
+                    .contains("Channel #minecraft: 0 waiting")
+                    .contains("Channel " + EVENTS + ": 0 waiting");
         }
     }
 
     @Test
-    void showsHelpForTheCommandsTheSourceMayUse() throws IOException {
-        try (Harness harness = Harness.started(directory, CHANNELS)) {
-            RecordingSource player = harness.run(RecordingSource.player(STEVE.id(), "Steve"));
+    void explainsWhyDiscordIsNotConnectedInTheConfiguredLanguage() throws IOException {
+        try (Harness harness = Harness.create(directory, CHANNELS + "language: ko\n", Map.of())) {
+            harness.bridge.start();
 
-            assertThat(player.nextPlain()).isEqualTo("Minecraft Discord Bridge");
-            assertThat(player.nextPlain()).startsWith("/discord link");
-            assertThat(player.nextPlain()).startsWith("/discord unlink");
-            assertThat(player.nextPlain()).startsWith("/discord toggle");
-            Waits.nothingIn(player.replies);
+            Waits.until("the Korean reason", () -> {
+                RecordingSource console = harness.run(RecordingSource.console(), GameCommand.STATUS);
+                console.nextPlain();
+                return console.nextPlain().equals("이유: 봇 토큰이 없습니다. 설정 방법은 서버 로그에 있습니다");
+            });
+        }
+    }
+
+    @Test
+    void saysWhenNoBotTokenIsSet() throws IOException {
+        try (Harness harness = Harness.create(directory, CHANNELS, Map.of())) {
+            harness.bridge.start();
+
+            assertThat(harness.settledStatus()).contains("Bot token: not set");
         }
     }
 }

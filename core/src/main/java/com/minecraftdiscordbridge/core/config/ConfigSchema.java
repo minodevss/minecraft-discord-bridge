@@ -6,158 +6,148 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 final class ConfigSchema {
     static final int VERSION = 1;
     static final String VERSION_KEY = "config-version";
     static final List<String> VERSION_COMMENT = List.of("Used to upgrade this file. Do not change it.");
     static final List<String> HEADER = List.of(
-            "Minecraft Discord Bridge settings.",
-            "The bot token goes in secrets.yml, not here.",
-            "Changes take effect after a reload or a restart.");
+            "Minecraft Discord Bridge settings. The bot token goes in secrets.yml.",
+            "Run /discord reload after you edit this file.",
+            "To copy an ID, turn on Developer Mode in Discord (User Settings > Advanced),",
+            "then right-click the channel, role or user and click Copy ID.");
 
-    static final Option<Language> LANGUAGE =
-            choice("language", Language.EN, "Language of the bridge's own messages: en (English) or ko (Korean).");
+    static final Option<Language> LANGUAGE = choice(
+            "language",
+            Language.EN,
+            "Language of the bridge's messages, and of deaths and advancements on Discord: en or ko.");
 
     static final Option<String> CHAT_CHANNEL =
-            discordId("discord.chat-channel", "Channel for chat. Leave empty to choose it with /setup in Discord.");
-    static final Option<String> EVENTS_CHANNEL = discordId(
-            "discord.events-channel",
-            "Channel for joins, leaves, deaths, advancements and server start and stop.",
-            "Empty uses the chat channel.");
-    static final Option<String> CONSOLE_CHANNEL =
-            discordId("discord.console-channel", "Channel that shows the server console. Empty turns it off.");
-    static final Option<Boolean> AUTO_ENABLE_MESSAGE_CONTENT = flag(
-            "discord.auto-enable-message-content",
-            true,
-            "Try to turn on the bot's Message Content intent when it is off.",
-            "The bridge needs it to read messages from Discord.");
-
-    static final Option<Boolean> MINECRAFT_TO_DISCORD =
-            flag("chat.minecraft-to-discord", true, "Send Minecraft chat to Discord.");
-    static final Option<Boolean> DISCORD_TO_MINECRAFT =
-            flag("chat.discord-to-minecraft", true, "Send Discord chat to Minecraft.");
+            discordId("chat.channel", "Channel ID for chat. Empty: run /setup in the channel instead.");
+    static final Option<Boolean> MINECRAFT_TO_DISCORD = flag("chat.minecraft-to-discord", true);
+    static final Option<Boolean> DISCORD_TO_MINECRAFT = flag("chat.discord-to-minecraft", true);
     static final Option<String> FORMAT = text(
             "chat.format",
             "<gray>[Discord]</gray> <author>: <message>",
-            "How Discord messages look in Minecraft, in MiniMessage format.",
-            "<author> is the sender's name and <message> is the text.");
+            "How Discord messages look in game, in MiniMessage. <author> is the sender, <message> the text.");
     static final Option<String> AVATAR_URL = text(
             "chat.avatar-url",
             "https://crafthead.net/helm/{texture}",
-            "Avatar for player messages on Discord. {texture} is the player's skin texture ID.");
-    static final Option<String> AVATAR_URL_FALLBACK = text(
-            "chat.avatar-url-fallback",
-            "https://crafthead.net/helm/{uuid}",
-            "Avatar to use when the skin texture is not known. {uuid} is the player's UUID.");
-    static final Option<Boolean> PING_LINKED_PLAYERS = flag(
-            "chat.ping-linked-players",
-            false,
-            "Let @name in Minecraft chat ping that player's linked Discord account.");
+            "Player head on Discord. {texture} is the skin (the UUID if unknown); {uuid} and {name} also work.",
+            "Empty uses Discord's default avatar.");
+    static final Option<Boolean> PING_LINKED_PLAYERS =
+            flag("chat.ping-linked-players", false, "Let @name in game ping that player's linked Discord account.");
     static final Option<List<String>> BLOCKED_WORDS = new Option<>(
             "chat.blocked-words",
             ValueTypes.listOf(ValueTypes.REGEX),
             List.of(),
             List.of(
-                    "Messages that match one of these regular expressions are not relayed.",
+                    "Messages that match one of these regular expressions are not sent either way.",
                     "Example: blocked-words: [\"(?i)badword\"]"));
 
-    static final Option<Boolean> JOIN = flag("events.join", true, "Post when a player joins.");
-    static final Option<Boolean> LEAVE = flag("events.leave", true, "Post when a player leaves.");
-    static final Option<Boolean> DEATH = flag("events.death", true, "Post when a player dies.");
-    static final Option<Boolean> ADVANCEMENT =
-            flag("events.advancement", true, "Post when a player earns an advancement.");
-    static final Option<Boolean> SERVER_START = flag("events.server-start", true, "Post when the server starts.");
-    static final Option<Boolean> SERVER_STOP = flag("events.server-stop", true, "Post when the server stops.");
+    static final Option<String> EVENTS_CHANNEL = discordId(
+            "events.channel", "Channel ID for events. Empty: the /setup as:events channel, else the chat channel.");
+    static final Option<Boolean> JOIN = flag("events.join", true);
+    static final Option<Boolean> LEAVE = flag("events.leave", true);
+    static final Option<Boolean> DEATH = flag("events.death", true);
+    static final Option<Boolean> ADVANCEMENT = flag("events.advancement", true);
+    static final Option<Boolean> SERVER_START = flag("events.server-start", true);
+    static final Option<Boolean> SERVER_STOP = flag("events.server-stop", true);
     static final Option<String> SERVER_START_PING_ROLE =
-            discordId("events.server-start-ping-role", "Role to ping when the server starts. Empty pings nobody.");
+            discordId("events.server-start-ping-role", "Role ID to ping when the server starts. Empty pings nobody.");
 
-    static final Option<Boolean> PRESENCE = flag("status.presence", true, "Show the player count as the bot's status.");
-    static final Option<Boolean> TOPIC =
-            flag("status.topic", false, "Show the player count in the chat channel's topic.");
+    static final Option<Boolean> BOT_STATUS = flag("player-count.bot-status", true);
+    static final Option<Boolean> CHANNEL_TOPIC = flag("player-count.channel-topic", false);
 
     static final Option<Boolean> LINKING_ENABLED =
-            flag("linking.enabled", true, "Let players link their Minecraft and Discord accounts.");
-    static final Option<Boolean> REQUIRE_FOR_JOIN =
-            flag("linking.require-for-join", false, "Only players who linked their account can join.");
+            flag("linking.enabled", true, "Players link with /discord link in game and /link in Discord.");
+    static final Option<Boolean> REQUIRE_FOR_JOIN = flag(
+            "linking.require-for-join",
+            false,
+            "Only linked players can join. The minecraftdiscordbridge.gate.bypass permission skips this.");
     static final Option<String> REQUIRED_ROLE = discordId(
-            "linking.required-role", "Discord role a linked player must have to join. Empty means no role is needed.");
+            "linking.required-role", "Role ID a player also needs to join. Setting it turns on require-for-join.");
     static final Option<UnreachablePolicy> WHEN_DISCORD_UNREACHABLE = choice(
             "linking.when-discord-unreachable",
             UnreachablePolicy.DENY,
-            "When linking is required and Discord cannot be reached: deny or allow joins.");
+            "deny or allow joins when Discord cannot be reached to check required-role.");
 
-    static final Option<List<RoleSyncRule>> ROLE_SYNC_RULES = new Option<>(
-            "role-sync.rules",
-            ValueTypes.listOf(ValueTypes.ROLE_SYNC_RULE),
-            List.of(),
-            List.of(
-                    "Each rule pairs a Discord role with a permission group.",
-                    "direction is discord-to-minecraft or minecraft-to-discord. Example:",
-                    "  rules:",
-                    "    - discord-role: \"123456789012345678\"",
-                    "      group: \"vip\"",
-                    "      direction: \"discord-to-minecraft\""));
-
-    static final Option<Boolean> WHITELIST =
-            flag("actions.whitelist", false, "Allow Discord commands that add and remove players from the whitelist.");
-    static final Option<Boolean> KICK = flag("actions.kick", false, "Allow a Discord command that kicks players.");
-
-    static final Option<Boolean> MIRROR =
-            flag("console.mirror", false, "Copy the server console to the console channel.");
+    static final Option<String> CONSOLE_CHANNEL = discordId(
+            "console.channel",
+            "Channel ID that mirrors the server console, with tokens, IPs and passwords hidden. Empty: off.");
     static final Option<List<String>> INPUT_USERS = new Option<>(
             "console.input-users",
             ValueTypes.listOf(ValueTypes.DISCORD_ID),
             List.of(),
             List.of(
-                    "Discord user IDs that can run console commands from the console channel.",
-                    "Empty means nobody. Example: input-users: [\"123456789012345678\"]"));
+                    "Discord user IDs that may run console commands in that channel. Empty: nobody.",
+                    "Example: input-users: [\"123456789012345678\"]"));
 
-    static final List<Option<?>> OPTIONS = List.of(
+    static final Option<Boolean> WHITELIST = flag("discord-commands.whitelist", false);
+    static final Option<Boolean> KICK = flag("discord-commands.kick", false);
+
+    static final Option<List<RoleSyncRule>> ROLE_SYNC = new Option<>(
+            "role-sync",
+            ValueTypes.listOf(ValueTypes.ROLE_SYNC_RULE),
+            List.of(),
+            List.of(
+                    "Pair Discord roles with LuckPerms groups. direction is discord-to-minecraft",
+                    "(the default, can be left out) or minecraft-to-discord. Example:",
+                    "  role-sync:",
+                    "    - discord-role: \"123456789012345678\"",
+                    "      group: \"vip\""));
+
+    static final List<Block> LAYOUT = List.of(
             LANGUAGE,
-            CHAT_CHANNEL,
-            EVENTS_CHANNEL,
-            CONSOLE_CHANNEL,
-            AUTO_ENABLE_MESSAGE_CONTENT,
-            MINECRAFT_TO_DISCORD,
-            DISCORD_TO_MINECRAFT,
-            FORMAT,
-            AVATAR_URL,
-            AVATAR_URL_FALLBACK,
-            PING_LINKED_PLAYERS,
-            BLOCKED_WORDS,
-            JOIN,
-            LEAVE,
-            DEATH,
-            ADVANCEMENT,
-            SERVER_START,
-            SERVER_STOP,
-            SERVER_START_PING_ROLE,
-            PRESENCE,
-            TOPIC,
-            LINKING_ENABLED,
-            REQUIRE_FOR_JOIN,
-            REQUIRED_ROLE,
-            WHEN_DISCORD_UNREACHABLE,
-            ROLE_SYNC_RULES,
-            WHITELIST,
-            KICK,
-            MIRROR,
-            INPUT_USERS);
-
-    static final List<Section> SECTIONS = List.of(
             new Section(
-                    "discord",
+                    "chat",
+                    List.of(),
                     List.of(
-                            "To copy an ID, turn on Developer Mode in Discord (User Settings > Advanced),",
-                            "then right-click the channel, role or user and copy its ID.")),
-            new Section("chat", List.of()),
-            new Section("events", List.of("Messages posted to the events channel.")),
-            new Section("status", List.of()),
-            new Section("linking", List.of()),
-            new Section("role-sync", List.of("Keeps Discord roles and permission groups in step.")),
-            new Section("actions", List.of()),
-            new Section("console", List.of()));
+                            CHAT_CHANNEL,
+                            MINECRAFT_TO_DISCORD,
+                            DISCORD_TO_MINECRAFT,
+                            FORMAT,
+                            AVATAR_URL,
+                            PING_LINKED_PLAYERS,
+                            BLOCKED_WORDS)),
+            new Section(
+                    "events",
+                    List.of("Set any event to false to stop posting it. On Velocity, join also posts server switches."),
+                    List.of(
+                            EVENTS_CHANNEL,
+                            JOIN,
+                            LEAVE,
+                            DEATH,
+                            ADVANCEMENT,
+                            SERVER_START,
+                            SERVER_STOP,
+                            SERVER_START_PING_ROLE)),
+            new Section(
+                    "player-count",
+                    List.of("Show the player count as the bot's status and in the chat channel's topic."),
+                    List.of(BOT_STATUS, CHANNEL_TOPIC)),
+            new Section(
+                    "linking",
+                    List.of(),
+                    List.of(LINKING_ENABLED, REQUIRE_FOR_JOIN, REQUIRED_ROLE, WHEN_DISCORD_UNREACHABLE)),
+            new Section("console", List.of(), List.of(CONSOLE_CHANNEL, INPUT_USERS)),
+            new Section(
+                    "discord-commands",
+                    List.of(
+                            "/whitelist and /kick in Discord. Only Discord admins can use them",
+                            "unless you allow more roles in Server Settings > Integrations."),
+                    List.of(WHITELIST, KICK)),
+            ROLE_SYNC);
+
+    static final List<Section> SECTIONS = LAYOUT.stream()
+            .flatMap(block -> block instanceof Section section ? Stream.of(section) : Stream.empty())
+            .toList();
+
+    static final List<Option<?>> OPTIONS = LAYOUT.stream()
+            .flatMap(block ->
+                    block instanceof Section section ? section.options().stream() : Stream.of((Option<?>) block))
+            .toList();
 
     static final Set<String> OPTION_PATHS = OPTIONS.stream().map(Option::path).collect(Collectors.toUnmodifiableSet());
 
@@ -166,20 +156,16 @@ final class ConfigSchema {
     static BridgeConfig toConfig(ConfigValues values) {
         return new BridgeConfig(
                 values.get(LANGUAGE),
-                new DiscordConfig(
-                        DiscordId.parse(values.get(CHAT_CHANNEL)),
-                        DiscordId.parse(values.get(EVENTS_CHANNEL)),
-                        DiscordId.parse(values.get(CONSOLE_CHANNEL)),
-                        values.get(AUTO_ENABLE_MESSAGE_CONTENT)),
                 new ChatConfig(
+                        DiscordId.parse(values.get(CHAT_CHANNEL)),
                         values.get(MINECRAFT_TO_DISCORD),
                         values.get(DISCORD_TO_MINECRAFT),
                         values.get(FORMAT),
                         values.get(AVATAR_URL),
-                        values.get(AVATAR_URL_FALLBACK),
                         values.get(PING_LINKED_PLAYERS),
                         values.get(BLOCKED_WORDS).stream().map(Pattern::compile).toList()),
                 new EventsConfig(
+                        DiscordId.parse(values.get(EVENTS_CHANNEL)),
                         values.get(JOIN),
                         values.get(LEAVE),
                         values.get(DEATH),
@@ -187,15 +173,15 @@ final class ConfigSchema {
                         values.get(SERVER_START),
                         values.get(SERVER_STOP),
                         DiscordId.parse(values.get(SERVER_START_PING_ROLE))),
-                new StatusConfig(values.get(PRESENCE), values.get(TOPIC)),
+                new PlayerCountConfig(values.get(BOT_STATUS), values.get(CHANNEL_TOPIC)),
                 new LinkingConfig(
                         values.get(LINKING_ENABLED),
                         values.get(REQUIRE_FOR_JOIN),
                         DiscordId.parse(values.get(REQUIRED_ROLE)),
                         values.get(WHEN_DISCORD_UNREACHABLE)),
-                new RoleSyncConfig(values.get(ROLE_SYNC_RULES)),
-                new ActionsConfig(values.get(WHITELIST), values.get(KICK)),
-                new ConsoleConfig(values.get(MIRROR), ids(values.get(INPUT_USERS))));
+                new ConsoleConfig(DiscordId.parse(values.get(CONSOLE_CHANNEL)), ids(values.get(INPUT_USERS))),
+                new DiscordCommandsConfig(values.get(WHITELIST), values.get(KICK)),
+                values.get(ROLE_SYNC));
     }
 
     private static List<DiscordId> ids(List<String> values) {

@@ -8,12 +8,14 @@ import com.minecraftdiscordbridge.core.discord.DiscordListener;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
+import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
@@ -25,28 +27,27 @@ import net.dv8tion.jda.api.events.guild.member.GuildMemberUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import org.jspecify.annotations.Nullable;
 
 final class JdaEvents {
-    static final String NOT_SET_UP = "This bot is not set up for this server.";
-    static final String UNKNOWN_COMMAND = "This command is no longer available.";
-
     private final DiscordSettings settings;
     private final GuildScope scope;
     private final CoreLoop loop;
     private final DiscordListener listener;
     private final WebhookSender webhooks;
     private final Map<String, CommandSpec> commands;
+    private final Supplier<Lang> lang;
 
     JdaEvents(
             DiscordSettings settings,
             GuildScope scope,
             CoreLoop loop,
             DiscordListener listener,
-            WebhookSender webhooks) {
+            WebhookSender webhooks,
+            Supplier<Lang> lang) {
         this.settings = settings;
+        this.lang = lang;
         this.scope = scope;
         this.loop = loop;
         this.listener = listener;
@@ -73,12 +74,12 @@ final class JdaEvents {
     void onCommand(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
         if (guild == null || !scope.accepts(guild.getIdLong())) {
-            refuse(event, NOT_SET_UP);
+            refuse(event, "discord.not-set-up");
             return;
         }
         CommandSpec spec = commands.get(event.getName());
         if (spec == null) {
-            refuse(event, UNKNOWN_COMMAND);
+            refuse(event, "discord.unknown-command");
             return;
         }
         JdaCommandReply reply = new JdaCommandReply(event);
@@ -96,6 +97,7 @@ final class JdaEvents {
                 options,
                 new DiscordId(guild.getIdLong()),
                 new DiscordId(event.getChannelIdLong()),
+                event.getChannel().getName(),
                 new DiscordId(event.getUser().getIdLong()),
                 displayName(member, event.getUser().getEffectiveName()),
                 member != null && member.hasPermission(Permission.MANAGE_SERVER),
@@ -149,8 +151,10 @@ final class JdaEvents {
         return message.getAuthor().isBot() ? Origin.BOT : Origin.USER;
     }
 
-    private static void refuse(IReplyCallback interaction, String text) {
-        interaction.reply(Messages.create(text)).setEphemeral(true).queue(null, failure -> {});
+    private void refuse(SlashCommandInteractionEvent event, String key) {
+        String text = Lang.forDiscordLocale(event.getUserLocale().getLocale(), lang.get())
+                .text(key);
+        event.reply(Messages.create(text)).setEphemeral(true).queue(null, failure -> {});
     }
 
     private static String displayName(@Nullable Member member, String fallback) {

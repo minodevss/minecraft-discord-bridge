@@ -6,14 +6,15 @@ import static com.minecraftdiscordbridge.core.Harness.EVENTS;
 import static com.minecraftdiscordbridge.core.Harness.GUILD;
 import static com.minecraftdiscordbridge.core.Harness.MEMBER;
 import static com.minecraftdiscordbridge.core.Harness.OWNER;
-import static com.minecraftdiscordbridge.core.Harness.STEVE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
+import com.minecraftdiscordbridge.core.fakes.RecordingLogs;
 import com.minecraftdiscordbridge.core.fakes.RecordingReply;
 import com.minecraftdiscordbridge.core.fakes.RecordingSource;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.storage.BindingStore;
 import com.minecraftdiscordbridge.core.storage.ChannelRole;
 import java.io.IOException;
@@ -24,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.event.Level;
 
 class SetupTest {
     private static final String UNBOUND = "config-version: 1\n";
@@ -48,6 +50,45 @@ class SetupTest {
             assertThat(bound.settings.channelIds()).containsExactly(CHAT);
             assertThat(bound.settings.commands()).extracting(CommandSpec::name).contains("list", "link");
             assertThat(waiting.shutDown).isTrue();
+        }
+    }
+
+    @Test
+    void offersSetupToMembersWhoCanManageTheServer() throws IOException {
+        try (Harness harness = Harness.started(directory, UNBOUND)) {
+            assertThat(harness.discord().settings.commands())
+                    .singleElement()
+                    .extracting(CommandSpec::access)
+                    .isEqualTo(CommandSpec.Access.MANAGE_SERVER);
+        }
+    }
+
+    @Test
+    void offersChatAndEventsAsFixedChoices() throws IOException {
+        try (Harness harness = Harness.started(directory, UNBOUND)) {
+            CommandSpec.Option as =
+                    harness.discord().settings.commands().get(0).options().get(0);
+
+            assertThat(as.name()).isEqualTo("as");
+            assertThat(as.autocomplete()).isFalse();
+            assertThat(as.choices()).extracting(CommandSpec.Choice::value).containsExactly("chat", "events");
+            assertThat(as.choices())
+                    .allSatisfy(choice -> assertThat(choice.koreanName()).isPresent());
+        }
+    }
+
+    @Test
+    void logsTheChosenChannelByNameAndId() throws IOException {
+        try (RecordingLogs.Capture logs = RecordingLogs.capture();
+                Harness harness = Harness.started(directory, UNBOUND)) {
+            harness.discord().owners = Set.of(OWNER);
+
+            harness.discord()
+                    .command(Harness.request("setup", null, Map.of(), OWNER, CHAT))
+                    .next();
+
+            assertThat(logs.lines(Level.INFO))
+                    .contains("Discord user " + OWNER + " set #minecraft (" + CHAT + ") as the chat channel");
         }
     }
 
@@ -83,8 +124,8 @@ class SetupTest {
     @Test
     void acceptsAOneTimeConsoleCodeFromAServerManager() throws IOException {
         try (Harness harness = Harness.started(directory, UNBOUND)) {
-            String code =
-                    Harness.code(harness.run(RecordingSource.console(), "setup").nextPlain());
+            String code = Harness.code(
+                    harness.run(RecordingSource.console(), GameCommand.SETUP).nextPlain());
             RecordingDiscord waiting = harness.discord();
 
             RecordingReply first = waiting.command(
@@ -106,8 +147,8 @@ class SetupTest {
                                 "link", null, Map.of("code", "WRONG"), new DiscordId(MEMBER.value() + i), CHAT))
                         .next();
             }
-            String code =
-                    Harness.code(harness.run(RecordingSource.console(), "setup").nextPlain());
+            String code = Harness.code(
+                    harness.run(RecordingSource.console(), GameCommand.SETUP).nextPlain());
 
             RecordingReply reply = waiting.command(Harness.managerRequest("setup", Map.of("code", code), MEMBER, CHAT));
 
@@ -118,8 +159,8 @@ class SetupTest {
     @Test
     void refusesCodesFromMembersWhoCannotManageTheServer() throws IOException {
         try (Harness harness = Harness.started(directory, UNBOUND)) {
-            String code =
-                    Harness.code(harness.run(RecordingSource.console(), "setup").nextPlain());
+            String code = Harness.code(
+                    harness.run(RecordingSource.console(), GameCommand.SETUP).nextPlain());
 
             RecordingReply reply =
                     harness.discord().command(Harness.request("setup", null, Map.of("code", code), MEMBER, CHAT));
@@ -132,8 +173,8 @@ class SetupTest {
     @Test
     void expiresConsoleCodesAfterTenMinutes() throws IOException {
         try (Harness harness = Harness.started(directory, UNBOUND)) {
-            String code =
-                    Harness.code(harness.run(RecordingSource.console(), "setup").nextPlain());
+            String code = Harness.code(
+                    harness.run(RecordingSource.console(), GameCommand.SETUP).nextPlain());
             harness.clock.advance(Duration.ofMinutes(10));
 
             RecordingReply reply =
@@ -144,20 +185,11 @@ class SetupTest {
     }
 
     @Test
-    void givesSetupCodesOnlyInTheConsole() throws IOException {
-        try (Harness harness = Harness.started(directory, UNBOUND)) {
-            RecordingSource operator = harness.run(RecordingSource.operator(STEVE.id(), "Steve"), "setup");
-
-            assertThat(operator.nextPlain()).isEqualTo("Run /discord setup in the server console.");
-        }
-    }
-
-    @Test
     void neverBindsTheConsoleChannel() throws IOException {
         try (Harness harness = Harness.started(directory, """
                 config-version: 1
-                discord:
-                  console-channel: "444444444444444444"
+                console:
+                  channel: "444444444444444444"
                 """)) {
             harness.discord().owners = Set.of(OWNER);
 
@@ -177,7 +209,7 @@ class SetupTest {
 
             assertThat(reply.next().text())
                     .startsWith("This channel now shows the Minecraft chat.")
-                    .contains("discord.chat-channel in config.yml takes priority");
+                    .contains("chat.channel in config.yml takes priority");
         }
     }
 }

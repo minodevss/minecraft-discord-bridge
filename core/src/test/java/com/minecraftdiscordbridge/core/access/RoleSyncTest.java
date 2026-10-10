@@ -3,7 +3,6 @@ package com.minecraftdiscordbridge.core.access;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.codes.Codes;
-import com.minecraftdiscordbridge.core.config.RoleSyncConfig;
 import com.minecraftdiscordbridge.core.config.RoleSyncRule;
 import com.minecraftdiscordbridge.core.config.SyncDirection;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
@@ -207,7 +206,7 @@ class RoleSyncTest {
 
     @Test
     void waitsForDiscordBeforeUsingAnyRule() {
-        RoleSync sync = RoleSync.create(new RoleSyncConfig(List.of(VIP_TO_GROUP)), ONLINE, context);
+        RoleSync sync = RoleSync.create(List.of(VIP_TO_GROUP), ONLINE, context);
 
         assertThat(sync.activeRules()).isEmpty();
         sync.discordReady();
@@ -217,7 +216,7 @@ class RoleSyncTest {
     @Test
     void staysOffOnOfflineModeServersWithoutSecureForwarding() {
         PlatformInfo offline = new PlatformInfo("Test", "1.21.1", 3955, false, false);
-        RoleSync sync = RoleSync.create(new RoleSyncConfig(List.of(VIP_TO_GROUP)), offline, context);
+        RoleSync sync = RoleSync.create(List.of(VIP_TO_GROUP), offline, context);
         sync.discordReady();
 
         assertThat(sync.activeRules()).isEmpty();
@@ -239,7 +238,7 @@ class RoleSyncTest {
     }
 
     private RoleSync ready(RoleSyncRule... rules) {
-        RoleSync sync = RoleSync.create(new RoleSyncConfig(List.of(rules)), ONLINE, context);
+        RoleSync sync = RoleSync.create(List.of(rules), ONLINE, context);
         sync.discordReady();
         return sync;
     }

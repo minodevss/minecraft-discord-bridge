@@ -12,7 +12,7 @@ import org.jspecify.annotations.Nullable;
 public final class PaperPlugin extends JavaPlugin {
     private static final String LOADED_MARKER = "minecraftdiscordbridge.loaded";
     private static final String RELOADED =
-            "Minecraft Discord Bridge was reloaded in place. Restart the server instead; /reload is not supported.";
+            "Minecraft Discord Bridge was reloaded in place, which it does not support; restart the server instead";
 
     private @Nullable Bridge bridge;
 

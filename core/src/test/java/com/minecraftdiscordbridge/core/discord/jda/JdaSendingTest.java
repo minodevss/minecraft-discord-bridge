@@ -98,6 +98,7 @@ class JdaSendingTest extends JdaTestBase {
 
         until("retried message", () -> executions().size() == 2);
         until("429 count", () -> bridge.status().channels().get(CHANNEL).rateLimited() == 1);
+        assertThat(bridge.status().channels().get(CHANNEL).name()).contains("minecraft");
     }
 
     @Test

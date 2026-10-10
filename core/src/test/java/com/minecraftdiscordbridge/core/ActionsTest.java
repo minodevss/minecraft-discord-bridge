@@ -10,11 +10,14 @@ import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
 import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
+import com.minecraftdiscordbridge.core.fakes.FakePlatform;
+import com.minecraftdiscordbridge.core.fakes.RecordingLogs;
 import com.minecraftdiscordbridge.core.fakes.RecordingReply;
 import com.minecraftdiscordbridge.core.fakes.Waits;
 import com.minecraftdiscordbridge.core.platform.ActionOutcome;
 import com.minecraftdiscordbridge.core.platform.GameAction;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
+import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -26,16 +29,37 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.event.Level;
 
 class ActionsTest {
     private static final String ACTIONS_ON = CHANNELS + """
-            actions:
+            discord-commands:
               whitelist: true
               kick: true
             """;
 
     @TempDir
     Path directory;
+
+    @Test
+    void offersNoWhitelistWhereThePlatformHasNoneAndSaysSo() throws IOException {
+        try (RecordingLogs.Capture logs = RecordingLogs.capture();
+                Harness harness = Harness.create(directory, ACTIONS_ON)) {
+            harness.platform.info =
+                    new PlatformInfo("Velocity 3.4.0", "1.21.1", FakePlatform.DATA_VERSION, true, false, false);
+            harness.bridge.start();
+
+            assertThat(harness.discord().settings.commands())
+                    .extracting(CommandSpec::name)
+                    .contains("kick")
+                    .doesNotContain("whitelist");
+            assertThat(logs.lines(Level.WARN))
+                    .filteredOn(line -> line.contains("whitelist"))
+                    .singleElement()
+                    .asString()
+                    .contains("has no effect on Velocity 3.4.0");
+        }
+    }
 
     @Test
     void offersWhitelistAndKickOnlyWhenTurnedOnAndOnlyToAdmins() throws IOException {
@@ -47,7 +71,7 @@ class ActionsTest {
         try (Harness on = Harness.started(directory.resolve("on"), ACTIONS_ON)) {
             List<CommandSpec> commands = on.discord().settings.commands();
             assertThat(commands)
-                    .filteredOn(CommandSpec::adminOnly)
+                    .filteredOn(command -> command.access() == CommandSpec.Access.ADMINS)
                     .extracting(CommandSpec::name)
                     .containsExactly("whitelist", "kick");
             CommandSpec whitelist = commands.stream()
@@ -65,8 +89,23 @@ class ActionsTest {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             RecordingReply reply = harness.discord().command(whitelist("add", "Steve"));
 
-            assertThat(reply.next().text()).isEqualTo("This action is turned off in config.yml.");
+            assertThat(reply.next().text()).isEqualTo("This command is turned off in config.yml.");
             assertThat(harness.platform.actions).isEmpty();
+        }
+    }
+
+    @Test
+    void logsWhoAskedForWhatAndHowItWentInWords() throws IOException {
+        try (RecordingLogs.Capture logs = RecordingLogs.capture();
+                Harness harness = Harness.started(directory, ACTIONS_ON)) {
+            harness.platform.outcomes =
+                    action -> CompletableFuture.completedFuture(new ActionOutcome.Failed("the whitelist is locked"));
+
+            harness.discord().command(whitelist("remove", "Steve")).next();
+
+            assertThat(logs.lines(Level.INFO))
+                    .contains("Discord user " + MEMBER + " (Alex) asked to remove Steve from the whitelist: failed (the"
+                            + " whitelist is locked)");
         }
     }
 
@@ -117,7 +156,7 @@ class ActionsTest {
             assertThat(harness.platform.actions)
                     .containsExactly(
                             new GameAction.Kick("Steve", "spam"),
-                            new GameAction.Kick("Steve", "Kicked from Discord by Alex"));
+                            new GameAction.Kick("Steve", "Kicked by Alex on Discord"));
         }
     }
 
@@ -149,7 +188,7 @@ class ActionsTest {
                             .command(whitelist("add", "Steve"))
                             .next()
                             .text())
-                    .isEqualTo("That did not work for **Steve**: the server did not answer in time");
+                    .isEqualTo("That did not work for **Steve**: the Minecraft server did not answer in time");
         }
     }
 

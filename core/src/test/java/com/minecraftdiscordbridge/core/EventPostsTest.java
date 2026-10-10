@@ -14,6 +14,7 @@ import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
 import com.minecraftdiscordbridge.core.fakes.RecordingSource;
 import com.minecraftdiscordbridge.core.fakes.Waits;
 import com.minecraftdiscordbridge.core.platform.AdvancementFrame;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.RichText;
 import java.io.IOException;
@@ -47,12 +48,12 @@ class EventPostsTest {
             assertThat(posts)
                     .extracting(OutboundMessage::text)
                     .containsExactly(
-                            "**Alex\\_2** joined the server",
+                            "Alex\\_2 joined the game",
                             "Alex\\_2 fell from a high place",
-                            "**Alex\\_2** has made the advancement **Stone Age**",
-                            "**Alex\\_2** has reached the goal **Hot Stuff**",
-                            "**Alex\\_2** has completed the challenge **Arbalistic**",
-                            "**Alex\\_2** left the server");
+                            "Alex\\_2 has made the advancement [Stone Age]",
+                            "Alex\\_2 has reached the goal [Hot Stuff]",
+                            "Alex\\_2 has completed the challenge [Arbalistic]",
+                            "Alex\\_2 left the game");
             assertThat(posts).allSatisfy(post -> {
                 assertThat(post.channelId()).isEqualTo(EVENTS);
                 assertThat(post.author()).isEqualTo(Author.server());
@@ -74,14 +75,13 @@ class EventPostsTest {
 
     @Test
     void respectsEachToggle() throws IOException {
-        try (Harness harness = Harness.started(directory, CHANNELS + """
-                events:
+        try (Harness harness = Harness.started(directory, Harness.withEventSettings("""
                   join: false
                   leave: false
                   death: false
                   advancement: false
                   server-start: false
-                """)) {
+                """))) {
             harness.publish(new GameEvent.ServerStarted(List.of()));
             harness.publish(new GameEvent.PlayerJoined(STEVE, false));
             harness.publish(new GameEvent.PlayerDied(STEVE, new RichText("{}", "Steve died")));
@@ -97,8 +97,8 @@ class EventPostsTest {
     void usesTheChatChannelWhenNoEventsChannelIsSet() throws IOException {
         try (Harness harness = Harness.started(directory, """
                 config-version: 1
-                discord:
-                  chat-channel: "222222222222222222"
+                chat:
+                  channel: "222222222222222222"
                 """)) {
             harness.publish(new GameEvent.PlayerJoined(STEVE, false));
 
@@ -108,14 +108,13 @@ class EventPostsTest {
 
     @Test
     void pingsOnlyTheConfiguredRoleWhenTheServerStarts() throws IOException {
-        try (Harness harness = Harness.started(directory, CHANNELS + """
-                events:
+        try (Harness harness = Harness.started(directory, Harness.withEventSettings("""
                   server-start-ping-role: "777777777777777777"
-                """)) {
+                """))) {
             harness.publish(new GameEvent.ServerStarted(List.of()));
 
             OutboundMessage post = harness.discord().nextSent();
-            assertThat(post.text()).isEqualTo("<@&" + ROLE + "> The server has started.");
+            assertThat(post.text()).isEqualTo("<@&" + ROLE + "> The server has started");
             assertThat(post.pingRoleIds()).containsExactly(ROLE);
             assertThat(post.pingUserIds()).isEmpty();
         }
@@ -125,9 +124,9 @@ class EventPostsTest {
     void announcesTheStartOnlyOnceEvenAfterReloads() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             harness.publish(new GameEvent.ServerStarted(List.of()));
-            assertThat(harness.discord().nextSent().text()).isEqualTo("The server has started.");
+            assertThat(harness.discord().nextSent().text()).isEqualTo("The server has started");
 
-            harness.run(RecordingSource.console(), "reload").nextPlain();
+            harness.run(RecordingSource.console(), GameCommand.RELOAD).nextPlain();
 
             Waits.nothingIn(harness.discord().sent);
         }
@@ -138,7 +137,7 @@ class EventPostsTest {
         try (Harness harness = Harness.started(directory, "language: ko\n" + CHANNELS)) {
             harness.publish(new GameEvent.AdvancementEarned(STEVE, title("Hot Stuff"), AdvancementFrame.GOAL));
 
-            assertThat(harness.discord().nextSent().text()).isEqualTo("**Steve**님이 목표 **Hot Stuff**을(를) 달성했습니다");
+            assertThat(harness.discord().nextSent().text()).isEqualTo("Steve님이 [Hot Stuff] 목표를 달성했습니다");
         }
     }
 
@@ -165,7 +164,7 @@ class EventPostsTest {
             harness.publish(new GameEvent.PlayerDied(
                     STEVE, new RichText("{\"translate\":\"death.attack.mymod.wisp\"}", "Steve met a wisp")));
 
-            assertThat(discord.nextSent().text()).isEqualTo("**Steve**님이 발전 과제 **석기 시대**을(를) 달성했습니다");
+            assertThat(discord.nextSent().text()).isEqualTo("Steve님이 [석기 시대] 발전 과제를 달성했습니다");
             assertThat(discord.nextSent().text()).isEqualTo("Steve met a wisp");
         }
     }
@@ -178,8 +177,8 @@ class EventPostsTest {
             harness.publish(new GameEvent.PlayerSwitchedServer(ALEX, "lobby", "survival_1"));
 
             RecordingDiscord discord = harness.discord();
-            assertThat(discord.nextSent().text()).isEqualTo("**Alex\\_2** joined the server");
-            assertThat(discord.nextSent().text()).isEqualTo("**Alex\\_2** moved to **survival\\_1**");
+            assertThat(discord.nextSent().text()).isEqualTo("Alex\\_2 joined the game");
+            assertThat(discord.nextSent().text()).isEqualTo("Alex\\_2 moved to survival\\_1");
             Waits.nothingIn(discord.sent);
         }
     }
@@ -191,7 +190,7 @@ class EventPostsTest {
             harness.publish(new GameEvent.PlayerSwitchedServer(STEVE, null, "lobby"));
 
             RecordingDiscord discord = harness.discord();
-            assertThat(discord.nextSent().text()).isEqualTo("**Steve** joined the server");
+            assertThat(discord.nextSent().text()).isEqualTo("Steve joined the game");
             Waits.nothingIn(discord.sent);
         }
     }
@@ -201,7 +200,7 @@ class EventPostsTest {
         try (Harness harness = Harness.started(directory, "language: ko\n" + CHANNELS)) {
             harness.publish(new GameEvent.PlayerSwitchedServer(STEVE, "lobby", "survival"));
 
-            assertThat(harness.discord().nextSent().text()).isEqualTo("**Steve**님이 **survival** 서버로 이동했습니다");
+            assertThat(harness.discord().nextSent().text()).isEqualTo("Steve님이 survival 서버로 이동했습니다");
         }
     }
 
@@ -213,7 +212,7 @@ class EventPostsTest {
 
             assertThat(harness.discord().nextSent().text()).isEqualTo("Steve was slain by \\*\\*Boss\\*\\*");
             assertThat(harness.discord().nextSent().text())
-                    .isEqualTo("**Steve** has made the advancement **\\<@&1\\> \\*x\\***");
+                    .isEqualTo("Steve has made the advancement [\\<@&1\\> \\*x\\*]");
         }
     }
 

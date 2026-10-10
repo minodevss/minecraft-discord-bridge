@@ -5,7 +5,6 @@ import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 import com.minecraftdiscordbridge.core.commands.DiscordCommands;
 import com.minecraftdiscordbridge.core.config.BridgeConfig;
 import com.minecraftdiscordbridge.core.config.ConfigSnapshot;
-import com.minecraftdiscordbridge.core.config.DiscordConfig;
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
@@ -21,11 +20,13 @@ import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.OfflineDiscord;
+import com.minecraftdiscordbridge.core.discord.StatusReason;
 import com.minecraftdiscordbridge.core.discord.WebhookRepository;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
 import com.minecraftdiscordbridge.core.loop.Deadline;
+import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import com.minecraftdiscordbridge.core.setup.Channels;
 import com.minecraftdiscordbridge.core.setup.SetupGuide;
 import com.minecraftdiscordbridge.core.storage.StoredCommandHashes;
@@ -54,7 +55,8 @@ final class DiscordConnection {
                 CoreLoop loop,
                 DiscordListener listener,
                 WebhookRepository webhooks,
-                CommandHashRepository commandHashes);
+                CommandHashRepository commandHashes,
+                Supplier<Lang> lang);
     }
 
     private final Services services;
@@ -84,9 +86,7 @@ final class DiscordConnection {
         Set<DiscordId> ids = new LinkedHashSet<>();
         channels.chat().ifPresent(ids::add);
         channels.events().ifPresent(ids::add);
-        if (config.console().mirror() || !config.console().inputUsers().isEmpty()) {
-            config.discord().consoleChannel().ifPresent(ids::add);
-        }
+        config.console().channel().ifPresent(ids::add);
         return ids;
     }
 
@@ -97,7 +97,7 @@ final class DiscordConnection {
             replace(OfflineDiscord.stopped(OfflineDiscord.NO_TOKEN));
             return Outcome.NO_TOKEN;
         }
-        DiscordSettings next = settings(loaded, channels);
+        DiscordSettings next = settings(loaded, channels, services.platform().info());
         if (next.equals(settings) && services.discord().status().state() == DiscordStatus.State.READY) {
             return Outcome.APPLIED;
         }
@@ -120,28 +120,26 @@ final class DiscordConnection {
         return services.discord().swap(OfflineDiscord.stopped(OfflineDiscord.STOPPED));
     }
 
-    private static DiscordSettings settings(ConfigSnapshot snapshot, Channels channels) {
+    private static DiscordSettings settings(ConfigSnapshot snapshot, Channels channels, PlatformInfo platform) {
         BridgeConfig config = snapshot.config();
         Set<DiscordId> channelIds = channelIds(config, channels);
         List<CommandSpec> commands =
-                channelIds.isEmpty() ? DiscordCommands.setupOnly() : DiscordCommands.forConfig(config);
+                channelIds.isEmpty() ? DiscordCommands.setupOnly() : DiscordCommands.forConfig(config, platform);
         return new DiscordSettings(
                 snapshot.secrets().discordToken(),
-                guild(config.discord(), channels),
+                guild(config, channels),
                 channelIds,
                 Author.server(),
-                config.discord().autoEnableMessageContent(),
                 needsMembers(config),
                 commands);
     }
 
     private static boolean needsMembers(BridgeConfig config) {
-        return !config.roleSync().rules().isEmpty()
-                || config.linking().requiredRole().isPresent();
+        return !config.roleSync().isEmpty() || config.linking().requiredRole().isPresent();
     }
 
-    private static Optional<DiscordId> guild(DiscordConfig config, Channels channels) {
-        if (config.chatChannel().isPresent() || config.eventsChannel().isPresent()) {
+    private static Optional<DiscordId> guild(BridgeConfig config, Channels channels) {
+        if (config.chat().channel().isPresent() || config.events().channel().isPresent()) {
             return Optional.empty();
         }
         return channels.guild();
@@ -184,14 +182,17 @@ final class DiscordConnection {
                         services.loop(),
                         new Listener(target),
                         new StoredWebhooks(stores.webhooks(), services.io()),
-                        new StoredCommandHashes(stores.commandHashes(), services.io()));
+                        new StoredCommandHashes(stores.commandHashes(), services.io()),
+                        lang);
                 services.discord().swap(created);
                 created.start();
             } catch (RuntimeException failure) {
                 LOGGER.error(
                         "Could not start the Discord connection: {}. Run /discord reload to try again",
                         Failures.describe(failure));
-                services.discord().swap(OfflineDiscord.stopped(failure.toString()));
+                services.discord()
+                        .swap(OfflineDiscord.stopped(
+                                new StatusReason(StatusReason.Kind.START_FAILED, Failures.describe(failure))));
                 return;
             }
         }

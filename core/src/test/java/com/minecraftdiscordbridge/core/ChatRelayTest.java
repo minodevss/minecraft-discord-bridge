@@ -16,6 +16,7 @@ import com.minecraftdiscordbridge.core.fakes.RecordingLogs;
 import com.minecraftdiscordbridge.core.fakes.RecordingSource;
 import com.minecraftdiscordbridge.core.fakes.Waits;
 import com.minecraftdiscordbridge.core.platform.Delivery;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.storage.Edition;
 import com.minecraftdiscordbridge.core.storage.Link;
@@ -66,10 +67,9 @@ class ChatRelayTest {
 
     @Test
     void dropsMinecraftChatWithABlockedWord() throws IOException {
-        try (Harness harness = Harness.started(directory, CHANNELS + """
-                chat:
+        try (Harness harness = Harness.started(directory, Harness.withChatSettings("""
                   blocked-words: ["(?i)badword"]
-                """)) {
+                """))) {
             harness.publish(new GameEvent.PlayerChatted(STEVE, "a BadWord here"));
             harness.publish(new GameEvent.PlayerChatted(STEVE, "fine"));
 
@@ -88,10 +88,9 @@ class ChatRelayTest {
                     Edition.JAVA,
                     Instant.EPOCH));
         }
-        try (Harness harness = Harness.started(directory, CHANNELS + """
-                chat:
+        try (Harness harness = Harness.started(directory, Harness.withChatSettings("""
                   ping-linked-players: true
-                """)) {
+                """))) {
             harness.publish(new GameEvent.PlayerChatted(
                     STEVE, "@friend_1 @Friend_2 @Friend_3 @Friend_4 @nobody mail@Friend_1"));
 
@@ -116,10 +115,9 @@ class ChatRelayTest {
                   "discordId": "99999999999999999999", "minecraftName": "Friend", "edition": "java",
                   "linkedAt": "2026-10-10T00:00:00Z"}]}
                 """);
-        try (Harness harness = Harness.started(directory, CHANNELS + """
-                chat:
+        try (Harness harness = Harness.started(directory, Harness.withChatSettings("""
                   ping-linked-players: true
-                """)) {
+                """))) {
             harness.publish(new GameEvent.PlayerChatted(STEVE, "@Friend hi"));
 
             OutboundMessage sent = harness.discord().nextSent();
@@ -145,7 +143,7 @@ class ChatRelayTest {
     @Test
     void showsDiscordChatToPlayersExceptThoseWhoHidIt() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
-            RecordingSource steve = harness.run(RecordingSource.player(STEVE.id(), "Steve"), "toggle");
+            RecordingSource steve = harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.TOGGLE);
             assertThat(steve.nextPlain()).startsWith("Messages from Discord are hidden");
 
             harness.discord()
@@ -174,8 +172,9 @@ class ChatRelayTest {
     void showsHiddenMessagesAgainAfterASecondToggle() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             RecordingSource steve = RecordingSource.player(STEVE.id(), "Steve");
-            harness.run(steve, "toggle").nextPlain();
-            assertThat(harness.run(steve, "toggle").nextPlain()).isEqualTo("Messages from Discord are shown again.");
+            harness.run(steve, GameCommand.TOGGLE).nextPlain();
+            assertThat(harness.run(steve, GameCommand.TOGGLE).nextPlain())
+                    .isEqualTo("Messages from Discord are shown again.");
 
             harness.discord().receive(Harness.message(CHAT, "hi"));
 
@@ -226,10 +225,9 @@ class ChatRelayTest {
     @Test
     void warnsThatLegacyColorCodesInTheChatFormatShowAsText() throws IOException {
         try (RecordingLogs.Capture logs = RecordingLogs.capture();
-                Harness harness = Harness.started(directory, CHANNELS + """
-                        chat:
+                Harness harness = Harness.started(directory, Harness.withChatSettings("""
                           format: "&a<author>: <message>"
-                        """)) {
+                        """))) {
             assertThat(harness.discord().started).isTrue();
             assertThat(logs.lines(Level.WARN))
                     .anySatisfy(line ->
@@ -261,10 +259,9 @@ class ChatRelayTest {
 
     @Test
     void ignoresOtherChannelsBlockedWordsAndEmptyMessages() throws IOException {
-        try (Harness harness = Harness.started(directory, CHANNELS + """
-                chat:
+        try (Harness harness = Harness.started(directory, Harness.withChatSettings("""
                   blocked-words: ["secret"]
-                """)) {
+                """))) {
             harness.discord().receive(Harness.message(EVENTS, "wrong channel"));
             harness.discord().receive(Harness.message(CHAT, "a secret"));
             harness.discord().receive(Harness.message(CHAT, "   "));
@@ -277,11 +274,10 @@ class ChatRelayTest {
 
     @Test
     void relaysNothingWhenBothDirectionsAreOff() throws IOException {
-        try (Harness harness = Harness.started(directory, CHANNELS + """
-                chat:
+        try (Harness harness = Harness.started(directory, Harness.withChatSettings("""
                   minecraft-to-discord: false
                   discord-to-minecraft: false
-                """)) {
+                """))) {
             harness.publish(new GameEvent.PlayerChatted(STEVE, "hi"));
             harness.discord().receive(Harness.message(CHAT, "hi"));
 
@@ -303,10 +299,9 @@ class ChatRelayTest {
 
     @Test
     void usesTheDefaultFormatWhileChatFormatIsInvalid() throws IOException {
-        try (Harness harness = Harness.started(directory, CHANNELS + """
-                chat:
+        try (Harness harness = Harness.started(directory, Harness.withChatSettings("""
                   format: "§a<author>: <message>"
-                """)) {
+                """))) {
             harness.discord().receive(Harness.message(CHAT, "hi"));
 
             assertThat(plain(Waits.take(harness.platform.deliveries))).isEqualTo("[Discord] Alex: hi");

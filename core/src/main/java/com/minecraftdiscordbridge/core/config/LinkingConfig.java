@@ -7,4 +7,8 @@ public record LinkingConfig(
         boolean enabled,
         boolean requireForJoin,
         Optional<DiscordId> requiredRole,
-        UnreachablePolicy whenDiscordUnreachable) {}
+        UnreachablePolicy whenDiscordUnreachable) {
+    public boolean gatesJoins() {
+        return requireForJoin || requiredRole.isPresent();
+    }
+}

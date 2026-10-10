@@ -59,7 +59,7 @@ record Features(
         boolean hasGuild = !DiscordConnection.channelIds(config, channels).isEmpty();
         FeatureContext context = new FeatureContext(services.discord(), services.io(), services.clock(), replies);
         ChannelSetup setup = new ChannelSetup(
-                context, config.discord(), stores.bindings(), services.setupCodes(), services.setupAttempts(), rebound);
+                context, config, stores.bindings(), services.setupCodes(), services.setupAttempts(), rebound);
         Linking linking = new Linking(
                 context,
                 config.linking(),
@@ -68,7 +68,7 @@ record Features(
                 services.linkAttempts(),
                 services.roster(),
                 () -> hasGuild && services.discord().status().isConnected());
-        Actions actions = new Actions(config.actions(), services.gameActions(), lang);
+        Actions actions = new Actions(config.discordCommands(), services.gameActions(), lang);
         AccessContext access = services.accessContext(stores);
         return new Features(
                 replies,
@@ -82,7 +82,7 @@ record Features(
                         stores.preferences()::hidingDiscord),
                 new EventPosts(
                         config.events(), events, lang, services.vanilla().use(config.language()), services.discord()),
-                new StatusBoard(config.status(), chat, lang, services.discord(), services.roster()),
+                new StatusBoard(config.playerCount(), chat, lang, services.discord(), services.roster()),
                 new DiscordCommands(setup, linking, actions, services.roster(), lang),
                 BridgeCommand.active(
                         replies,
@@ -91,20 +91,14 @@ record Features(
                         new ChatToggle(stores.preferences(), services.io(), replies),
                         setup),
                 ConsoleMirror.start(
-                        config.console(),
-                        snapshot.secrets().hasDiscordToken() ? config.discord().consoleChannel() : Optional.empty(),
+                        snapshot.secrets().hasDiscordToken() ? config.console().channel() : Optional.empty(),
                         services.discord(),
                         lang,
                         services.loop(),
                         () -> secrets(services, snapshot)),
                 JoinGate.create(config.linking(), services.platform().info(), access, replies),
                 RoleSync.create(config.roleSync(), services.platform().info(), access),
-                new ConsoleInput(
-                        context,
-                        config.console(),
-                        config.discord().consoleChannel(),
-                        services.gameActions(),
-                        () -> secrets(services, snapshot)));
+                new ConsoleInput(context, config.console(), services.gameActions(), () -> secrets(services, snapshot)));
     }
 
     private static Format chatFormat(String template) {
@@ -114,7 +108,7 @@ record Features(
             return format;
         } catch (IllegalArgumentException invalid) {
             LOGGER.warn(
-                    "{} Using the default chat.format; fix chat.format in config.yml and run /discord reload",
+                    "{}. Using the default chat.format; fix chat.format in config.yml and run /discord reload",
                     invalid.getMessage());
             return DiscordChat.compileFormat(BridgeConfig.defaults().chat().format());
         }

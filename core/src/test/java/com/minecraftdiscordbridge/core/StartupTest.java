@@ -13,6 +13,7 @@ import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.fakes.RecordingLogs;
 import com.minecraftdiscordbridge.core.fakes.RecordingSource;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.setup.SetupGuide;
 import java.io.IOException;
@@ -65,6 +66,16 @@ class StartupTest {
     }
 
     @Test
+    void needsNoMembersIntentToRequireOnlyALink() throws IOException {
+        try (Harness harness = Harness.started(directory, CHANNELS + """
+                linking:
+                  require-for-join: true
+                """)) {
+            assertThat(harness.discord().settings.requestMembersIntent()).isFalse();
+        }
+    }
+
+    @Test
     void staysIdleWithoutATokenAndKeepsTheServerUnaffected() throws IOException {
         try (Harness harness = Harness.create(directory, CHANNELS, Map.of())) {
             harness.bridge.start();
@@ -79,19 +90,19 @@ class StartupTest {
     }
 
     @Test
-    void explainsTheMissingTokenInAShortBannerThatAgreesWithItself() throws IOException {
+    void explainsTheMissingTokenInOneLineWithTheSetupGuide() throws IOException {
         try (RecordingLogs.Capture logs = RecordingLogs.capture();
                 Harness harness = Harness.create(directory, CHANNELS, Map.of())) {
             harness.bridge.start();
             harness.settledStatus();
 
             assertThat(logs.lines(Level.WARN))
-                    .hasSizeLessThanOrEqualTo(3)
-                    .anySatisfy(line -> assertThat(line).contains(SetupGuide.QUICK_START))
-                    .anySatisfy(line -> assertThat(line)
-                            .contains("https://discord.com/developers/applications")
-                            .contains(directory.resolve("secrets.yml").toString())
-                            .contains("/discord reload"));
+                    .singleElement()
+                    .asString()
+                    .contains(SetupGuide.QUICK_START)
+                    .contains("https://discord.com/developers/applications")
+                    .contains(directory.resolve("secrets.yml").toString())
+                    .contains("/discord reload");
             assertThat(logs.lines()).noneSatisfy(line -> assertThat(line).contains("restart"));
         }
     }
@@ -100,11 +111,10 @@ class StartupTest {
     void mirrorsTheConsoleOnlyWhileABotTokenIsSet() throws IOException {
         String mirrored = """
                 config-version: 1
-                discord:
-                  chat-channel: "222222222222222222"
-                  console-channel: "444444444444444444"
+                chat:
+                  channel: "222222222222222222"
                 console:
-                  mirror: true
+                  channel: "444444444444444444"
                 """;
         Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"" + TOKEN + "\"\n");
         try (Harness harness = Harness.create(directory, mirrored, Map.of())) {
@@ -113,7 +123,8 @@ class StartupTest {
             assertThat(consoleMirrorAttached()).isTrue();
 
             Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"\"\n");
-            assertThat(harness.run(RecordingSource.console(), "reload").nextPlain())
+            assertThat(harness.run(RecordingSource.console(), GameCommand.RELOAD)
+                            .nextPlain())
                     .contains("no bot token is set");
 
             assertThat(consoleMirrorAttached()).isFalse();
@@ -123,11 +134,10 @@ class StartupTest {
     @Test
     void hidesPendingLinkCodesInTheMirroredConsole() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS + """
-                  console-channel: "444444444444444444"
                 console:
-                  mirror: true
+                  channel: "444444444444444444"
                 """)) {
-            String code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
+            String code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.LINK)
                     .nextPlain());
 
             LogManager.getLogger("net.minecraft.server.MinecraftServer").error("Disconnecting Steve: {}", code);

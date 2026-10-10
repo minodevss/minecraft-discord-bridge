@@ -14,10 +14,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.interactions.IntegrationType;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -79,11 +81,8 @@ final class CommandRegistrar {
         SlashCommandData command = Commands.slash(spec.name(), spec.description())
                 .setContexts(InteractionContextType.GUILD)
                 .setIntegrationTypes(IntegrationType.GUILD_INSTALL)
-                .setDefaultPermissions(
-                        spec.adminOnly() ? DefaultMemberPermissions.DISABLED : DefaultMemberPermissions.ENABLED);
-        spec.korean()
-                .ifPresent(korean -> command.setNameLocalization(DiscordLocale.KOREAN, korean.name())
-                        .setDescriptionLocalization(DiscordLocale.KOREAN, korean.description()));
+                .setDefaultPermissions(defaultPermissions(spec.access()));
+        spec.koreanDescription().ifPresent(korean -> command.setDescriptionLocalization(DiscordLocale.KOREAN, korean));
         return command.addOptions(
                         spec.options().stream().map(CommandRegistrar::toData).toList())
                 .addSubcommands(spec.subcommands().stream()
@@ -93,21 +92,33 @@ final class CommandRegistrar {
 
     private static SubcommandData toData(CommandSpec.Subcommand spec) {
         SubcommandData subcommand = new SubcommandData(spec.name(), spec.description());
-        spec.korean()
-                .ifPresent(korean -> subcommand
-                        .setNameLocalization(DiscordLocale.KOREAN, korean.name())
-                        .setDescriptionLocalization(DiscordLocale.KOREAN, korean.description()));
+        spec.koreanDescription()
+                .ifPresent(korean -> subcommand.setDescriptionLocalization(DiscordLocale.KOREAN, korean));
         return subcommand.addOptions(
                 spec.options().stream().map(CommandRegistrar::toData).toList());
     }
 
     private static OptionData toData(CommandSpec.Option spec) {
         OptionData option = new OptionData(
-                type(spec.type()), spec.name(), spec.description(), spec.required(), spec.autocomplete());
-        spec.korean()
-                .ifPresent(korean -> option.setNameLocalization(DiscordLocale.KOREAN, korean.name())
-                        .setDescriptionLocalization(DiscordLocale.KOREAN, korean.description()));
+                        type(spec.type()), spec.name(), spec.description(), spec.required(), spec.autocomplete())
+                .addChoices(
+                        spec.choices().stream().map(CommandRegistrar::toData).toList());
+        spec.koreanDescription().ifPresent(korean -> option.setDescriptionLocalization(DiscordLocale.KOREAN, korean));
         return option;
+    }
+
+    private static Command.Choice toData(CommandSpec.Choice spec) {
+        Command.Choice choice = new Command.Choice(spec.name(), spec.value());
+        spec.koreanName().ifPresent(korean -> choice.setNameLocalization(DiscordLocale.KOREAN, korean));
+        return choice;
+    }
+
+    private static DefaultMemberPermissions defaultPermissions(CommandSpec.Access access) {
+        return switch (access) {
+            case EVERYONE -> DefaultMemberPermissions.ENABLED;
+            case MANAGE_SERVER -> DefaultMemberPermissions.enabledFor(Permission.MANAGE_SERVER);
+            case ADMINS -> DefaultMemberPermissions.DISABLED;
+        };
     }
 
     private static OptionType type(CommandSpec.OptionType type) {

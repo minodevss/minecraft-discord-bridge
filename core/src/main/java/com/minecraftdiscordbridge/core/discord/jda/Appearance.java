@@ -73,13 +73,13 @@ final class Appearance {
         if (!channel.getGuild().getSelfMember().hasPermission(channel, Permission.MANAGE_CHANNEL)) {
             if (topicLocked.add(channelId)) {
                 LOGGER.warn(
-                        "Give the bot the Manage Channel permission in #{} so it can update the topic",
-                        channel.getName());
+                        "Give the bot the Manage Channel permission in {} so it can update the topic",
+                        ChannelLabels.of(channel));
             }
             return;
         }
         if (topicLocked.remove(channelId)) {
-            LOGGER.info("The bot can update the topic of #{} again", channel.getName());
+            LOGGER.info("The bot can update the topic of {} again", ChannelLabels.of(channel));
         }
         String fitted = Graphemes.fit(topic, MAX_TOPIC_LENGTH, Graphemes.ELLIPSIS);
         if (fitted.equals(channel.getTopic())) {
@@ -90,8 +90,8 @@ final class Appearance {
                 .queue(
                         null,
                         failure -> LOGGER.warn(
-                                "Could not update the topic of #{}: {}",
-                                channel.getName(),
+                                "Could not update the topic of {}: {}",
+                                ChannelLabels.of(channel),
                                 Failures.describe(failure)));
     }
 }

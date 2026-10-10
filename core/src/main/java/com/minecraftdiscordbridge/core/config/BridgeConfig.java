@@ -1,17 +1,21 @@
 package com.minecraftdiscordbridge.core.config;
 
 import com.minecraftdiscordbridge.core.i18n.Language;
+import java.util.List;
 
 public record BridgeConfig(
         Language language,
-        DiscordConfig discord,
         ChatConfig chat,
         EventsConfig events,
-        StatusConfig status,
+        PlayerCountConfig playerCount,
         LinkingConfig linking,
-        RoleSyncConfig roleSync,
-        ActionsConfig actions,
-        ConsoleConfig console) {
+        ConsoleConfig console,
+        DiscordCommandsConfig discordCommands,
+        List<RoleSyncRule> roleSync) {
+    public BridgeConfig {
+        roleSync = List.copyOf(roleSync);
+    }
+
     public static BridgeConfig defaults() {
         return ConfigSchema.toConfig(ConfigValues.defaults());
     }

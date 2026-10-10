@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
 import com.minecraftdiscordbridge.core.fakes.RecordingSource;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,8 +32,7 @@ class ShutdownTest {
 
         harness.publish(new GameEvent.ServerStarted(List.of()));
 
-        assertThat(harness.discord().nextSent().text())
-                .isEqualTo("The server has started. It recovered from an unclean shutdown.");
+        assertThat(harness.discord().nextSent().text()).isEqualTo("The server has started after an unclean shutdown");
         harness.close();
         assertThat(marker).doesNotExist();
     }
@@ -42,7 +42,7 @@ class ShutdownTest {
         Harness harness = Harness.started(directory, CHANNELS);
         harness.publish(new GameEvent.ServerStarted(List.of()));
 
-        assertThat(harness.discord().nextSent().text()).isEqualTo("The server has started.");
+        assertThat(harness.discord().nextSent().text()).isEqualTo("The server has started");
         assertThat(directory.resolve("data").resolve("running")).exists();
         harness.close();
     }
@@ -55,7 +55,7 @@ class ShutdownTest {
         harness.publish(new GameEvent.ServerStopping());
         harness.bridge.stop();
 
-        assertThat(discord.finalMessages).extracting(OutboundMessage::text).containsExactly("The server has stopped.");
+        assertThat(discord.finalMessages).extracting(OutboundMessage::text).containsExactly("The server has stopped");
         assertThat(discord.finalMessages.get(0).channelId()).isEqualTo(EVENTS);
         assertThat(discord.shutDown).isTrue();
     }
@@ -70,12 +70,12 @@ class ShutdownTest {
 
         assertThat(discord.finalMessages)
                 .extracting(OutboundMessage::text)
-                .containsExactly("The server has stopped unexpectedly.");
+                .containsExactly("The server has stopped unexpectedly");
     }
 
     @Test
     void skipsTheStopPostWhenItIsTurnedOff() throws IOException {
-        Harness harness = Harness.started(directory, CHANNELS + "events:\n  server-stop: false\n");
+        Harness harness = Harness.started(directory, Harness.withEventSettings("  server-stop: false\n"));
         RecordingDiscord discord = harness.discord();
 
         harness.publish(new GameEvent.ServerStopping());
@@ -106,7 +106,7 @@ class ShutdownTest {
                     harness.bridge.stop();
                     harness.bridge.stop();
                     harness.bridge.publish(new GameEvent.PlayerChatted(STEVE, "late"));
-                    harness.bridge.command(RecordingSource.console(), List.of("status"));
+                    harness.bridge.command(RecordingSource.console(), GameCommand.STATUS);
                 })
                 .doesNotThrowAnyException();
     }

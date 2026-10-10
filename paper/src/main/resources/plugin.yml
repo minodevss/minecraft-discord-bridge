@@ -5,23 +5,23 @@ api-version: '1.21'
 folia-supported: true
 description: Minecraft ↔ Discord bridge
 website: https://github.com/minodevss/minecraft-discord-bridge
-softdepend: [LuckPerms, PlaceholderAPI, floodgate]
+softdepend: [LuckPerms, floodgate]
 permissions:
   minecraftdiscordbridge.command.link:
-    description: Link a Discord account with /discord link
+    description: Get a code to link your Discord account, or unlink it
     default: true
   minecraftdiscordbridge.command.toggle:
-    description: Hide or show Discord messages for yourself
+    description: Hide or show messages from Discord for yourself
     default: true
   minecraftdiscordbridge.command.status:
-    description: Show the bridge status
+    description: Show the Discord connection, queues and linked accounts
     default: op
   minecraftdiscordbridge.command.reload:
-    description: Reload the bridge configuration
+    description: Reload config.yml and secrets.yml
     default: op
   minecraftdiscordbridge.command.setup:
-    description: Set up the Discord bot and channels
+    description: Get a one-time code for /setup in Discord (console only)
     default: op
   minecraftdiscordbridge.gate.bypass:
-    description: Join without a linked Discord account
+    description: Join without the linked Discord account or role the join gate asks for
     default: op

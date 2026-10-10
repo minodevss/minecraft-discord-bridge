@@ -4,13 +4,13 @@ import com.minecraftdiscordbridge.core.codes.Codes;
 import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
-import com.minecraftdiscordbridge.core.discord.OfflineDiscord;
 import com.minecraftdiscordbridge.core.fakes.FakeGroups;
 import com.minecraftdiscordbridge.core.fakes.FakePlatform;
 import com.minecraftdiscordbridge.core.fakes.MutableClock;
 import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
 import com.minecraftdiscordbridge.core.fakes.RecordingSource;
 import com.minecraftdiscordbridge.core.fakes.Waits;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.minecraftdiscordbridge.core.vanilla.FakeFetcher;
@@ -21,7 +21,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -44,9 +43,10 @@ final class Harness implements AutoCloseable {
     static final String TOKEN = "test-token";
     static final String CHANNELS = """
             config-version: 1
-            discord:
-              chat-channel: "222222222222222222"
-              events-channel: "333333333333333333"
+            chat:
+              channel: "222222222222222222"
+            events:
+              channel: "333333333333333333"
             """;
     static final PlayerProfile STEVE =
             new PlayerProfile(UUID.fromString("00000000-0000-4000-8000-000000000001"), "Steve", "Steve", "abc", false);
@@ -67,7 +67,7 @@ final class Harness implements AutoCloseable {
         this.platform = new FakePlatform(directory);
         this.bridge = new Bridge(
                 platform,
-                (settings, loop, listener, webhooks, hashes) -> {
+                (settings, loop, listener, webhooks, hashes, lang) -> {
                     RecordingDiscord discord = new RecordingDiscord(settings, loop, listener);
                     discords.add(discord);
                     return discord;
@@ -97,6 +97,14 @@ final class Harness implements AutoCloseable {
         return harness;
     }
 
+    static String withChatSettings(String settings) {
+        return CHANNELS.replace("events:", settings + "events:");
+    }
+
+    static String withEventSettings(String settings) {
+        return CHANNELS + settings;
+    }
+
     RecordingDiscord discord() {
         Waits.until("a Discord connection", () -> !discords.isEmpty());
         return discords.get(discords.size() - 1);
@@ -111,18 +119,23 @@ final class Harness implements AutoCloseable {
         bridge.publish(event);
     }
 
-    RecordingSource run(RecordingSource source, String... arguments) {
-        bridge.command(source, Arrays.asList(arguments));
+    RecordingSource run(RecordingSource source, GameCommand command) {
+        bridge.command(source, command);
+        return source;
+    }
+
+    RecordingSource help(RecordingSource source) {
+        bridge.help(source);
         return source;
     }
 
     String settledStatus() {
-        Waits.until("the bridge to finish starting", () -> !status().contains(OfflineDiscord.STARTING));
+        Waits.until("the bridge to finish starting", () -> !status().contains("The bridge is starting"));
         return status();
     }
 
     String status() {
-        RecordingSource console = run(RecordingSource.console(), "status");
+        RecordingSource console = run(RecordingSource.console(), GameCommand.STATUS);
         List<String> lines = new ArrayList<>();
         String line;
         do {
@@ -143,12 +156,22 @@ final class Harness implements AutoCloseable {
             DiscordId user,
             DiscordId channel) {
         return new CommandRequest(
-                command, Optional.ofNullable(subcommand), options, GUILD, channel, user, "Alex", false, "en-US");
+                command,
+                Optional.ofNullable(subcommand),
+                options,
+                GUILD,
+                channel,
+                "minecraft",
+                user,
+                "Alex",
+                false,
+                "en-US");
     }
 
     static CommandRequest managerRequest(
             String command, Map<String, String> options, DiscordId user, DiscordId channel) {
-        return new CommandRequest(command, Optional.empty(), options, GUILD, channel, user, "Alex", true, "en-US");
+        return new CommandRequest(
+                command, Optional.empty(), options, GUILD, channel, "minecraft", user, "Alex", true, "en-US");
     }
 
     static DiscordMessage message(DiscordId channel, String content) {

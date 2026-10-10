@@ -18,6 +18,7 @@ import com.minecraftdiscordbridge.core.fakes.RecordingReply;
 import com.minecraftdiscordbridge.core.fakes.RecordingSource;
 import com.minecraftdiscordbridge.core.fakes.Waits;
 import com.minecraftdiscordbridge.core.platform.GameAction;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.JoinDecision;
 import com.minecraftdiscordbridge.core.text.TextRenderer;
@@ -96,10 +97,8 @@ class AccessTest {
     void syncsTheGroupOnLinkJoinAndDiscordRoleChanges() throws Exception {
         try (Harness harness = Harness.create(directory, CHANNELS + """
                 role-sync:
-                  rules:
-                    - discord-role: "777777777777777777"
-                      group: "vip"
-                      direction: "discord-to-minecraft"
+                  - discord-role: "777777777777777777"
+                    group: "vip"
                 """)) {
             harness.groups.groups.put("vip", new GroupCheck.Safe());
             harness.bridge.start();
@@ -126,8 +125,8 @@ class AccessTest {
     @Test
     void runsConsoleCommandsFromListedUsersInTheConsoleChannel() throws Exception {
         try (Harness harness = Harness.started(directory, CHANNELS + """
-                  console-channel: "444444444444444444"
                 console:
+                  channel: "444444444444444444"
                   input-users: ["555555555555555555"]
                 """)) {
             RecordingDiscord discord = harness.discord();
@@ -151,8 +150,8 @@ class AccessTest {
     }
 
     private static void linkSteve(Harness harness) {
-        String reply =
-                harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link").nextPlain();
+        String reply = harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.LINK)
+                .nextPlain();
         assertThat(link(harness, Harness.code(reply)).next().text()).startsWith("Linked");
         Waits.until("the link to be stored", () -> harness.status().contains("Linked accounts: 1"));
     }

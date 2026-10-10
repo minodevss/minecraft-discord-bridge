@@ -14,13 +14,13 @@ final class Avatars {
     static Optional<String> url(ChatConfig chat, PlayerProfile player) {
         String skin = player.skinTexture();
         String texture = skin == null ? "" : skin.strip();
-        String template =
-                chat.avatarUrl().contains(TEXTURE) && texture.isEmpty() ? chat.avatarUrlFallback() : chat.avatarUrl();
+        String template = chat.avatarUrl();
         if (template.isBlank()) {
             return Optional.empty();
         }
-        return Optional.of(template.replace(TEXTURE, encode(texture))
-                .replace("{uuid}", player.id().toString())
+        String uuid = player.id().toString();
+        return Optional.of(template.replace(TEXTURE, texture.isEmpty() ? uuid : encode(texture))
+                .replace("{uuid}", uuid)
                 .replace("{name}", encode(player.name())));
     }
 

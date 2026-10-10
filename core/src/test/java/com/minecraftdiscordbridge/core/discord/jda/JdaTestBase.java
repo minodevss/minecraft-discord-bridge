@@ -43,10 +43,10 @@ abstract class JdaTestBase {
     static final CommandSpec LIST = new CommandSpec(
             "list",
             "Show who is online",
-            Optional.of(new CommandSpec.Localized("목록", "접속 중인 플레이어")),
+            Optional.of("접속 중인 플레이어"),
             List.of(new CommandSpec.Option(
                     CommandSpec.OptionType.INTEGER, "page", "Page", Optional.empty(), false, false)),
-            false,
+            CommandSpec.Access.EVERYONE,
             false,
             false);
     static final CommandSpec WHITELIST = new CommandSpec(
@@ -54,13 +54,8 @@ abstract class JdaTestBase {
             "Add a player to the whitelist",
             Optional.empty(),
             List.of(new CommandSpec.Option(
-                    CommandSpec.OptionType.STRING,
-                    "player",
-                    "Player name",
-                    Optional.of(new CommandSpec.Localized("플레이어", "플레이어 이름")),
-                    true,
-                    true)),
-            true,
+                    CommandSpec.OptionType.STRING, "player", "Player name", Optional.of("플레이어 이름"), true, true)),
+            CommandSpec.Access.ADMINS,
             true,
             false);
 
@@ -96,7 +91,6 @@ abstract class JdaTestBase {
                 Optional.empty(),
                 channels,
                 base.serverAuthor(),
-                base.autoEnableMessageContent(),
                 base.requestMembersIntent(),
                 base.commands());
     }
@@ -108,25 +102,14 @@ abstract class JdaTestBase {
     }
 
     JdaDiscord start(DiscordSettings settings) {
-        JdaDiscord started = new JdaDiscord(settings, discord.endpoints(), loop, listener, webhooks, commandHashes);
+        JdaDiscord started = new JdaDiscord(
+                settings, discord.endpoints(), loop, listener, webhooks, commandHashes, TestSupport.ENGLISH);
         started.start();
         return started;
     }
 
     void awaitState(State state) {
         until(state.name(), () -> bridge.status().state() == state);
-    }
-
-    static DiscordSettings withAutoEnable(boolean autoEnable) {
-        DiscordSettings base = TestSupport.settings(List.of());
-        return new DiscordSettings(
-                base.token(),
-                base.guild(),
-                base.channelIds(),
-                base.serverAuthor(),
-                autoEnable,
-                base.requestMembersIntent(),
-                base.commands());
     }
 
     List<RecordedRequest> executions() {

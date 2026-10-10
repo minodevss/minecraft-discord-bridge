@@ -6,6 +6,8 @@ import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
+import com.minecraftdiscordbridge.core.i18n.Lang;
+import com.minecraftdiscordbridge.core.i18n.Language;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -23,7 +25,7 @@ class OutboxTest {
     private static final Author ALEX = Author.player("2", "Alex", Optional.empty());
 
     private final FakeSender sender = new FakeSender();
-    private final Outbox outbox = new Outbox(SERVER, sender, Runnable::run);
+    private final Outbox outbox = new Outbox(SERVER, sender, Runnable::run, OutboxTest::skipped, DiscordId::toString);
 
     @BeforeEach
     void openTheOutbox() {
@@ -32,7 +34,7 @@ class OutboxTest {
 
     @Test
     void holdsMessagesUntilDiscordIsReady() {
-        Outbox waiting = new Outbox(SERVER, sender, Runnable::run);
+        Outbox waiting = new Outbox(SERVER, sender, Runnable::run, OutboxTest::skipped, DiscordId::toString);
         waiting.enqueue(OutboundMessage.of(CHANNEL, SERVER, "Server started"));
 
         assertThat(sender.sent).isEmpty();
@@ -188,7 +190,9 @@ class OutboxTest {
                 message -> {
                     throw new IllegalStateException("boom");
                 },
-                Runnable::run);
+                Runnable::run,
+                OutboxTest::skipped,
+                DiscordId::toString);
         throwing.open();
 
         throwing.enqueue(OutboundMessage.of(CHANNEL, STEVE, "lost"));
@@ -257,5 +261,9 @@ class OutboxTest {
         void fail(int index) {
             sent.get(index).result().completeExceptionally(new IllegalStateException("timeout"));
         }
+    }
+
+    private static String skipped(long count) {
+        return Lang.of(Language.EN).count("discord.skipped", count);
     }
 }

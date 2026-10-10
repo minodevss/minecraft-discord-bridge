@@ -16,8 +16,9 @@ import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.i18n.Replies;
 import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
-import com.minecraftdiscordbridge.core.platform.Permission;
+import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import com.minecraftdiscordbridge.core.setup.Channels;
 import com.minecraftdiscordbridge.core.setup.SetupGuide;
 import com.minecraftdiscordbridge.core.status.StatusReport;
@@ -52,7 +53,9 @@ final class Activator implements BridgeCommand.Callbacks {
     private @Nullable Stores stores;
     private @Nullable ConfigSnapshot snapshot;
     private Lang lang = Lang.of(Language.EN);
+    private volatile boolean linkingEnabled = BridgeConfig.defaults().linking().enabled();
     private boolean recovered;
+    private boolean bootFailed;
     private boolean serverStarted;
     private boolean startAnnounced;
     private long droppedEvents;
@@ -83,9 +86,11 @@ final class Activator implements BridgeCommand.Callbacks {
                         this::booted,
                         failure -> {
                             LOGGER.error(
-                                    "The bridge could not start: {}. Check that the plugin data folder is readable and"
-                                            + " writable, then restart the server",
-                                    Failures.describe(failure));
+                                    "The bridge could not start: {}. Check that {} is readable and writable, then"
+                                            + " restart the server",
+                                    Failures.describe(failure),
+                                    services.platform().dataDirectory().toAbsolutePath());
+                            bootFailed = true;
                             joins.release();
                         });
     }
@@ -109,10 +114,21 @@ final class Activator implements BridgeCommand.Callbacks {
         }
     }
 
-    void command(CommandSource source, Set<Permission> granted, List<String> arguments) {
+    void command(CommandSource source, GameCommand command, boolean permitted) {
+        bridgeCommand().run(source, command, permitted);
+    }
+
+    void help(CommandSource source, Set<GameCommand> permitted) {
+        bridgeCommand().help(source, permitted, linkingEnabled);
+    }
+
+    boolean linkingEnabled() {
+        return linkingEnabled;
+    }
+
+    private BridgeCommand bridgeCommand() {
         Features current = features;
-        BridgeCommand command = current == null ? BridgeCommand.idle(replies(), this) : current.command();
-        command.run(source, granted, arguments);
+        return current == null ? BridgeCommand.idle(replies(), this) : current.command();
     }
 
     JoinQueue joins() {
@@ -172,7 +188,7 @@ final class Activator implements BridgeCommand.Callbacks {
     @Override
     public void reload(CommandSource source, Replies replies) {
         if (stores == null) {
-            replies.send(source, "game.not-ready");
+            replies.send(source, bootFailed ? "game.reload.start-failed" : "game.reload.starting");
             return;
         }
         services.io().completeOnLoop(loader::load, result -> apply(result, source), failure -> {
@@ -180,7 +196,7 @@ final class Activator implements BridgeCommand.Callbacks {
                     "Could not reload config.yml or secrets.yml: {}. Check that both files are readable and run"
                             + " /discord reload again",
                     Failures.describe(failure));
-            replies.send(source, "game.reload.failed");
+            replies.send(source, "game.reload.unreadable");
         });
     }
 
@@ -195,7 +211,9 @@ final class Activator implements BridgeCommand.Callbacks {
             joins.release();
             return;
         }
-        DiscordConnection.Outcome outcome = activate(((ConfigResult.Loaded) result).snapshot());
+        ConfigSnapshot loaded = ((ConfigResult.Loaded) result).snapshot();
+        warnAboutUnsupported(loaded.config());
+        DiscordConnection.Outcome outcome = activate(loaded);
         joins.release();
         if (source != null) {
             replies()
@@ -228,7 +246,8 @@ final class Activator implements BridgeCommand.Callbacks {
         snapshot = loaded;
         BridgeConfig config = loaded.config();
         lang = Lang.of(config.language());
-        Channels channels = Channels.resolve(config.discord(), ready.bindings().current());
+        linkingEnabled = config.linking().enabled();
+        Channels channels = Channels.resolve(config, ready.bindings().current());
         synchronized (lock) {
             if (closed) {
                 return DiscordConnection.Outcome.APPLIED;
@@ -247,6 +266,15 @@ final class Activator implements BridgeCommand.Callbacks {
             current.roleSync().discordReady();
         }
         return outcome;
+    }
+
+    private void warnAboutUnsupported(BridgeConfig config) {
+        PlatformInfo platform = services.platform().info();
+        if (config.discordCommands().whitelist() && !platform.supportsWhitelist()) {
+            LOGGER.warn(
+                    "discord-commands.whitelist has no effect on {}, which has no whitelist; set it to false in config.yml",
+                    platform.software());
+        }
     }
 
     private void rebound() {
@@ -279,7 +307,11 @@ final class Activator implements BridgeCommand.Callbacks {
         Stores ready = stores;
         int links = ready == null ? 0 : ready.links().all().size();
         DiscordStatus status = services.discord().status();
-        StatusReport.send(replies, source, status, links, droppedEvents);
+        ConfigSnapshot current = snapshot;
+        Optional<String> tokenSource = current == null || !current.secrets().hasDiscordToken()
+                ? Optional.empty()
+                : Optional.of(current.secrets().discordTokenSource());
+        StatusReport.send(replies, source, status, tokenSource, links, droppedEvents);
     }
 
     private Replies replies() {

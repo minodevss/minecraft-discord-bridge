@@ -2,7 +2,7 @@ package com.minecraftdiscordbridge.core.actions;
 
 import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
-import com.minecraftdiscordbridge.core.config.ActionsConfig;
+import com.minecraftdiscordbridge.core.config.DiscordCommandsConfig;
 import com.minecraftdiscordbridge.core.discord.CommandReply;
 import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.i18n.Lang;
@@ -21,11 +21,11 @@ public final class Actions {
     private static final Pattern PLAYER_NAME = Pattern.compile("[A-Za-z0-9_.]{1,16}");
     private static final int MAX_REASON_LENGTH = 256;
 
-    private final ActionsConfig config;
+    private final DiscordCommandsConfig config;
     private final GameActions game;
     private final Lang lang;
 
-    public Actions(ActionsConfig config, GameActions game, Lang lang) {
+    public Actions(DiscordCommandsConfig config, GameActions game, Lang lang) {
         this.config = config;
         this.game = game;
         this.lang = lang;
@@ -81,12 +81,24 @@ public final class Actions {
 
     private static void audit(CommandRequest request, GameAction action, ActionOutcome outcome) {
         LOGGER.info(
-                "Discord user {} ({}) ran {} {}: {}",
+                "Discord user {} ({}) asked to {}: {}",
                 request.userId(),
                 SafeText.strip(request.userDisplayName()).replaceAll("\\s+", " "),
-                verb(action),
-                name(action),
-                outcome.getClass().getSimpleName());
+                action.describe(),
+                describe(outcome));
+    }
+
+    private static String describe(ActionOutcome outcome) {
+        if (outcome instanceof ActionOutcome.Failed failed) {
+            return "failed (" + failed.reason() + ")";
+        }
+        if (outcome instanceof ActionOutcome.Unchanged) {
+            return "nothing changed";
+        }
+        if (outcome instanceof ActionOutcome.NoSuchPlayer) {
+            return "no such player";
+        }
+        return "done";
     }
 
     private static String outcomeKey(GameAction action, ActionOutcome outcome) {

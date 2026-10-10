@@ -47,7 +47,7 @@ public final class ConfigLoader {
                     null,
                     "",
                     "cannot read " + file + " (" + failure.getClass().getSimpleName()
-                            + "). Check the file permissions.");
+                            + "). Check the file permissions");
             return ConfigValues.defaults();
         }
         String text = decode(original, problems);
@@ -64,7 +64,7 @@ public final class ConfigLoader {
                     null,
                     ConfigSchema.VERSION_KEY,
                     "this file is from a newer version of the bridge (" + version + "). This version reads version "
-                            + ConfigSchema.VERSION + " and ignores settings it does not know.");
+                            + ConfigSchema.VERSION + " and ignores settings it does not know");
         }
         return ConfigReader.read(raw, problems);
     }
@@ -76,7 +76,7 @@ public final class ConfigLoader {
                     .decode(ByteBuffer.wrap(bytes))
                     .toString();
         } catch (CharacterCodingException invalid) {
-            problems.error(null, "", "the file is not valid UTF-8. Save it with UTF-8 encoding.");
+            problems.error(null, "", "the file is not valid UTF-8. Save it with UTF-8 encoding");
             return null;
         }
     }
@@ -84,13 +84,13 @@ public final class ConfigLoader {
     private static void createDefault(Path file, Problems problems) {
         try {
             AtomicFile.write(file, utf8(ConfigWriter.render(ConfigValues.defaults())));
-            LOGGER.info("Created {} with default settings.", file);
+            LOGGER.info("Created {} with default settings", file);
         } catch (IOException failure) {
             problems.warning(
                     null,
                     "",
                     "could not create " + file + " (" + failure.getMessage()
-                            + "). Using default settings; check that the folder is writable.");
+                            + "). Using default settings; check that the folder is writable");
         }
     }
 

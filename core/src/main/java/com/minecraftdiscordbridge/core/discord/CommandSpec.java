@@ -6,10 +6,10 @@ import java.util.Optional;
 public record CommandSpec(
         String name,
         String description,
-        Optional<Localized> korean,
+        Optional<String> koreanDescription,
         List<Option> options,
         List<Subcommand> subcommands,
-        boolean adminOnly,
+        Access access,
         boolean slow,
         boolean ephemeral) {
     public CommandSpec {
@@ -23,28 +23,53 @@ public record CommandSpec(
     public CommandSpec(
             String name,
             String description,
-            Optional<Localized> korean,
+            Optional<String> koreanDescription,
             List<Option> options,
-            boolean adminOnly,
+            Access access,
             boolean slow,
             boolean ephemeral) {
-        this(name, description, korean, options, List.of(), adminOnly, slow, ephemeral);
+        this(name, description, koreanDescription, options, List.of(), access, slow, ephemeral);
     }
-
-    public record Localized(String name, String description) {}
 
     public record Option(
             OptionType type,
             String name,
             String description,
-            Optional<Localized> korean,
+            Optional<String> koreanDescription,
             boolean required,
-            boolean autocomplete) {}
+            boolean autocomplete,
+            List<Choice> choices) {
+        public Option {
+            choices = List.copyOf(choices);
+            if (autocomplete && !choices.isEmpty()) {
+                throw new IllegalArgumentException("Option " + name + " cannot have both autocomplete and choices");
+            }
+        }
 
-    public record Subcommand(String name, String description, Optional<Localized> korean, List<Option> options) {
+        public Option(
+                OptionType type,
+                String name,
+                String description,
+                Optional<String> koreanDescription,
+                boolean required,
+                boolean autocomplete) {
+            this(type, name, description, koreanDescription, required, autocomplete, List.of());
+        }
+    }
+
+    public record Choice(String name, String value, Optional<String> koreanName) {}
+
+    public record Subcommand(
+            String name, String description, Optional<String> koreanDescription, List<Option> options) {
         public Subcommand {
             options = List.copyOf(options);
         }
+    }
+
+    public enum Access {
+        EVERYONE,
+        MANAGE_SERVER,
+        ADMINS
     }
 
     public enum OptionType {

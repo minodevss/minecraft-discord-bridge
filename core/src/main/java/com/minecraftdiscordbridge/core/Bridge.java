@@ -21,9 +21,9 @@ import com.minecraftdiscordbridge.core.loop.Deadline;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.loop.Threads;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.JoinDecision;
-import com.minecraftdiscordbridge.core.platform.Permission;
 import com.minecraftdiscordbridge.core.platform.Platform;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.minecraftdiscordbridge.core.setup.SetupCodes;
@@ -33,6 +33,7 @@ import com.minecraftdiscordbridge.core.vanilla.Fetcher;
 import com.minecraftdiscordbridge.core.vanilla.HttpFetcher;
 import com.minecraftdiscordbridge.core.vanilla.LanguageFiles;
 import com.minecraftdiscordbridge.core.vanilla.VanillaTranslations;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.InstantSource;
 import java.util.EnumSet;
@@ -57,6 +58,7 @@ public final class Bridge {
     private final IoExecutor downloads;
     private final ExecutorService lifecycle;
     private final Activator activator;
+    private final ShutdownMarker marker;
     private final AtomicBoolean started = new AtomicBoolean();
     private final AtomicBoolean stopped = new AtomicBoolean();
     private volatile boolean stopping;
@@ -93,12 +95,13 @@ public final class Bridge {
                         platform.info().minecraftVersion()),
                 groups,
                 new AccessMemory());
+        this.marker = new ShutdownMarker(platform.dataDirectory());
         this.activator = new Activator(
                 services,
                 lifecycle,
                 discordFactory,
                 new ConfigLoader(platform.dataDirectory(), environment),
-                new ShutdownMarker(platform.dataDirectory()),
+                marker,
                 () -> stopping);
     }
 
@@ -131,15 +134,23 @@ public final class Bridge {
         }
     }
 
-    public void command(CommandSource source, List<String> arguments) {
-        Set<Permission> granted = EnumSet.noneOf(Permission.class);
-        for (Permission permission : Permission.values()) {
-            if (source.hasPermission(permission)) {
-                granted.add(permission);
+    public boolean canUse(CommandSource source, GameCommand command) {
+        return command.permits(source) && command.available(activator.linkingEnabled());
+    }
+
+    public void command(CommandSource source, GameCommand command) {
+        boolean permitted = command.permits(source);
+        loop.control(() -> activator.command(source, command, permitted));
+    }
+
+    public void help(CommandSource source) {
+        Set<GameCommand> permitted = EnumSet.noneOf(GameCommand.class);
+        for (GameCommand command : GameCommand.values()) {
+            if (command.permits(source)) {
+                permitted.add(command);
             }
         }
-        List<String> copy = List.copyOf(arguments);
-        loop.control(() -> activator.command(source, granted, copy));
+        loop.control(() -> activator.help(source, permitted));
     }
 
     public CompletableFuture<JoinDecision> checkJoin(PlayerProfile player, boolean bypass) {
@@ -163,7 +174,7 @@ public final class Bridge {
         Discord discord = activator.close();
         stopDiscord(discord, farewell, deadline.minus(AFTER_DISCORD));
         loop.close();
-        awaitMarker(markerCleared, deadline);
+        awaitMarker(markerCleared, marker.file(), deadline);
         io.close();
         downloads.close();
         lifecycle.shutdownNow();
@@ -190,16 +201,17 @@ public final class Bridge {
         }
     }
 
-    private static void awaitMarker(CompletableFuture<Void> cleared, Deadline deadline) {
+    private static void awaitMarker(CompletableFuture<Void> cleared, Path file, Deadline deadline) {
         try {
             cleared.get(deadline.remaining().toNanos(), TimeUnit.NANOSECONDS);
         } catch (ExecutionException failure) {
             LOGGER.warn(
-                    "Could not delete data/running: {}. The next start will report an unclean shutdown; check that"
-                            + " the data folder is writable",
+                    "Could not delete {}: {}. The next start will report an unclean shutdown; check that its folder is"
+                            + " writable",
+                    file,
                     Failures.describe(failure));
         } catch (TimeoutException late) {
-            LOGGER.warn("Gave up deleting data/running during shutdown; the next start may report an unclean shutdown");
+            LOGGER.warn("Gave up deleting {} during shutdown; the next start may report an unclean shutdown", file);
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
         }

@@ -29,7 +29,7 @@ public final class Secrets {
     public String discordToken() {
         if (discordToken.isEmpty()) {
             throw new IllegalStateException(
-                    "No Discord bot token is set. Put it in secrets.yml or set " + SecretsReader.TOKEN_VARIABLE + ".");
+                    "No Discord bot token is set. Put it in secrets.yml or set " + SecretsReader.TOKEN_VARIABLE);
         }
         return discordToken;
     }

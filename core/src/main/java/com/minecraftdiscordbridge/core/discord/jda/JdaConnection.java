@@ -7,11 +7,13 @@ import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus.ChannelStatus;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus.State;
+import com.minecraftdiscordbridge.core.discord.StatusReason;
 import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.loop.Deadline;
 import com.minecraftdiscordbridge.core.loop.Threads;
 import java.time.Duration;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -55,7 +57,7 @@ final class JdaConnection {
 
     private record Session(JDA jda, JdaPools pools) {}
 
-    private record Phase(State state, @Nullable String reason) {}
+    private record Phase(State state, List<StatusReason> reasons) {}
 
     private final DiscordSettings settings;
     private final JdaDiscord.Endpoints endpoints;
@@ -65,9 +67,10 @@ final class JdaConnection {
             Executors.newSingleThreadScheduledExecutor(Threads.named("Lifecycle"));
     private final Generations generations = new Generations();
     private final Set<String> warnings = new CopyOnWriteArraySet<>();
+    private final Set<StatusReason> problems = new CopyOnWriteArraySet<>();
     private final AtomicBoolean started = new AtomicBoolean();
     private final Object sessionLock = new Object();
-    private volatile Phase phase = new Phase(State.CONNECTING, null);
+    private volatile Phase phase = new Phase(State.CONNECTING, List.of());
     private volatile @Nullable Session session;
     private volatile @Nullable ApplicationInfo application;
     private volatile boolean closing;
@@ -93,7 +96,7 @@ final class JdaConnection {
         try {
             lifecycle.execute(this::connect);
         } catch (RejectedExecutionException alreadyStopped) {
-            enter(State.STOPPED, null);
+            enter(State.STOPPED, List.of());
         }
     }
 
@@ -119,18 +122,16 @@ final class JdaConnection {
         Phase current = phase;
         JDA active = jda();
         long ping = active == null ? -1 : active.getGatewayPing();
-        return new DiscordStatus(current.state(), Optional.ofNullable(current.reason()), ping, channels);
+        return new DiscordStatus(current.state(), current.reasons(), ping, channels);
     }
 
     void ready() {
-        enter(
-                warnings.isEmpty() ? State.READY : State.DEGRADED,
-                warnings.isEmpty() ? null : String.join(" ", warnings));
+        enter(problems.isEmpty() ? State.READY : State.DEGRADED, List.copyOf(problems));
     }
 
-    void degrade(String reason) {
-        LOGGER.warn(reason);
-        enter(State.DEGRADED, reason);
+    void degrade(String warning, StatusReason reason) {
+        LOGGER.warn(warning);
+        enter(State.DEGRADED, List.of(reason));
     }
 
     void sessionEnded(int generation, @Nullable CloseCode code, int rawCode) {
@@ -166,28 +167,36 @@ final class JdaConnection {
             return;
         }
         if (settings.token().isBlank()) {
-            stop("No bot token is set. Create a bot at " + PORTAL + ", put its token in secrets.yml and run"
-                    + " /discord reload");
+            stop(
+                    "No bot token is set. Create a bot at " + PORTAL + ", put its token in secrets.yml and run"
+                            + " /discord reload",
+                    StatusReason.of(StatusReason.Kind.NO_TOKEN));
             return;
         }
-        enter(State.CONNECTING, null);
+        enter(State.CONNECTING, List.of());
         PreflightResult result = preflight();
         if (result instanceof PreflightResult.InvalidToken) {
-            stop(INVALID_TOKEN);
+            stop(INVALID_TOKEN, StatusReason.of(StatusReason.Kind.INVALID_TOKEN));
         } else if (result instanceof PreflightResult.Unreachable unreachable) {
-            retryLater("Cannot reach Discord: " + unreachable.reason());
+            retryLater(
+                    "Cannot reach Discord: " + unreachable.reason(),
+                    new StatusReason(StatusReason.Kind.UNREACHABLE, unreachable.reason()));
         } else if (result instanceof PreflightResult.Ready ready) {
             ApplicationInfo info = ready.application();
             application = info;
             boolean messageContent = info.messageContentGranted() && !privilegedIntentsDropped;
             if (!info.messageContentGranted()) {
-                warn("The Message Content intent is off, so Discord messages reach Minecraft empty. Turn on"
-                        + " Message Content Intent at " + info.botSettingsUrl() + " and run /discord reload");
+                warn(
+                        "The Message Content intent is off, so Discord messages reach Minecraft empty. Turn on"
+                                + " Message Content Intent at " + info.botSettingsUrl() + " and run /discord reload",
+                        new StatusReason(StatusReason.Kind.MESSAGE_CONTENT_OFF, info.botSettingsUrl()));
             }
             boolean members = settings.requestMembersIntent() && info.membersGranted() && !privilegedIntentsDropped;
             if (settings.requestMembersIntent() && !members) {
-                warn("The Server Members intent is off, so the join gate and role sync cannot see members. Turn on"
-                        + " Server Members Intent at " + info.botSettingsUrl() + " and run /discord reload");
+                warn(
+                        "The Server Members intent is off, so the join gate and role sync cannot see members. Turn on"
+                                + " Server Members Intent at " + info.botSettingsUrl() + " and run /discord reload",
+                        new StatusReason(StatusReason.Kind.MEMBERS_INTENT_OFF, info.botSettingsUrl()));
             }
             login(messageContent, members);
         }
@@ -199,8 +208,7 @@ final class JdaConnection {
             if (closing) {
                 return new PreflightResult.Unreachable("stopping");
             }
-            return new Preflight(http, endpoints.restBaseUrl())
-                    .run(settings.token(), settings.autoEnableMessageContent());
+            return new Preflight(http, endpoints.restBaseUrl()).run(settings.token());
         } finally {
             connecting = false;
         }
@@ -227,10 +235,12 @@ final class JdaConnection {
             pools.shutdownNow();
         } catch (InvalidTokenException invalid) {
             pools.shutdownNow();
-            stop(INVALID_TOKEN);
+            stop(INVALID_TOKEN, StatusReason.of(StatusReason.Kind.INVALID_TOKEN));
         } catch (RuntimeException failure) {
             pools.shutdownNow();
-            retryLater("Could not log in to Discord: " + Failures.describe(failure));
+            retryLater(
+                    "Could not log in to Discord: " + Failures.describe(failure),
+                    new StatusReason(StatusReason.Kind.LOGIN_FAILED, Failures.describe(failure)));
         } finally {
             connecting = false;
         }
@@ -275,20 +285,24 @@ final class JdaConnection {
         String botSettings = application().map(ApplicationInfo::botSettingsUrl).orElse(PORTAL);
         if (code == CloseCode.DISALLOWED_INTENTS && !privilegedIntentsDropped) {
             privilegedIntentsDropped = true;
-            warn("Discord refused the bot's privileged intents, so Discord messages reach Minecraft empty. Turn on"
-                    + " Message Content Intent, and Server Members Intent if you use the join gate or role sync, at "
-                    + botSettings + " and run /discord reload");
-            enter(State.CONNECTING, null);
+            warn(
+                    "Discord refused the bot's privileged intents, so Discord messages reach Minecraft empty. Turn on"
+                            + " Message Content Intent, and Server Members Intent if you use the join gate or role"
+                            + " sync, at " + botSettings + " and run /discord reload",
+                    new StatusReason(StatusReason.Kind.INTENTS_REFUSED, botSettings));
+            enter(State.CONNECTING, List.of());
             login(false, false);
             return;
         }
         if (code == CloseCode.AUTHENTICATION_FAILED) {
-            stop(INVALID_TOKEN);
+            stop(INVALID_TOKEN, StatusReason.of(StatusReason.Kind.INVALID_TOKEN));
             return;
         }
         String meaning = code == null ? "close code " + rawCode : code.getMeaning();
-        stop("Discord ended the connection (" + meaning + "). Check the bot at " + botSettings
-                + " and run /discord reload");
+        stop(
+                "Discord ended the connection (" + meaning + "). Check the bot at " + botSettings
+                        + " and run /discord reload",
+                new StatusReason(StatusReason.Kind.DISCONNECTED, meaning));
     }
 
     private void stopGracefully(Consumer<JDA> beforeLogout, Deadline deadline) {
@@ -314,7 +328,7 @@ final class JdaConnection {
         releaseSession();
         var unused = lifecycle.shutdownNow();
         HttpClients.close(http);
-        enter(State.STOPPED, null);
+        enter(State.STOPPED, List.of());
     }
 
     private void releaseSession() {
@@ -332,7 +346,7 @@ final class JdaConnection {
         ended.pools().shutdownNow();
     }
 
-    private void retryLater(String reason) {
+    private void retryLater(String problem, StatusReason reason) {
         if (closing) {
             return;
         }
@@ -340,31 +354,32 @@ final class JdaConnection {
         nextRetry = nextRetry.multipliedBy(2).compareTo(MAX_RETRY) > 0 ? MAX_RETRY : nextRetry.multipliedBy(2);
         LOGGER.warn(
                 "{}. Trying again in {} seconds; check that the server can reach discord.com",
-                reason,
+                problem,
                 delay.toSeconds());
-        enter(State.CONNECTING, reason);
+        enter(State.CONNECTING, List.of(reason));
         try {
             var unused = lifecycle.schedule(this::connect, delay.toMillis(), TimeUnit.MILLISECONDS);
         } catch (RejectedExecutionException stopping) {
-            enter(State.STOPPED, null);
+            enter(State.STOPPED, List.of());
         }
     }
 
-    private void stop(String reason) {
-        LOGGER.error(reason);
+    private void stop(String problem, StatusReason reason) {
+        LOGGER.error(problem);
         releaseSession();
         callbacks.onSessionLost();
-        enter(State.STOPPED, reason);
+        enter(State.STOPPED, List.of(reason));
     }
 
-    private void warn(String warning) {
+    private void warn(String warning, StatusReason reason) {
+        problems.add(reason);
         if (warnings.add(warning)) {
             LOGGER.warn(warning);
         }
     }
 
-    private void enter(State state, @Nullable String reason) {
-        Phase next = new Phase(state, reason);
+    private void enter(State state, List<StatusReason> reasons) {
+        Phase next = new Phase(state, reasons);
         Phase previous;
         synchronized (sessionLock) {
             previous = phase;

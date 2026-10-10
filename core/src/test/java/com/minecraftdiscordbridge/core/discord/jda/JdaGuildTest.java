@@ -41,7 +41,13 @@ class JdaGuildTest extends JdaTestBase {
     @Test
     void reportsMemberLookupsAsUnavailableBeforeConnecting() throws Exception {
         bridge = new JdaDiscord(
-                TestSupport.settings(List.of()), discord.endpoints(), loop, listener, webhooks, commandHashes);
+                TestSupport.settings(List.of()),
+                discord.endpoints(),
+                loop,
+                listener,
+                webhooks,
+                commandHashes,
+                TestSupport.ENGLISH);
 
         assertThat(bridge.member(PLAYER).get(5, TimeUnit.SECONDS)).isInstanceOf(MemberLookup.Unavailable.class);
         assertThat(bridge.roles()).isEmpty();

@@ -1,20 +1,22 @@
 package com.minecraftdiscordbridge.modded.common;
 
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 
 public final class DiscordCommand {
-    private static final String ARGUMENTS = "arguments";
-
     private DiscordCommand() {}
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher, ModdedBridge bridge) {
-        dispatcher.register(Commands.literal("discord")
-                .executes(context -> bridge.command(context.getSource(), ""))
-                .then(Commands.argument(ARGUMENTS, StringArgumentType.greedyString())
-                        .executes(context ->
-                                bridge.command(context.getSource(), StringArgumentType.getString(context, ARGUMENTS)))));
+        LiteralArgumentBuilder<CommandSourceStack> root =
+                Commands.literal(GameCommand.ROOT).executes(context -> bridge.help(context.getSource()));
+        for (GameCommand command : GameCommand.values()) {
+            root.then(Commands.literal(command.literal())
+                    .requires(source -> bridge.canUse(source, command))
+                    .executes(context -> bridge.command(context.getSource(), command)));
+        }
+        dispatcher.register(root);
     }
 }

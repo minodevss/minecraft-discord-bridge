@@ -2,7 +2,6 @@ package com.minecraftdiscordbridge.core.discord.jda;
 
 import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.APPLICATION_ID;
 import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.CHANNEL_ID;
-import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.GUILD_ID;
 import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.MESSAGE_CONTENT_INTENT;
 import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.OTHER_GUILD_ID;
 import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.PLAYER_ID;
@@ -14,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus.State;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
+import com.minecraftdiscordbridge.core.discord.StatusReason;
 import com.minecraftdiscordbridge.core.loop.Deadline;
 import java.time.Duration;
 import java.util.List;
@@ -28,7 +28,7 @@ class JdaConnectionTest extends JdaTestBase {
         bridge = start(TestSupport.settings(List.of()));
 
         awaitState(State.READY);
-        assertThat(bridge.status().reason()).isEmpty();
+        assertThat(bridge.status().reasons()).isEmpty();
         assertThat(take(listener.statuses).state()).isEqualTo(State.READY);
     }
 
@@ -39,9 +39,7 @@ class JdaConnectionTest extends JdaTestBase {
         assertThatCode(() -> bridge = start(TestSupport.settings(List.of()))).doesNotThrowAnyException();
 
         awaitState(State.STOPPED);
-        assertThat(bridge.status().reason().orElseThrow())
-                .contains("rejected the bot token")
-                .contains("secrets.yml");
+        assertThat(kinds()).containsExactly(StatusReason.Kind.INVALID_TOKEN);
         assertThat(discord.timeline).containsExactly("GET applications/@me");
     }
 
@@ -61,21 +59,6 @@ class JdaConnectionTest extends JdaTestBase {
                 .isLessThan(discord.timeline.indexOf("GATEWAY connect"));
         assertThat(discord.identifies.get(0).getInt("intents") & MESSAGE_CONTENT_INTENT)
                 .isNotZero();
-    }
-
-    @Test
-    void degradesWithoutMessageContentWhenNotAllowedToTurnItOn() {
-        discord.applicationFlags = 0;
-
-        bridge = start(withAutoEnable(false));
-
-        awaitState(State.DEGRADED);
-        assertThat(bridge.status().reason().orElseThrow())
-                .contains("Message Content")
-                .contains("https://discord.com/developers/applications/" + APPLICATION_ID + "/bot");
-        assertThat(discord.requests("PATCH", "applications/@me")).isEmpty();
-        assertThat(discord.identifies.get(0).getInt("intents") & MESSAGE_CONTENT_INTENT)
-                .isZero();
     }
 
     @Test
@@ -103,7 +86,10 @@ class JdaConnectionTest extends JdaTestBase {
                 .isNotZero();
         assertThat(discord.identifies.get(1).getInt("intents") & MESSAGE_CONTENT_INTENT)
                 .isZero();
-        assertThat(bridge.status().reason().orElseThrow()).contains("refused the bot's privileged intents");
+        assertThat(bridge.status().reasons())
+                .containsExactly(new StatusReason(
+                        StatusReason.Kind.INTENTS_REFUSED,
+                        "https://discord.com/developers/applications/" + APPLICATION_ID + "/bot"));
     }
 
     @Test
@@ -113,8 +99,8 @@ class JdaConnectionTest extends JdaTestBase {
         bridge = start(TestSupport.settings(List.of()));
 
         awaitState(State.DEGRADED);
-        assertThat(bridge.status().reason().orElseThrow())
-                .contains("not in Discord server " + GUILD_ID)
+        assertThat(kinds()).containsExactly(StatusReason.Kind.NOT_IN_SERVER);
+        assertThat(bridge.status().reasons().get(0).detail())
                 .contains("client_id=" + APPLICATION_ID + "&scope=bot+applications.commands");
     }
 
@@ -180,8 +166,11 @@ class JdaConnectionTest extends JdaTestBase {
         bridge = start(unbound(Set.of(new DiscordId(CHANNEL_ID + 1)), List.of(LIST)));
 
         awaitState(State.DEGRADED);
-        assertThat(bridge.status().reason().orElseThrow())
-                .contains("cannot see any channel set under discord: in config.yml");
+        assertThat(kinds()).containsExactly(StatusReason.Kind.CHANNELS_NOT_VISIBLE);
         assertThat(registrations()).isEmpty();
+    }
+
+    private List<StatusReason.Kind> kinds() {
+        return bridge.status().reasons().stream().map(StatusReason::kind).toList();
     }
 }

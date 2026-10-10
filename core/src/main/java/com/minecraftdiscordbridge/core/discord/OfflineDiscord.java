@@ -3,30 +3,29 @@ package com.minecraftdiscordbridge.core.discord;
 import com.minecraftdiscordbridge.core.loop.Deadline;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public final class OfflineDiscord implements Discord {
-    public static final String STARTING = "The bridge is starting";
-    public static final String CONNECTING = "Connecting to Discord";
-    public static final String NO_TOKEN = "No bot token is set. See the server log for the setup steps";
-    public static final String CONFIG_ERRORS =
-            "The settings have errors. See the server log, fix them and run /discord reload";
-    public static final String STOPPED = "The bridge has stopped";
+    public static final StatusReason STARTING = StatusReason.of(StatusReason.Kind.STARTING);
+    public static final StatusReason CONNECTING = StatusReason.of(StatusReason.Kind.CONNECTING);
+    public static final StatusReason NO_TOKEN = StatusReason.of(StatusReason.Kind.NO_TOKEN);
+    public static final StatusReason CONFIG_ERRORS = StatusReason.of(StatusReason.Kind.CONFIG_ERRORS);
+    public static final StatusReason STOPPED = StatusReason.of(StatusReason.Kind.STOPPED);
+    private static final String NOT_CONNECTED = "Discord is not connected";
 
     private final DiscordStatus.State state;
-    private final String reason;
+    private final StatusReason reason;
 
-    private OfflineDiscord(DiscordStatus.State state, String reason) {
+    private OfflineDiscord(DiscordStatus.State state, StatusReason reason) {
         this.state = state;
         this.reason = reason;
     }
 
-    public static OfflineDiscord stopped(String reason) {
+    public static OfflineDiscord stopped(StatusReason reason) {
         return new OfflineDiscord(DiscordStatus.State.STOPPED, reason);
     }
 
-    public static OfflineDiscord connecting(String reason) {
+    public static OfflineDiscord connecting(StatusReason reason) {
         return new OfflineDiscord(DiscordStatus.State.CONNECTING, reason);
     }
 
@@ -35,7 +34,7 @@ public final class OfflineDiscord implements Discord {
 
     @Override
     public DiscordStatus status() {
-        return new DiscordStatus(state, Optional.of(reason), -1, Map.of());
+        return new DiscordStatus(state, List.of(reason), -1, Map.of());
     }
 
     @Override
@@ -54,7 +53,7 @@ public final class OfflineDiscord implements Discord {
 
     @Override
     public CompletableFuture<MemberLookup> member(DiscordId userId) {
-        return CompletableFuture.completedFuture(new MemberLookup.Unavailable(reason));
+        return CompletableFuture.completedFuture(new MemberLookup.Unavailable(NOT_CONNECTED));
     }
 
     @Override
@@ -64,12 +63,12 @@ public final class OfflineDiscord implements Discord {
 
     @Override
     public CompletableFuture<Void> addRole(DiscordId userId, DiscordId roleId) {
-        return CompletableFuture.failedFuture(new IllegalStateException(reason));
+        return CompletableFuture.failedFuture(new IllegalStateException(NOT_CONNECTED));
     }
 
     @Override
     public CompletableFuture<Void> removeRole(DiscordId userId, DiscordId roleId) {
-        return CompletableFuture.failedFuture(new IllegalStateException(reason));
+        return CompletableFuture.failedFuture(new IllegalStateException(NOT_CONNECTED));
     }
 
     @Override

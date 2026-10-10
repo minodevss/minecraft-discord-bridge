@@ -7,15 +7,18 @@ import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
 import com.minecraftdiscordbridge.core.discord.CommandReply;
 import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
-import com.minecraftdiscordbridge.core.discord.CommandSpec.Localized;
+import com.minecraftdiscordbridge.core.discord.CommandSpec.Access;
+import com.minecraftdiscordbridge.core.discord.CommandSpec.Choice;
 import com.minecraftdiscordbridge.core.discord.CommandSpec.Option;
 import com.minecraftdiscordbridge.core.discord.CommandSpec.OptionType;
 import com.minecraftdiscordbridge.core.discord.CommandSpec.Subcommand;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.linking.Linking;
+import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import com.minecraftdiscordbridge.core.setup.ChannelSetup;
 import com.minecraftdiscordbridge.core.status.Roster;
+import com.minecraftdiscordbridge.core.storage.ChannelRole;
 import com.minecraftdiscordbridge.core.text.markdown.DiscordEscaper;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,46 +63,44 @@ public final class DiscordCommands {
     }
 
     public void onAutocomplete(AutocompleteRequest request, AutocompleteReply reply) {
-        if (request.command().equals(SETUP) && request.option().equals(ChannelSetup.ROLE_OPTION)) {
-            setup.autocomplete(request.typed(), userLang(request.locale()), reply);
-        } else if (request.command().equals(KICK) && request.option().equals(Actions.PLAYER_OPTION)) {
+        if (request.command().equals(KICK) && request.option().equals(Actions.PLAYER_OPTION)) {
             reply.respond(onlineNamesStartingWith(request.typed()));
         } else {
             reply.respond(List.of());
         }
     }
 
-    public static List<CommandSpec> forConfig(BridgeConfig config) {
+    public static List<CommandSpec> forConfig(BridgeConfig config, PlatformInfo platform) {
         List<CommandSpec> commands = new ArrayList<>();
         commands.add(setupCommand());
-        commands.add(command(LIST, List.of(), false, false, false));
+        commands.add(command(LIST, List.of(), Access.EVERYONE, false, false));
         if (config.linking().enabled()) {
             commands.add(command(
                     LINK,
                     List.of(option(OptionType.STRING, Linking.CODE_OPTION, "command.link.code", true, false)),
-                    false,
+                    Access.EVERYONE,
                     true,
                     true));
-            commands.add(command(UNLINK, List.of(), false, true, true));
+            commands.add(command(UNLINK, List.of(), Access.EVERYONE, true, true));
         }
-        if (config.actions().whitelist()) {
+        if (config.discordCommands().whitelist() && platform.supportsWhitelist()) {
             commands.add(new CommandSpec(
                     WHITELIST,
                     english("command.whitelist"),
-                    korean(WHITELIST, "command.whitelist"),
+                    korean("command.whitelist"),
                     List.of(),
                     List.of(whitelistChange(Actions.ADD), whitelistChange(Actions.REMOVE)),
-                    true,
+                    Access.ADMINS,
                     true,
                     false));
         }
-        if (config.actions().kick()) {
+        if (config.discordCommands().kick()) {
             commands.add(command(
                     KICK,
                     List.of(
                             option(OptionType.STRING, Actions.PLAYER_OPTION, "command.player", true, true),
                             option(OptionType.STRING, Actions.REASON_OPTION, "command.kick.reason", false, false)),
-                    true,
+                    Access.ADMINS,
                     true,
                     false));
         }
@@ -139,11 +140,23 @@ public final class DiscordCommands {
         return command(
                 SETUP,
                 List.of(
-                        option(OptionType.STRING, ChannelSetup.ROLE_OPTION, "command.setup.as", false, true),
+                        new Option(
+                                OptionType.STRING,
+                                ChannelSetup.ROLE_OPTION,
+                                english("command.setup.as"),
+                                korean("command.setup.as"),
+                                false,
+                                false,
+                                List.of(roleChoice(ChannelRole.CHAT), roleChoice(ChannelRole.EVENTS))),
                         option(OptionType.STRING, ChannelSetup.CODE_OPTION, "command.setup.code", false, false)),
-                false,
+                Access.MANAGE_SERVER,
                 true,
                 true);
+    }
+
+    private static Choice roleChoice(ChannelRole role) {
+        String key = "command.setup.as." + role.id();
+        return new Choice(english(key), role.id(), korean(key));
     }
 
     private static Subcommand whitelistChange(String change) {
@@ -151,25 +164,25 @@ public final class DiscordCommands {
         return new Subcommand(
                 change,
                 english(key),
-                korean(change, key),
+                korean(key),
                 List.of(option(OptionType.STRING, Actions.PLAYER_OPTION, "command.player", true, false)));
     }
 
     private static CommandSpec command(
-            String name, List<Option> options, boolean adminOnly, boolean slow, boolean ephemeral) {
+            String name, List<Option> options, Access access, boolean slow, boolean ephemeral) {
         String key = "command." + name;
-        return new CommandSpec(name, english(key), korean(name, key), options, adminOnly, slow, ephemeral);
+        return new CommandSpec(name, english(key), korean(key), options, access, slow, ephemeral);
     }
 
     private static Option option(OptionType type, String name, String key, boolean required, boolean autocomplete) {
-        return new Option(type, name, english(key), korean(name, key), required, autocomplete);
+        return new Option(type, name, english(key), korean(key), required, autocomplete);
     }
 
     private static String english(String key) {
         return ENGLISH.text(key);
     }
 
-    private static Optional<Localized> korean(String name, String key) {
-        return Optional.of(new Localized(name, KOREAN.text(key)));
+    private static Optional<String> korean(String key) {
+        return Optional.of(KOREAN.text(key));
     }
 }

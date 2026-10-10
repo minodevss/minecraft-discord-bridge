@@ -28,7 +28,7 @@ Download the jar for your server from the [latest release](https://github.com/mi
 
 Fabric also needs [Fabric API](https://modrinth.com/mod/fabric-api). The Paper and Velocity jars need Java 21 or newer. Spigot, Bukkit, BungeeCord and Waterfall are not supported.
 
-On a Velocity network, install the bridge on the proxy only. The proxy does not see deaths or advancements, and `/whitelist` does not work there.
+On a Velocity network, install the bridge on the proxy only. The proxy does not see deaths or advancements and has no whitelist, so Discord offers no `/whitelist` there.
 
 Releases also go to Modrinth (every jar), CurseForge (Fabric, NeoForge and Forge) and Hangar (Paper and Velocity). Each GitHub release lists SHA-256 checksums in `SHA256SUMS`, and every jar has a build provenance attestation. To check a download:
 
@@ -51,7 +51,7 @@ Setup takes about two minutes.
 3. Run `/discord reload` in the server console. The bridge connects and logs an invite link with the permissions it needs. Open the link and add the bot to your Discord server.
 4. In the Discord channel for the chat, run `/setup`.
 
-Only the bot's owner, the account that owns the application in the Developer Portal, can run `/setup` directly. Anyone else needs the **Manage Server** permission and a one-time code: run `/discord setup` in the server console, then run `/setup code:<code>` in Discord within 10 minutes. To post events in a different channel, run `/setup as:events` there.
+By default, Discord shows `/setup` only to members with the **Manage Server** permission. The bot's owner, the account that owns the application in the Developer Portal, can run it directly. Anyone else also needs a one-time code: run `/discord setup` in the server console, then run `/setup code:<code>` in Discord within 10 minutes. To post events in a different channel, run `/setup as:events` there.
 
 The bridge folder is `plugins/MinecraftDiscordBridge` on Paper, `plugins/minecraftdiscordbridge` on Velocity, and `config/minecraftdiscordbridge` on Fabric, NeoForge and Forge.
 
@@ -89,8 +89,8 @@ In Discord:
 /list                              Show who is online
 /link <code>                       Link your Discord account
 /unlink                            Unlink your Discord account
-/whitelist add|remove <player>     Change the whitelist (actions.whitelist)
-/kick <player> [reason]            Kick a player (actions.kick)
+/whitelist add|remove <player>     Change the whitelist (discord-commands.whitelist)
+/kick <player> [reason]            Kick a player (discord-commands.kick)
 ```
 
 `/link` and `/unlink` exist while linking is on. `/whitelist` and `/kick` exist only when you turn them on in `config.yml`, and by default only Discord administrators can use them. To let other roles use them, change the command permissions under **Server Settings > Integrations** in Discord.
@@ -105,15 +105,16 @@ The bridge folder holds three things:
 
 | Section | What it controls |
 | --- | --- |
-| `language` | `en` or `ko` for the bridge's own messages |
-| `discord` | Chat, events and console channel IDs. A channel ID in `config.yml` takes priority over `/setup`. |
-| `chat` | Both directions, the in-game format in MiniMessage, avatars, `@name` pings for linked players, blocked words |
-| `events` | Which events to post, and a role to ping when the server starts |
-| `status` | The player count as the bot's status and in the channel topic |
+| `language` | `en` or `ko` for the bridge's messages, and for deaths and advancements on Discord |
+| `chat` | The chat channel, both directions, the in-game format in MiniMessage, avatars, `@name` pings for linked players, blocked words |
+| `events` | The events channel, which events to post, and a role to ping when the server starts |
+| `player-count` | The player count as the bot's status and in the chat channel's topic |
 | `linking` | Account linking, and whether players need a linked account or a Discord role to join |
-| `role-sync` | Rules that pair Discord roles with permission groups |
-| `actions` | `/whitelist` and `/kick` from Discord, off by default |
-| `console` | The console mirror, and the Discord user IDs that may run console commands |
+| `console` | The console channel, and the Discord user IDs that may run console commands |
+| `discord-commands` | `/whitelist` and `/kick` in Discord, off by default |
+| `role-sync` | Pairs of Discord roles and LuckPerms groups |
+
+A channel ID in `config.yml` takes priority over `/setup`.
 
 To copy a channel, role or user ID, turn on **Developer Mode** in Discord under **User Settings > Advanced**, then right-click the channel, role or user and click **Copy ID**.
 

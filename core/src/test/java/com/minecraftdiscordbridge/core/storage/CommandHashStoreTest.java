@@ -25,4 +25,12 @@ class CommandHashStoreTest {
         assertThat(reopened.hash(GUILD)).contains("second");
         assertThat(reopened.hash(new DiscordId(100000000000000001L))).isEmpty();
     }
+
+    @Test
+    void keepsTheHashesInTheCacheFolder() throws IOException {
+        CommandHashStore.open(directory).put(GUILD, "first");
+
+        assertThat(directory.resolve("data").resolve("cache").resolve("command-hashes.json"))
+                .exists();
+    }
 }

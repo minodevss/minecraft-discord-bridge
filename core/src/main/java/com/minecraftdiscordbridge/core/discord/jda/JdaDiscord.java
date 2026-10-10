@@ -12,7 +12,9 @@ import com.minecraftdiscordbridge.core.discord.DiscordStatus.ChannelStatus;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.discord.RoleInfo;
+import com.minecraftdiscordbridge.core.discord.StatusReason;
 import com.minecraftdiscordbridge.core.discord.WebhookRepository;
+import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
 import com.minecraftdiscordbridge.core.loop.Deadline;
@@ -22,9 +24,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
@@ -71,7 +75,8 @@ public final class JdaDiscord implements Discord {
             CoreLoop loop,
             DiscordListener listener,
             WebhookRepository webhookRepository,
-            CommandHashRepository commandHashes) {
+            CommandHashRepository commandHashes,
+            Supplier<Lang> lang) {
         this.settings = settings;
         this.scope = new GuildScope(settings);
         this.loop = loop;
@@ -79,9 +84,14 @@ public final class JdaDiscord implements Discord {
         this.connection = new JdaConnection(settings, endpoints, rateLimits, new ConnectionCallbacks());
         this.guild = new JdaGuild(this::currentGuild);
         this.webhooks = new WebhookSender(connection::jda, webhookRepository, rateLimits, System::nanoTime);
-        this.outbox = new Outbox(settings.serverAuthor(), webhooks, loop);
+        this.outbox = new Outbox(
+                settings.serverAuthor(),
+                webhooks,
+                loop,
+                skipped -> lang.get().count("discord.skipped", skipped),
+                channelId -> ChannelLabels.of(connection.jda(), channelId));
         this.commands = new CommandRegistrar(settings.commands(), commandHashes);
-        this.events = new JdaEvents(settings, scope, loop, listener, webhooks);
+        this.events = new JdaEvents(settings, scope, loop, listener, webhooks, lang);
         this.appearance = new Appearance(connection::jda, System::nanoTime, loop);
     }
 
@@ -90,8 +100,9 @@ public final class JdaDiscord implements Discord {
             CoreLoop loop,
             DiscordListener listener,
             WebhookRepository webhooks,
-            CommandHashRepository commandHashes) {
-        return new JdaDiscord(settings, Endpoints.DISCORD, loop, listener, webhooks, commandHashes);
+            CommandHashRepository commandHashes,
+            Supplier<Lang> lang) {
+        return new JdaDiscord(settings, Endpoints.DISCORD, loop, listener, webhooks, commandHashes, lang);
     }
 
     @Override
@@ -104,8 +115,15 @@ public final class JdaDiscord implements Discord {
         Map<DiscordId, ChannelStatus> channels = new HashMap<>();
         settings.channelIds().forEach(id -> channels.put(id, ChannelStatus.IDLE));
         channels.putAll(outbox.snapshot());
-        channels.replaceAll((id, channel) -> channel.withRateLimited(rateLimits.count(id)));
+        channels.replaceAll(
+                (id, channel) -> channel.withRateLimited(rateLimits.count(id)).withName(channelName(id)));
         return connection.status(channels);
+    }
+
+    private Optional<String> channelName(DiscordId id) {
+        JDA jda = connection.jda();
+        GuildChannel channel = jda == null ? null : jda.getGuildChannelById(id.value());
+        return channel == null ? Optional.empty() : Optional.of(channel.getName());
     }
 
     @Override
@@ -214,10 +232,17 @@ public final class JdaDiscord implements Discord {
         }
         Guild guild = scope.resolve(jda);
         if (guild == null) {
-            connection.degrade(settings.guild()
-                    .map(id -> "The bot is not in Discord server " + id + ". Invite it with " + inviteUrl(jda))
-                    .orElseGet(() -> "The bot cannot see any channel set under discord: in config.yml. Fix the"
-                            + " channel IDs and run /discord reload, or invite the bot with " + inviteUrl(jda)));
+            String invite = inviteUrl(jda);
+            if (settings.guild().isPresent()) {
+                connection.degrade(
+                        "The bot is not in Discord server " + settings.guild().get() + ". Invite it with " + invite,
+                        new StatusReason(StatusReason.Kind.NOT_IN_SERVER, invite));
+            } else {
+                connection.degrade(
+                        "The bot cannot see the chat or events channel set in config.yml. Fix the channel IDs and run"
+                                + " /discord reload, or invite the bot with " + invite,
+                        new StatusReason(StatusReason.Kind.CHANNELS_NOT_VISIBLE, invite));
+            }
             return;
         }
         commands.registerIfChanged(guild, jda.getSelfUser().getApplicationIdLong());
@@ -238,7 +263,10 @@ public final class JdaDiscord implements Discord {
     private void readyForSetup(JDA jda) {
         List<Guild> guilds = jda.getGuilds();
         if (guilds.isEmpty()) {
-            connection.degrade("The bot is not in any Discord server. Invite it with " + inviteUrl(jda));
+            String invite = inviteUrl(jda);
+            connection.degrade(
+                    "The bot is not in any Discord server. Invite it with " + invite,
+                    new StatusReason(StatusReason.Kind.NOT_IN_ANY_SERVER, invite));
             return;
         }
         long applicationId = jda.getSelfUser().getApplicationIdLong();

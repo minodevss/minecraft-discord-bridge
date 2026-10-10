@@ -1,20 +1,20 @@
 package com.minecraftdiscordbridge.core.status;
 
-import com.minecraftdiscordbridge.core.config.StatusConfig;
+import com.minecraftdiscordbridge.core.config.PlayerCountConfig;
 import com.minecraftdiscordbridge.core.discord.Discord;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import java.util.Optional;
 
 public final class StatusBoard {
-    private final StatusConfig config;
+    private final PlayerCountConfig config;
     private final Optional<DiscordId> topicChannel;
     private final Lang lang;
     private final Discord discord;
     private final Roster roster;
 
     public StatusBoard(
-            StatusConfig config, Optional<DiscordId> topicChannel, Lang lang, Discord discord, Roster roster) {
+            PlayerCountConfig config, Optional<DiscordId> topicChannel, Lang lang, Discord discord, Roster roster) {
         this.config = config;
         this.topicChannel = topicChannel;
         this.lang = lang;
@@ -24,10 +24,10 @@ public final class StatusBoard {
 
     public void refresh() {
         String online = lang.count("discord.status.online", roster.visibleCount());
-        if (config.presence()) {
+        if (config.botStatus()) {
             discord.updatePresence(online);
         }
-        if (config.topic() && topicChannel.isPresent()) {
+        if (config.channelTopic() && topicChannel.isPresent()) {
             discord.updateTopic(topicChannel.get(), online);
         }
     }

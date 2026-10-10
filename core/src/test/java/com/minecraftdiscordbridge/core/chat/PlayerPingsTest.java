@@ -9,6 +9,7 @@ import com.minecraftdiscordbridge.core.storage.Edition;
 import com.minecraftdiscordbridge.core.storage.Link;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -47,21 +48,30 @@ class PlayerPingsTest {
     }
 
     @Test
-    void buildsAvatarUrlsFromTheTextureOrTheFallback() {
-        ChatConfig chat = new ChatConfig(
-                true,
-                true,
-                "<author>: <message>",
-                "https://crafthead.net/helm/{texture}",
-                "https://example.com/{name}/{uuid}",
-                false,
-                List.of());
+    void buildsAvatarUrlsFromTheTextureOrTheUuidWhenTheSkinIsUnknown() {
+        ChatConfig chat = chat("https://crafthead.net/helm/{texture}");
         UUID id = UUID.fromString("00000000-0000-4000-8000-000000000001");
 
         assertThat(Avatars.url(chat, new PlayerProfile(id, "Steve", "Steve", "abc123", false)))
                 .contains("https://crafthead.net/helm/abc123");
         assertThat(Avatars.url(chat, new PlayerProfile(id, ".Kid Two", ".Kid Two", null, true)))
+                .contains("https://crafthead.net/helm/" + id);
+    }
+
+    @Test
+    void fillsTheNameAndUuidIntoAvatarUrls() {
+        UUID id = UUID.fromString("00000000-0000-4000-8000-000000000001");
+
+        assertThat(Avatars.url(
+                        chat("https://example.com/{name}/{uuid}"),
+                        new PlayerProfile(id, ".Kid Two", ".Kid Two", null, true)))
                 .contains("https://example.com/.Kid%20Two/" + id);
+        assertThat(Avatars.url(chat(""), new PlayerProfile(id, "Steve", "Steve", "abc123", false)))
+                .isEmpty();
+    }
+
+    private static ChatConfig chat(String avatarUrl) {
+        return new ChatConfig(Optional.empty(), true, true, "<author>: <message>", avatarUrl, false, List.of());
     }
 
     @Test
