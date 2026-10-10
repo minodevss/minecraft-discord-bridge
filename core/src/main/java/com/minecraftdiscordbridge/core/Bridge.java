@@ -35,10 +35,8 @@ import com.minecraftdiscordbridge.core.vanilla.LanguageFiles;
 import com.minecraftdiscordbridge.core.vanilla.VanillaTranslations;
 import java.time.Duration;
 import java.time.InstantSource;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -150,14 +148,6 @@ public final class Bridge {
             }
         }
         loop.control(() -> activator.help(source, permitted));
-    }
-
-    public void command(CommandSource source, List<String> arguments) {
-        String literal = arguments.isEmpty() ? "" : arguments.get(0).toLowerCase(Locale.ROOT);
-        Arrays.stream(GameCommand.values())
-                .filter(command -> command.literal().equals(literal))
-                .findFirst()
-                .ifPresentOrElse(command -> command(source, command), () -> help(source));
     }
 
     public CompletableFuture<JoinDecision> checkJoin(PlayerProfile player, boolean bypass) {
