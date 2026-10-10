@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.text;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.minecraftdiscordbridge.core.platform.RichText;
 import java.util.Map;
 import java.util.UUID;
 import net.kyori.adventure.key.Key;
@@ -154,6 +155,40 @@ class TextRendererTest {
                 .build();
 
         assertThat(TextRenderer.plain(component, Translations.NONE)).isEqualTo("Steve joined");
+    }
+
+    @Test
+    void translatesRichTextWhenEveryKeyIsKnown() {
+        Translations korean =
+                Map.of("death.attack.mob", "%1$s이(가) %2$s에게 살해당했습니다", "entity.minecraft.zombie", "좀비")::get;
+        RichText death = new RichText(
+                "{\"translate\":\"death.attack.mob\",\"with\":[{\"text\":\"Steve\"},"
+                        + "{\"translate\":\"entity.minecraft.zombie\"}]}",
+                "Steve was slain by Zombie");
+
+        assertThat(TextRenderer.plain(death, korean)).isEqualTo("Steve이(가) 좀비에게 살해당했습니다");
+    }
+
+    @Test
+    void keepsThePlatformTextWhenAModKeyIsMissing() {
+        Translations korean = Map.of("death.attack.mob", "%1$s이(가) %2$s에게 살해당했습니다")::get;
+        RichText death = new RichText(
+                "{\"translate\":\"death.attack.mob\",\"with\":[\"Steve\",{\"translate\":\"entity.mymod.wisp\"}]}",
+                "Steve was slain by Wisp");
+
+        assertThat(TextRenderer.plain(death, korean)).isEqualTo("Steve was slain by Wisp");
+    }
+
+    @Test
+    void keepsThePlatformTextWithoutTheTranslationOrReadableJson() {
+        Translations korean = Map.of("death.attack.fall", "%1$s이(가) 땅바닥으로 곤두박질쳤습니다")::get;
+
+        assertThat(TextRenderer.plain(
+                        new RichText("{\"translate\":\"death.attack.fall\",\"with\":[\"Steve\"]}", "Steve fell"),
+                        Translations.NONE))
+                .isEqualTo("Steve fell");
+        assertThat(TextRenderer.plain(new RichText("{broken", "Steve fell"), korean))
+                .isEqualTo("Steve fell");
     }
 
     @Test
