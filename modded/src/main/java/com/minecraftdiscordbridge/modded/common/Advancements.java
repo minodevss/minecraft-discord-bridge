@@ -14,8 +14,10 @@ import java.util.Arrays;
 //? if >=1.21 {
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementType;
-//?} else
-/*import net.minecraft.advancements.Advancement;*/
+//?} else {
+/*import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.FrameType;
+*///?}
 
 final class Advancements {
     //? if >=26.1 {
@@ -47,9 +49,23 @@ final class Advancements {
     }
     *///?}
 
-    private static AdvancementFrame frame(Enum<?> type) {
-        return AdvancementFrame.valueOf(type.name());
+    //? if >=1.21 {
+    private static AdvancementFrame frame(AdvancementType type) {
+        return switch (type) {
+            case TASK -> AdvancementFrame.TASK;
+            case GOAL -> AdvancementFrame.GOAL;
+            case CHALLENGE -> AdvancementFrame.CHALLENGE;
+        };
     }
+    //?} else {
+    /*private static AdvancementFrame frame(FrameType type) {
+        return switch (type) {
+            case TASK -> AdvancementFrame.TASK;
+            case GOAL -> AdvancementFrame.GOAL;
+            case CHALLENGE -> AdvancementFrame.CHALLENGE;
+        };
+    }
+    *///?}
 
     //? if >=26.1 {
     private static boolean announcesToChat(DisplayInfo display) {
