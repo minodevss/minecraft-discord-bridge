@@ -16,15 +16,9 @@ class ModJar(val minecraft: String, val loader: String, val gameVersions: List<S
     fun fileName(version: String) = "minecraft-discord-bridge-$loader-$version+$minecraft.jar"
 }
 
-val modJars = listOf(
-    ModJar("26.1.2", "fabric", listOf("26.1.2", "26.2", "26.3")),
-    ModJar("1.21.11", "fabric", listOf("1.21.11")),
-    ModJar("1.21.1", "fabric", listOf("1.21", "1.21.1")),
-    ModJar("1.20.1", "fabric", listOf("1.20.1")),
-    ModJar("26.2", "neoforge", listOf("26.2", "26.3")),
-    ModJar("1.21.1", "neoforge", listOf("1.21", "1.21.1")),
-    ModJar("1.20.1", "forge", listOf("1.20.1")),
-)
+@Suppress("UNCHECKED_CAST")
+val modJars = (gradle.extra["modNodes"] as List<Triple<String, String, List<String>>>)
+    .map { (minecraft, loader, gameVersions) -> ModJar(minecraft, loader, gameVersions) }
 val pluginGameVersions = listOf(
     "1.21", "1.21.1", "1.21.2", "1.21.3", "1.21.4", "1.21.5", "1.21.6", "1.21.7", "1.21.8", "1.21.9", "1.21.10", "1.21.11",
     "26.1", "26.1.1", "26.1.2", "26.2", "26.3",
