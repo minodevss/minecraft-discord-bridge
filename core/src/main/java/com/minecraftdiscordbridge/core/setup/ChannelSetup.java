@@ -1,5 +1,6 @@
 package com.minecraftdiscordbridge.core.setup;
 
+import com.minecraftdiscordbridge.core.codes.Attempts;
 import com.minecraftdiscordbridge.core.config.DiscordConfig;
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.Discord;
@@ -8,7 +9,6 @@ import com.minecraftdiscordbridge.core.discord.InteractionReply;
 import com.minecraftdiscordbridge.core.discord.InteractionRequest;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Replies;
-import com.minecraftdiscordbridge.core.linking.Attempts;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
 import com.minecraftdiscordbridge.core.storage.BindingStore;

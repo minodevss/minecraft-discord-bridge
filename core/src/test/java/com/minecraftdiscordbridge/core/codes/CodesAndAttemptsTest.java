@@ -1,4 +1,4 @@
-package com.minecraftdiscordbridge.core.linking;
+package com.minecraftdiscordbridge.core.codes;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

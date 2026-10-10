@@ -1,6 +1,6 @@
 package com.minecraftdiscordbridge.core.setup;
 
-import com.minecraftdiscordbridge.core.linking.Codes;
+import com.minecraftdiscordbridge.core.codes.Codes;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;

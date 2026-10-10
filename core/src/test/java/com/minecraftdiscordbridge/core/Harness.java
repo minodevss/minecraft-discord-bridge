@@ -1,8 +1,8 @@
 package com.minecraftdiscordbridge.core;
 
+import com.minecraftdiscordbridge.core.codes.Codes;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.InteractionRequest;
-import com.minecraftdiscordbridge.core.linking.Codes;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.minecraftdiscordbridge.core.vanilla.FakeFetcher;

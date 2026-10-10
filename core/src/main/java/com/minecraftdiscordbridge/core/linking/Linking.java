@@ -1,5 +1,6 @@
 package com.minecraftdiscordbridge.core.linking;
 
+import com.minecraftdiscordbridge.core.codes.Attempts;
 import com.minecraftdiscordbridge.core.config.LinkingConfig;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.InteractionReply;

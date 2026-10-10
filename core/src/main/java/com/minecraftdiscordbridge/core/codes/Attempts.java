@@ -1,4 +1,4 @@
-package com.minecraftdiscordbridge.core.linking;
+package com.minecraftdiscordbridge.core.codes;
 
 import java.time.Duration;
 import java.time.Instant;

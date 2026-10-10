@@ -4,13 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.FakeGroups;
 import com.minecraftdiscordbridge.core.MutableClock;
+import com.minecraftdiscordbridge.core.codes.Codes;
 import com.minecraftdiscordbridge.core.config.RoleSyncConfig;
 import com.minecraftdiscordbridge.core.config.RoleSyncRule;
 import com.minecraftdiscordbridge.core.config.SyncDirection;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.RoleInfo;
-import com.minecraftdiscordbridge.core.linking.Codes;
 import com.minecraftdiscordbridge.core.linking.PendingLinks;
 import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
