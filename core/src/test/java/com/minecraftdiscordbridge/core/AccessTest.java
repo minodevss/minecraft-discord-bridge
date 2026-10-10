@@ -25,6 +25,8 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -167,13 +169,13 @@ class AccessTest {
     private static DiscordMessage fromOwner(String content) {
         return new DiscordMessage(
                 CONSOLE,
-                new DiscordMessage.Sender(OWNER, "Owner", null, false, false),
+                new DiscordMessage.Sender(OWNER, "Owner", OptionalInt.empty(), false, false),
                 content,
                 Map.of(),
                 Map.of(),
                 Map.of(),
                 List.of(),
-                null,
+                Optional.empty(),
                 List.of(),
                 false,
                 false,

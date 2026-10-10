@@ -50,7 +50,7 @@ public final class Actions {
 
     public void whitelist(CommandRequest request, CommandReply reply) {
         Lang userLang = Lang.forDiscordLocale(request.locale(), lang);
-        String change = request.subcommand();
+        String change = request.subcommand().orElse("");
         if (!config.whitelist()) {
             reply.replyEphemeral(userLang.text("discord.action.disabled"));
         } else if (ADD.equals(change)) {

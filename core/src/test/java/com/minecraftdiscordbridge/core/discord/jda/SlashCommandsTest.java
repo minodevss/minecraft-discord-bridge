@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import java.util.List;
+import java.util.Optional;
 import net.dv8tion.jda.api.utils.data.DataObject;
 import org.junit.jupiter.api.Test;
 
@@ -11,19 +12,19 @@ class SlashCommandsTest {
     private static final CommandSpec KICK = new CommandSpec(
             "kick",
             "Kick a player",
-            new CommandSpec.Localized("추방", "플레이어를 추방합니다"),
+            Optional.of(new CommandSpec.Localized("추방", "플레이어를 추방합니다")),
             List.of(new CommandSpec.Option(
                     CommandSpec.OptionType.STRING,
                     "player",
                     "Player name",
-                    new CommandSpec.Localized("플레이어", "플레이어 이름"),
+                    Optional.of(new CommandSpec.Localized("플레이어", "플레이어 이름")),
                     true,
                     true)),
             true,
             false,
             true);
     private static final CommandSpec LINK =
-            new CommandSpec("link", "Link your account", null, List.of(), false, false, true);
+            new CommandSpec("link", "Link your account", Optional.empty(), List.of(), false, false, true);
 
     @Test
     void limitsAdminCommandsToAdministratorsByDefault() {
@@ -59,14 +60,19 @@ class SlashCommandsTest {
         CommandSpec whitelist = new CommandSpec(
                 "whitelist",
                 "Change the whitelist",
-                null,
+                Optional.empty(),
                 List.of(),
                 List.of(new CommandSpec.Subcommand(
                         "add",
                         "Add a player",
-                        new CommandSpec.Localized("add", "플레이어를 추가합니다"),
+                        Optional.of(new CommandSpec.Localized("add", "플레이어를 추가합니다")),
                         List.of(new CommandSpec.Option(
-                                CommandSpec.OptionType.STRING, "player", "Player name", null, true, false)))),
+                                CommandSpec.OptionType.STRING,
+                                "player",
+                                "Player name",
+                                Optional.empty(),
+                                true,
+                                false)))),
                 true,
                 true,
                 false);

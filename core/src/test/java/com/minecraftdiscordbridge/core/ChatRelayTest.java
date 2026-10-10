@@ -27,6 +27,8 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -44,7 +46,8 @@ class ChatRelayTest {
             OutboundMessage sent = harness.discord().nextSent();
             assertThat(sent.channelId()).isEqualTo(CHAT);
             assertThat(sent.author())
-                    .isEqualTo(Author.player(STEVE.id().toString(), "Steve", "https://crafthead.net/helm/abc"));
+                    .isEqualTo(Author.player(
+                            STEVE.id().toString(), "Steve", Optional.of("https://crafthead.net/helm/abc")));
             assertThat(sent.text()).isEqualTo("\\*\\*hi\\*\\* \\_there\\_ @everyone");
             assertThat(sent.pingUserIds()).isEmpty();
             assertThat(sent.pingRoleIds()).isEmpty();
@@ -57,7 +60,7 @@ class ChatRelayTest {
             harness.publish(new GameEvent.PlayerChatted(ALEX, "hello"));
 
             assertThat(harness.discord().nextSent().author().avatarUrl())
-                    .isEqualTo("https://crafthead.net/helm/" + ALEX.id());
+                    .contains("https://crafthead.net/helm/" + ALEX.id());
         }
     }
 
@@ -148,13 +151,13 @@ class ChatRelayTest {
             harness.discord()
                     .receive(new DiscordMessage(
                             CHAT,
-                            new DiscordMessage.Sender(MEMBER, "Alex", null, false, false),
+                            new DiscordMessage.Sender(MEMBER, "Alex", OptionalInt.empty(), false, false),
                             "**hello** <@" + MEMBER + ">",
                             Map.of(MEMBER, "Alex"),
                             Map.of(),
                             Map.of(),
                             List.of(),
-                            null,
+                            Optional.empty(),
                             List.of(),
                             false,
                             false,
@@ -189,7 +192,7 @@ class ChatRelayTest {
                             new DiscordMessage.Attachment(
                                     "cat.png", "https://cdn.discordapp.com/attachments/1/2/cat.png", true),
                             new DiscordMessage.Attachment("notes.txt", "https://evil.example/notes.txt", false)),
-                    null,
+                    Optional.empty(),
                     List.of("wave"),
                     true);
 
@@ -209,7 +212,11 @@ class ChatRelayTest {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             harness.discord()
                     .receive(withExtras(
-                            "me too", List.of(), new DiscordMessage.Reply("Bob", "first\nline"), List.of(), false));
+                            "me too",
+                            List.of(),
+                            Optional.of(new DiscordMessage.Reply("Bob", "first\nline")),
+                            List.of(),
+                            false));
 
             assertThat(plain(Waits.take(harness.platform.deliveries)))
                     .isEqualTo("↳ Bob: first line\n[Discord] Alex: me too");
@@ -236,13 +243,13 @@ class ChatRelayTest {
             harness.discord()
                     .receive(new DiscordMessage(
                             CHAT,
-                            new DiscordMessage.Sender(MEMBER, "Alex", 0x3498db, false, false),
+                            new DiscordMessage.Sender(MEMBER, "Alex", OptionalInt.of(0x3498db), false, false),
                             "hi",
                             Map.of(),
                             Map.of(),
                             Map.of(),
                             List.of(),
-                            null,
+                            Optional.empty(),
                             List.of(),
                             false,
                             false,
@@ -309,12 +316,12 @@ class ChatRelayTest {
     private static DiscordMessage withExtras(
             String content,
             List<DiscordMessage.Attachment> attachments,
-            DiscordMessage.Reply reply,
+            Optional<DiscordMessage.Reply> reply,
             List<String> stickers,
             boolean poll) {
         return new DiscordMessage(
                 CHAT,
-                new DiscordMessage.Sender(MEMBER, "Alex", null, false, false),
+                new DiscordMessage.Sender(MEMBER, "Alex", OptionalInt.empty(), false, false),
                 content,
                 Map.of(),
                 Map.of(),

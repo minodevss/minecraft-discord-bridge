@@ -8,6 +8,7 @@ import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -17,9 +18,9 @@ import org.junit.jupiter.api.Test;
 class OutboxTest {
     private static final DiscordId CHANNEL = new DiscordId(1);
     private static final DiscordId OTHER_CHANNEL = new DiscordId(2);
-    private static final Author SERVER = Author.server("Survival", null);
-    private static final Author STEVE = Author.player("1", "Steve", null);
-    private static final Author ALEX = Author.player("2", "Alex", null);
+    private static final Author SERVER = Author.server("Survival", Optional.empty());
+    private static final Author STEVE = Author.player("1", "Steve", Optional.empty());
+    private static final Author ALEX = Author.player("2", "Alex", Optional.empty());
 
     private final FakeSender sender = new FakeSender();
     private final Outbox outbox = new Outbox(SERVER, sender, Runnable::run);
@@ -119,7 +120,7 @@ class OutboxTest {
 
     @Test
     void escapesMarkdownInNamesOfMergedLines() {
-        Author tricky = Author.player("3", "Under_score*", null);
+        Author tricky = Author.player("3", "Under_score*", Optional.empty());
         outbox.enqueue(OutboundMessage.of(CHANNEL, STEVE, "first"));
         for (int i = 0; i < 5; i++) {
             outbox.enqueue(OutboundMessage.of(CHANNEL, i % 2 == 0 ? tricky : ALEX, "line"));

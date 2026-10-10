@@ -81,11 +81,9 @@ final class SlashCommands {
                 .setIntegrationTypes(IntegrationType.GUILD_INSTALL)
                 .setDefaultPermissions(
                         spec.adminOnly() ? DefaultMemberPermissions.DISABLED : DefaultMemberPermissions.ENABLED);
-        CommandSpec.Localized korean = spec.korean();
-        if (korean != null) {
-            command.setNameLocalization(DiscordLocale.KOREAN, korean.name())
-                    .setDescriptionLocalization(DiscordLocale.KOREAN, korean.description());
-        }
+        spec.korean()
+                .ifPresent(korean -> command.setNameLocalization(DiscordLocale.KOREAN, korean.name())
+                        .setDescriptionLocalization(DiscordLocale.KOREAN, korean.description()));
         return command.addOptions(
                         spec.options().stream().map(SlashCommands::toData).toList())
                 .addSubcommands(
@@ -94,12 +92,10 @@ final class SlashCommands {
 
     private static SubcommandData toData(CommandSpec.Subcommand spec) {
         SubcommandData subcommand = new SubcommandData(spec.name(), spec.description());
-        CommandSpec.Localized korean = spec.korean();
-        if (korean != null) {
-            subcommand
-                    .setNameLocalization(DiscordLocale.KOREAN, korean.name())
-                    .setDescriptionLocalization(DiscordLocale.KOREAN, korean.description());
-        }
+        spec.korean()
+                .ifPresent(korean -> subcommand
+                        .setNameLocalization(DiscordLocale.KOREAN, korean.name())
+                        .setDescriptionLocalization(DiscordLocale.KOREAN, korean.description()));
         return subcommand.addOptions(
                 spec.options().stream().map(SlashCommands::toData).toList());
     }
@@ -107,11 +103,9 @@ final class SlashCommands {
     private static OptionData toData(CommandSpec.Option spec) {
         OptionData option = new OptionData(
                 type(spec.type()), spec.name(), spec.description(), spec.required(), spec.autocomplete());
-        CommandSpec.Localized korean = spec.korean();
-        if (korean != null) {
-            option.setNameLocalization(DiscordLocale.KOREAN, korean.name())
-                    .setDescriptionLocalization(DiscordLocale.KOREAN, korean.description());
-        }
+        spec.korean()
+                .ifPresent(korean -> option.setNameLocalization(DiscordLocale.KOREAN, korean.name())
+                        .setDescriptionLocalization(DiscordLocale.KOREAN, korean.description()));
         return option;
     }
 

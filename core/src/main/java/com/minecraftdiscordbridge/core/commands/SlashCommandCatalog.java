@@ -13,6 +13,7 @@ import com.minecraftdiscordbridge.core.linking.Linking;
 import com.minecraftdiscordbridge.core.setup.ChannelSetup;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public final class SlashCommandCatalog {
     public static final String SETUP = "setup";
@@ -102,7 +103,7 @@ public final class SlashCommandCatalog {
         return ENGLISH.text(key);
     }
 
-    private static Localized korean(String name, String key) {
-        return new Localized(name, KOREAN.text(key));
+    private static Optional<Localized> korean(String name, String key) {
+        return Optional.of(new Localized(name, KOREAN.text(key)));
     }
 }

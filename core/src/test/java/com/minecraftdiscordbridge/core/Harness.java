@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -140,24 +142,25 @@ final class Harness implements AutoCloseable {
             Map<String, String> options,
             DiscordId user,
             DiscordId channel) {
-        return new CommandRequest(command, subcommand, options, GUILD, channel, user, "Alex", false, "en-US");
+        return new CommandRequest(
+                command, Optional.ofNullable(subcommand), options, GUILD, channel, user, "Alex", false, "en-US");
     }
 
     static CommandRequest managerRequest(
             String command, Map<String, String> options, DiscordId user, DiscordId channel) {
-        return new CommandRequest(command, null, options, GUILD, channel, user, "Alex", true, "en-US");
+        return new CommandRequest(command, Optional.empty(), options, GUILD, channel, user, "Alex", true, "en-US");
     }
 
     static DiscordMessage message(DiscordId channel, String content) {
         return new DiscordMessage(
                 channel,
-                new DiscordMessage.Sender(MEMBER, "Alex", null, false, false),
+                new DiscordMessage.Sender(MEMBER, "Alex", OptionalInt.empty(), false, false),
                 content,
                 Map.of(),
                 Map.of(),
                 Map.of(),
                 List.of(),
-                null,
+                Optional.empty(),
                 List.of(),
                 false,
                 false,

@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.discord;
 import com.minecraftdiscordbridge.core.loop.Deadline;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public final class OfflineDiscord implements Discord {
@@ -34,7 +35,7 @@ public final class OfflineDiscord implements Discord {
 
     @Override
     public DiscordStatus status() {
-        return new DiscordStatus(state, reason, -1, Map.of());
+        return new DiscordStatus(state, Optional.of(reason), -1, Map.of());
     }
 
     @Override

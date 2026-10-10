@@ -12,6 +12,7 @@ import com.minecraftdiscordbridge.core.loop.CoreLoop;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -92,7 +93,7 @@ final class JdaEvents {
         Member member = event.getMember();
         CommandRequest request = new CommandRequest(
                 event.getName(),
-                event.getSubcommandName(),
+                Optional.ofNullable(event.getSubcommandName()),
                 options,
                 new DiscordId(guild.getIdLong()),
                 new DiscordId(event.getChannelIdLong()),

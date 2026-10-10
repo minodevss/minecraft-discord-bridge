@@ -33,7 +33,7 @@ final class TestSupport {
                 FakeDiscord.TOKEN,
                 Optional.of(new DiscordId(FakeDiscord.GUILD_ID)),
                 Set.of(new DiscordId(FakeDiscord.CHANNEL_ID)),
-                Author.server("Survival", "https://example.com/server.png"),
+                Author.server("Survival", Optional.of("https://example.com/server.png")),
                 true,
                 false,
                 commands);

@@ -15,10 +15,7 @@ public final class StatusReport {
         Component state =
                 replies.lang().component("game.state." + status.state().name().toLowerCase(Locale.ROOT));
         replies.send(source, "game.status.state", Slot.component("state", state));
-        String reason = status.reason();
-        if (reason != null) {
-            replies.send(source, "game.status.reason", Slot.text("reason", reason));
-        }
+        status.reason().ifPresent(reason -> replies.send(source, "game.status.reason", Slot.text("reason", reason)));
         if (status.gatewayPingMillis() >= 0) {
             replies.send(source, "game.status.ping", Slot.text("ping", Long.toString(status.gatewayPingMillis())));
         }

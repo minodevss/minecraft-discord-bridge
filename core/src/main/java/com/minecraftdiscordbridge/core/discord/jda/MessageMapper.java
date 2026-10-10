@@ -5,6 +5,8 @@ import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.text.Graphemes;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Mentions;
 import net.dv8tion.jda.api.entities.Message;
@@ -41,7 +43,7 @@ final class MessageMapper {
         return new DiscordMessage.Sender(
                 new DiscordId(author.getIdLong()),
                 displayName(author, member),
-                member == null ? null : color(member.getColors()),
+                member == null ? OptionalInt.empty() : color(member.getColors()),
                 author.isBot(),
                 message.isWebhookMessage());
     }
@@ -78,24 +80,24 @@ final class MessageMapper {
         return new DiscordMessage.Attachment(attachment.getFileName(), attachment.getUrl(), attachment.isImage());
     }
 
-    private static DiscordMessage.@Nullable Reply reply(Message message) {
+    private static Optional<DiscordMessage.Reply> reply(Message message) {
         Message referenced = message.getReferencedMessage();
         if (referenced == null || !message.getMessageSnapshots().isEmpty()) {
-            return null;
+            return Optional.empty();
         }
         String excerpt = referenced.getContentRaw();
-        return new DiscordMessage.Reply(
+        return Optional.of(new DiscordMessage.Reply(
                 displayName(referenced.getAuthor(), referenced.getMember()),
                 excerpt.length() <= REPLY_EXCERPT_LENGTH
                         ? excerpt
-                        : Graphemes.fit(excerpt, REPLY_EXCERPT_LENGTH + 1, Graphemes.ELLIPSIS));
+                        : Graphemes.fit(excerpt, REPLY_EXCERPT_LENGTH + 1, Graphemes.ELLIPSIS)));
     }
 
     private static String displayName(User user, @Nullable Member member) {
         return member == null ? user.getEffectiveName() : member.getEffectiveName();
     }
 
-    private static @Nullable Integer color(RoleColors colors) {
-        return colors.isDefault() ? null : colors.getPrimaryRaw() & 0xFFFFFF;
+    private static OptionalInt color(RoleColors colors) {
+        return colors.isDefault() ? OptionalInt.empty() : OptionalInt.of(colors.getPrimaryRaw() & 0xFFFFFF);
     }
 }

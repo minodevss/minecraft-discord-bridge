@@ -244,8 +244,10 @@ final class WebhookSender implements MessageSender {
     }
 
     private static @Nullable String avatarUrl(JDA api, Author author) {
-        String avatar = author.avatarUrl();
-        return author.isServer() && avatar == null ? api.getSelfUser().getEffectiveAvatarUrl() : avatar;
+        if (author.isServer()) {
+            return author.avatarUrl().orElseGet(() -> api.getSelfUser().getEffectiveAvatarUrl());
+        }
+        return author.avatarUrl().orElse(null);
     }
 
     private static boolean isOurs(JDA api, Webhook webhook) {

@@ -17,6 +17,7 @@ import com.minecraftdiscordbridge.core.loop.Deadline;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -113,7 +114,7 @@ public final class RecordingDiscord implements Discord {
 
     @Override
     public DiscordStatus status() {
-        return new DiscordStatus(shutDown ? DiscordStatus.State.STOPPED : state, null, 42, Map.of());
+        return new DiscordStatus(shutDown ? DiscordStatus.State.STOPPED : state, Optional.empty(), 42, Map.of());
     }
 
     @Override

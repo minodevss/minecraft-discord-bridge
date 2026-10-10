@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -60,28 +61,30 @@ class JdaDiscordTest {
     private static final DiscordId FRIEND = new DiscordId(FRIEND_ID);
     private static final DiscordId ROLE = new DiscordId(ROLE_ID);
     private static final DiscordId OTHER_BOT = new DiscordId(OTHER_BOT_ID);
-    private static final Author STEVE = Author.player("uuid-steve", "Steve", "https://mc-heads.net/avatar/Steve");
-    private static final Author SERVER = Author.server("Survival", "https://example.com/server.png");
+    private static final Author STEVE =
+            Author.player("uuid-steve", "Steve", Optional.of("https://mc-heads.net/avatar/Steve"));
+    private static final Author SERVER = Author.server("Survival", Optional.of("https://example.com/server.png"));
     private static final int GUILD_MEMBERS_INTENT = 1 << 1;
     private static final Duration SHUTDOWN_BUDGET = Duration.ofMillis(2300);
     private static final Duration SHUTDOWN_LIMIT = SHUTDOWN_BUDGET.plusMillis(250);
     private static final CommandSpec LIST = new CommandSpec(
             "list",
             "Show who is online",
-            new CommandSpec.Localized("목록", "접속 중인 플레이어"),
-            List.of(new CommandSpec.Option(CommandSpec.OptionType.INTEGER, "page", "Page", null, false, false)),
+            Optional.of(new CommandSpec.Localized("목록", "접속 중인 플레이어")),
+            List.of(new CommandSpec.Option(
+                    CommandSpec.OptionType.INTEGER, "page", "Page", Optional.empty(), false, false)),
             false,
             false,
             false);
     private static final CommandSpec WHITELIST = new CommandSpec(
             "whitelist",
             "Add a player to the whitelist",
-            null,
+            Optional.empty(),
             List.of(new CommandSpec.Option(
                     CommandSpec.OptionType.STRING,
                     "player",
                     "Player name",
-                    new CommandSpec.Localized("플레이어", "플레이어 이름"),
+                    Optional.of(new CommandSpec.Localized("플레이어", "플레이어 이름")),
                     true,
                     true)),
             true,
@@ -118,7 +121,7 @@ class JdaDiscordTest {
         bridge = start(TestSupport.settings(List.of()));
 
         awaitState(State.READY);
-        assertThat(bridge.status().reason()).isNull();
+        assertThat(bridge.status().reason()).isEmpty();
         assertThat(take(listener.statuses).state()).isEqualTo(State.READY);
     }
 
@@ -129,7 +132,9 @@ class JdaDiscordTest {
         assertThatCode(() -> bridge = start(TestSupport.settings(List.of()))).doesNotThrowAnyException();
 
         awaitState(State.STOPPED);
-        assertThat(bridge.status().reason()).contains("rejected the bot token").contains("secrets.yml");
+        assertThat(bridge.status().reason().orElseThrow())
+                .contains("rejected the bot token")
+                .contains("secrets.yml");
         assertThat(discord.timeline).containsExactly("GET applications/@me");
     }
 
@@ -158,7 +163,7 @@ class JdaDiscordTest {
         bridge = start(withAutoEnable(false));
 
         awaitState(State.DEGRADED);
-        assertThat(bridge.status().reason())
+        assertThat(bridge.status().reason().orElseThrow())
                 .contains("Message Content")
                 .contains("https://discord.com/developers/applications/" + APPLICATION_ID + "/bot");
         assertThat(discord.requests("PATCH", "applications/@me")).isEmpty();
@@ -191,7 +196,7 @@ class JdaDiscordTest {
                 .isNotZero();
         assertThat(discord.identifies.get(1).getInt("intents") & MESSAGE_CONTENT_INTENT)
                 .isZero();
-        assertThat(bridge.status().reason()).contains("refused the bot's privileged intents");
+        assertThat(bridge.status().reason().orElseThrow()).contains("refused the bot's privileged intents");
     }
 
     @Test
@@ -201,7 +206,7 @@ class JdaDiscordTest {
         bridge = start(TestSupport.settings(List.of()));
 
         awaitState(State.DEGRADED);
-        assertThat(bridge.status().reason())
+        assertThat(bridge.status().reason().orElseThrow())
                 .contains("not in Discord server " + GUILD_ID)
                 .contains("client_id=" + APPLICATION_ID + "&scope=bot+applications.commands");
     }
@@ -225,18 +230,19 @@ class JdaDiscordTest {
 
         DiscordMessage received = take(listener.messages);
         assertThat(received.channelId()).isEqualTo(CHANNEL);
-        assertThat(received.author()).isEqualTo(new DiscordMessage.Sender(PLAYER, "Alex", 0x3498db, false, false));
+        assertThat(received.author())
+                .isEqualTo(new DiscordMessage.Sender(PLAYER, "Alex", OptionalInt.of(0x3498db), false, false));
         assertThat(received.content()).startsWith("hi <@" + FRIEND_ID + ">");
         assertThat(received.mentionedUsers()).containsEntry(FRIEND, "Bestie");
         assertThat(received.mentionedRoles())
-                .containsEntry(ROLE, new DiscordMessage.MentionedRole("Builders", 0x3498db));
+                .containsEntry(ROLE, new DiscordMessage.MentionedRole("Builders", OptionalInt.of(0x3498db)));
         assertThat(received.mentionedChannels()).containsEntry(CHANNEL, "minecraft");
         assertThat(received.attachments())
                 .containsExactly(new DiscordMessage.Attachment("cat.png", "https://cdn.example.com/cat.png", true));
         assertThat(received.stickers()).containsExactly("wave");
-        assertThat(received.reply()).isNotNull();
-        assertThat(received.reply().authorName()).isEqualTo("Author" + FRIEND_ID);
-        assertThat(received.reply().excerpt()).isEqualTo("x".repeat(80) + "…");
+        assertThat(received.reply()).isPresent();
+        assertThat(received.reply().orElseThrow().authorName()).isEqualTo("Author" + FRIEND_ID);
+        assertThat(received.reply().orElseThrow().excerpt()).isEqualTo("x".repeat(80) + "…");
         assertThat(received.forwarded()).isFalse();
         assertThat(received.poll()).isFalse();
         assertThat(received.voiceMessage()).isFalse();
@@ -256,7 +262,7 @@ class JdaDiscordTest {
         DiscordMessage forwarded = take(listener.messages);
         DiscordMessage voice = take(listener.messages);
         assertThat(forwarded.forwarded()).isTrue();
-        assertThat(forwarded.reply()).isNull();
+        assertThat(forwarded.reply()).isEmpty();
         assertThat(voice.voiceMessage()).isTrue();
     }
 
@@ -663,7 +669,8 @@ class JdaDiscordTest {
         bridge = start(unbound(Set.of(new DiscordId(CHANNEL_ID + 1)), List.of(LIST)));
 
         awaitState(State.DEGRADED);
-        assertThat(bridge.status().reason()).contains("cannot see any channel set under discord: in config.yml");
+        assertThat(bridge.status().reason().orElseThrow())
+                .contains("cannot see any channel set under discord: in config.yml");
         assertThat(registrations()).isEmpty();
     }
 
@@ -672,14 +679,14 @@ class JdaDiscordTest {
         CommandSpec whitelist = new CommandSpec(
                 "whitelist",
                 "Change the whitelist",
-                null,
+                Optional.empty(),
                 List.of(),
                 List.of(new CommandSpec.Subcommand(
                         "add",
                         "Add a player",
-                        null,
+                        Optional.empty(),
                         List.of(new CommandSpec.Option(
-                                CommandSpec.OptionType.STRING, "player", "Player", null, true, false)))),
+                                CommandSpec.OptionType.STRING, "player", "Player", Optional.empty(), true, false)))),
                 true,
                 false,
                 false);
@@ -700,7 +707,7 @@ class JdaDiscordTest {
         discord.dispatch("INTERACTION_CREATE", discord.command(GUILD_ID, "whitelist", 2, options));
 
         CommandRequest request = take(listener.commands);
-        assertThat(request.subcommand()).isEqualTo("add");
+        assertThat(request.subcommand()).contains("add");
         assertThat(request.options()).containsEntry("player", "Steve");
         assertThat(request.canManageServer()).isTrue();
     }

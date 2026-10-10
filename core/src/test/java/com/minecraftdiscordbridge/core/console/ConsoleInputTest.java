@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -153,13 +154,13 @@ class ConsoleInputTest {
             DiscordId channel, DiscordId author, boolean bot, boolean webhook, String content) {
         return new DiscordMessage(
                 channel,
-                new DiscordMessage.Sender(author, "Admin", null, bot, webhook),
+                new DiscordMessage.Sender(author, "Admin", OptionalInt.empty(), bot, webhook),
                 content,
                 Map.of(),
                 Map.of(),
                 Map.of(),
                 List.of(),
-                null,
+                Optional.empty(),
                 List.of(),
                 false,
                 false,

@@ -17,8 +17,7 @@ record MessageMentions(DiscordMessage message) implements MentionResolver {
         if (role == null) {
             return null;
         }
-        Integer color = role.color();
-        return color == null ? Role.uncolored(role.name()) : Role.colored(role.name(), color);
+        return new Role(role.name(), role.color());
     }
 
     @Override

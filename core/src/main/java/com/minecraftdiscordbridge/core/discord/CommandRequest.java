@@ -1,11 +1,11 @@
 package com.minecraftdiscordbridge.core.discord;
 
 import java.util.Map;
-import org.jspecify.annotations.Nullable;
+import java.util.Optional;
 
 public record CommandRequest(
         String command,
-        @Nullable String subcommand,
+        Optional<String> subcommand,
         Map<String, String> options,
         DiscordId guildId,
         DiscordId channelId,

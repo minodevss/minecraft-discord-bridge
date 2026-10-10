@@ -1,10 +1,10 @@
 package com.minecraftdiscordbridge.core.discord;
 
 import java.util.Map;
-import org.jspecify.annotations.Nullable;
+import java.util.Optional;
 
 public record DiscordStatus(
-        State state, @Nullable String reason, long gatewayPingMillis, Map<DiscordId, ChannelStatus> channels) {
+        State state, Optional<String> reason, long gatewayPingMillis, Map<DiscordId, ChannelStatus> channels) {
     public DiscordStatus {
         channels = Map.copyOf(channels);
     }

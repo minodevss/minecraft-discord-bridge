@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -168,7 +169,7 @@ public final class JdaDiscord implements Discord {
         channels.putAll(outbox.snapshot());
         channels.replaceAll((id, channel) -> channel.withRateLimited(rateLimits.count(id)));
         long ping = active == null ? -1 : active.jda().getGatewayPing();
-        return new DiscordStatus(current.state(), current.reason(), ping, channels);
+        return new DiscordStatus(current.state(), Optional.ofNullable(current.reason()), ping, channels);
     }
 
     @Override
