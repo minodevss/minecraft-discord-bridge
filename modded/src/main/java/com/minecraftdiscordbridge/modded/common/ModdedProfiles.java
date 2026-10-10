@@ -13,10 +13,10 @@ import java.util.UUID;
 import net.minecraft.server.level.ServerPlayer;
 import org.jspecify.annotations.Nullable;
 
-final class Profiles {
+final class ModdedProfiles {
     private static final String TEXTURES = "textures";
 
-    private Profiles() {}
+    private ModdedProfiles() {}
 
     static PlayerProfile of(ServerPlayer player) {
         return new PlayerProfile(

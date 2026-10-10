@@ -6,6 +6,8 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerPlayer;
 
 public interface LoaderHooks {
+    String MOD_ID = "minecraftdiscordbridge";
+
     String software();
 
     Path dataDirectory();

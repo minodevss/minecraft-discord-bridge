@@ -3,7 +3,6 @@ package com.minecraftdiscordbridge.modded.forge;
 import com.minecraftdiscordbridge.core.platform.Permission;
 import com.minecraftdiscordbridge.modded.common.DefaultPermissions;
 import com.minecraftdiscordbridge.modded.common.LoaderHooks;
-import com.minecraftdiscordbridge.modded.common.ModdedBridge;
 import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.List;
@@ -43,7 +42,7 @@ final class ForgeLoaderHooks implements LoaderHooks {
 
     @Override
     public Path dataDirectory() {
-        return FMLPaths.CONFIGDIR.get().resolve(ModdedBridge.MOD_ID);
+        return FMLPaths.CONFIGDIR.get().resolve(LoaderHooks.MOD_ID);
     }
 
     @Override
@@ -61,9 +60,9 @@ final class ForgeLoaderHooks implements LoaderHooks {
     }
 
     private static PermissionNode<Boolean> node(Permission permission) {
-        String name = permission.node().substring(ModdedBridge.MOD_ID.length() + 1);
+        String name = permission.node().substring(LoaderHooks.MOD_ID.length() + 1);
         return new PermissionNode<>(
-                ModdedBridge.MOD_ID,
+                LoaderHooks.MOD_ID,
                 name,
                 PermissionTypes.BOOLEAN,
                 (player, playerId, context) -> DefaultPermissions.allows(player, permission));

@@ -1,7 +1,8 @@
 package com.minecraftdiscordbridge.modded.forge;
 
-import com.minecraftdiscordbridge.modded.common.DiscordCommand;
-import com.minecraftdiscordbridge.modded.common.ModdedBridge;
+import com.minecraftdiscordbridge.modded.common.LoaderHooks;
+import com.minecraftdiscordbridge.modded.common.ModdedCommand;
+import com.minecraftdiscordbridge.modded.common.ModdedEvents;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -23,58 +24,58 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.server.permission.events.PermissionGatherEvent;
 
-@Mod(ModdedBridge.MOD_ID)
+@Mod(LoaderHooks.MOD_ID)
 public final class ForgeMod {
     public ForgeMod() {
         if (!FMLEnvironment.dist.isDedicatedServer()) {
             return;
         }
         ForgeLoaderHooks hooks = new ForgeLoaderHooks();
-        ModdedBridge bridge = new ModdedBridge(hooks);
+        ModdedEvents events = new ModdedEvents(hooks);
         IEventBus bus = MinecraftForge.EVENT_BUS;
         bus.addListener(EventPriority.NORMAL, false, PermissionGatherEvent.Nodes.class, hooks::registerNodes);
         bus.addListener(
                 EventPriority.NORMAL,
                 false,
                 RegisterCommandsEvent.class,
-                event -> DiscordCommand.register(event.getDispatcher(), bridge));
+                event -> ModdedCommand.register(event.getDispatcher(), events));
         bus.addListener(
                 EventPriority.NORMAL,
                 false,
                 ServerStartedEvent.class,
-                event -> bridge.serverStarted(event.getServer()));
-        bus.addListener(EventPriority.NORMAL, false, ServerStoppingEvent.class, event -> bridge.serverStopping());
+                event -> events.serverStarted(event.getServer()));
+        bus.addListener(EventPriority.NORMAL, false, ServerStoppingEvent.class, event -> events.serverStopping());
         // Forge skips ServerStoppingEvent after a crash; ServerStoppedEvent always fires.
-        bus.addListener(EventPriority.NORMAL, false, ServerStoppedEvent.class, event -> bridge.serverStopped());
+        bus.addListener(EventPriority.NORMAL, false, ServerStoppedEvent.class, event -> events.serverStopped());
         bus.addListener(
                 EventPriority.LOWEST,
                 false,
                 ServerChatEvent.class,
-                event -> bridge.playerChatted(event.getPlayer(), event.getRawText()));
+                event -> events.playerChatted(event.getPlayer(), event.getRawText()));
         bus.addListener(EventPriority.NORMAL, false, PlayerNegotiationEvent.class, event -> {
             Connection connection = event.getConnection();
-            event.enqueueWork(bridge.checkJoin(event.getProfile())
+            event.enqueueWork(events.checkJoin(event.getProfile())
                     .thenAccept(kick -> kick.ifPresent(message -> disconnect(connection, message))));
         });
         bus.addListener(EventPriority.NORMAL, false, PlayerEvent.PlayerLoggedInEvent.class, event -> {
             if (event.getEntity() instanceof ServerPlayer player) {
-                bridge.playerJoined(player);
+                events.playerJoined(player);
             }
         });
         bus.addListener(EventPriority.NORMAL, false, PlayerEvent.PlayerLoggedOutEvent.class, event -> {
             if (event.getEntity() instanceof ServerPlayer player) {
-                bridge.playerLeft(player);
+                events.playerLeft(player);
             }
         });
         bus.addListener(EventPriority.LOWEST, false, LivingDeathEvent.class, event -> {
             Entity entity = event.getEntity();
             if (entity instanceof ServerPlayer player) {
-                bridge.playerDied(player);
+                events.playerDied(player);
             }
         });
         bus.addListener(EventPriority.NORMAL, false, AdvancementEvent.AdvancementEarnEvent.class, event -> {
             if (event.getEntity() instanceof ServerPlayer player) {
-                bridge.advancementEarned(player, event.getAdvancement());
+                events.advancementEarned(player, event.getAdvancement());
             }
         });
     }

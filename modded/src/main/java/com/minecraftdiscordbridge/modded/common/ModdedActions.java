@@ -22,12 +22,12 @@ import net.minecraft.Util;
 import net.minecraft.server.players.GameProfileCache;
 *///?}
 
-final class GameActions {
+final class ModdedActions {
     private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private final MinecraftServer server;
 
-    GameActions(MinecraftServer server) {
+    ModdedActions(MinecraftServer server) {
         this.server = server;
     }
 
@@ -94,7 +94,7 @@ final class GameActions {
 
     private CompletableFuture<ActionOutcome> runConsoleCommand(String command) {
         return ServerThread.supply(server, () -> {
-            CommandFeedback feedback = new CommandFeedback();
+            ModdedConsoleFeedback feedback = new ModdedConsoleFeedback();
             server.getCommands()
                     .performPrefixedCommand(server.createCommandSourceStack().withSource(feedback), command);
             return new ActionOutcome.Output(feedback.text());

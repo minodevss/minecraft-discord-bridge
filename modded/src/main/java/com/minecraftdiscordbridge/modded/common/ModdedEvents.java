@@ -27,8 +27,7 @@ import net.minecraft.advancements.AdvancementHolder;
 //?} else
 /*import net.minecraft.advancements.Advancement;*/
 
-public final class ModdedBridge {
-    public static final String MOD_ID = "minecraftdiscordbridge";
+public final class ModdedEvents {
     private static final long GATE_WAIT_SECONDS = 4;
     private static final String REFUSED = "You cannot join this server right now.";
 
@@ -36,7 +35,7 @@ public final class ModdedBridge {
     private final AtomicReference<@Nullable Session> session = new AtomicReference<>();
     private final RateLimitedWarning failures = new RateLimitedWarning();
 
-    public ModdedBridge(LoaderHooks loader) {
+    public ModdedEvents(LoaderHooks loader) {
         this.loader = loader;
     }
 
@@ -98,7 +97,7 @@ public final class ModdedBridge {
         MinecraftServer server = current.server();
         try {
             return current.bridge()
-                    .checkJoin(Profiles.of(profile), isOperator(server, profile))
+                    .checkJoin(ModdedProfiles.of(profile), isOperator(server, profile))
                     .completeOnTimeout(new JoinDecision.Allow(), GATE_WAIT_SECONDS, TimeUnit.SECONDS)
                     .thenApplyAsync(decision -> kickMessage(decision, server), server);
         } catch (RuntimeException | LinkageError error) {
@@ -109,7 +108,7 @@ public final class ModdedBridge {
 
     public boolean canUse(CommandSourceStack source, GameCommand command) {
         Session current = session.get();
-        return current != null && current.bridge().canUse(ServerCommandSource.of(source, loader), command);
+        return current != null && current.bridge().canUse(ModdedCommandSource.of(source, loader), command);
     }
 
     public int command(CommandSourceStack source, GameCommand command) {
@@ -117,7 +116,7 @@ public final class ModdedBridge {
         if (current == null) {
             return 0;
         }
-        current.bridge().command(ServerCommandSource.of(source, loader), command);
+        current.bridge().command(ModdedCommandSource.of(source, loader), command);
         return Command.SINGLE_SUCCESS;
     }
 
@@ -126,7 +125,7 @@ public final class ModdedBridge {
         if (current == null) {
             return 0;
         }
-        current.bridge().help(ServerCommandSource.of(source, loader));
+        current.bridge().help(ModdedCommandSource.of(source, loader));
         return Command.SINGLE_SUCCESS;
     }
 
@@ -158,7 +157,7 @@ public final class ModdedBridge {
         }
         guard(event, () -> {
             GameEvent created =
-                    factory.create(Profiles.of(player), current.server().registryAccess());
+                    factory.create(ModdedProfiles.of(player), current.server().registryAccess());
             if (created != null) {
                 current.bridge().publish(created);
             }
@@ -168,7 +167,7 @@ public final class ModdedBridge {
     private List<PlayerProfile> onlinePlayers(MinecraftServer server) {
         return server.getPlayerList().getPlayers().stream()
                 .filter(player -> !loader.isFakePlayer(player))
-                .map(Profiles::of)
+                .map(ModdedProfiles::of)
                 .toList();
     }
 

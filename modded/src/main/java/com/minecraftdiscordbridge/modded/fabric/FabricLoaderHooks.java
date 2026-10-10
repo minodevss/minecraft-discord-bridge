@@ -3,7 +3,6 @@ package com.minecraftdiscordbridge.modded.fabric;
 import com.minecraftdiscordbridge.core.platform.Permission;
 import com.minecraftdiscordbridge.modded.common.DefaultPermissions;
 import com.minecraftdiscordbridge.modded.common.LoaderHooks;
-import com.minecraftdiscordbridge.modded.common.ModdedBridge;
 import java.nio.file.Path;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.entity.FakePlayer;
@@ -23,7 +22,7 @@ final class FabricLoaderHooks implements LoaderHooks {
 
     @Override
     public Path dataDirectory() {
-        return FabricLoader.getInstance().getConfigDir().resolve(ModdedBridge.MOD_ID);
+        return FabricLoader.getInstance().getConfigDir().resolve(LoaderHooks.MOD_ID);
     }
 
     @Override

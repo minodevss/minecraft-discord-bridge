@@ -19,14 +19,14 @@ final class ModdedPlatform implements Platform {
     private final MinecraftServer server;
     private final PlatformInfo info;
     private final Path dataDirectory;
-    private final GameActions actions;
+    private final ModdedActions actions;
 
     ModdedPlatform(MinecraftServer server, LoaderHooks loader) {
         this.server = server;
         this.info = new PlatformInfo(
                 loader.software(), server.getServerVersion(), dataVersion(), server.usesAuthentication());
         this.dataDirectory = loader.dataDirectory();
-        this.actions = new GameActions(server);
+        this.actions = new ModdedActions(server);
     }
 
     @Override

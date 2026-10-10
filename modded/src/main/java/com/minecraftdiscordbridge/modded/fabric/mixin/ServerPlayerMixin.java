@@ -12,6 +12,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 abstract class ServerPlayerMixin {
     @Inject(method = "die", at = @At("HEAD"))
     private void minecraftdiscordbridge$died(DamageSource source, CallbackInfo callback) {
-        FabricMod.BRIDGE.playerDied((ServerPlayer) (Object) this);
+        FabricMod.EVENTS.playerDied((ServerPlayer) (Object) this);
     }
 }

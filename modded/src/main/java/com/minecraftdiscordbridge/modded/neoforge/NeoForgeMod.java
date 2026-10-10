@@ -1,7 +1,8 @@
 package com.minecraftdiscordbridge.modded.neoforge;
 
-import com.minecraftdiscordbridge.modded.common.DiscordCommand;
-import com.minecraftdiscordbridge.modded.common.ModdedBridge;
+import com.minecraftdiscordbridge.modded.common.LoaderHooks;
+import com.minecraftdiscordbridge.modded.common.ModdedCommand;
+import com.minecraftdiscordbridge.modded.common.ModdedEvents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 import net.minecraft.world.entity.Entity;
@@ -21,47 +22,47 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent;
 import net.neoforged.neoforge.server.permission.events.PermissionGatherEvent;
 
-@Mod(value = ModdedBridge.MOD_ID, dist = Dist.DEDICATED_SERVER)
+@Mod(value = LoaderHooks.MOD_ID, dist = Dist.DEDICATED_SERVER)
 public final class NeoForgeMod {
     public NeoForgeMod(IEventBus modBus) {
         NeoForgeLoaderHooks hooks = new NeoForgeLoaderHooks();
-        ModdedBridge bridge = new ModdedBridge(hooks);
+        ModdedEvents events = new ModdedEvents(hooks);
         modBus.addListener(RegisterConfigurationTasksEvent.class, event -> {
             if (event.getListener() instanceof ServerConfigurationPacketListenerImpl listener) {
-                event.register(new JoinGateTask(listener, bridge));
+                event.register(new JoinGateTask(listener, events));
             }
         });
         IEventBus bus = NeoForge.EVENT_BUS;
         bus.addListener(PermissionGatherEvent.Nodes.class, hooks::registerNodes);
-        bus.addListener(RegisterCommandsEvent.class, event -> DiscordCommand.register(event.getDispatcher(), bridge));
-        bus.addListener(ServerStartedEvent.class, event -> bridge.serverStarted(event.getServer()));
-        bus.addListener(ServerStoppingEvent.class, event -> bridge.serverStopping());
+        bus.addListener(RegisterCommandsEvent.class, event -> ModdedCommand.register(event.getDispatcher(), events));
+        bus.addListener(ServerStartedEvent.class, event -> events.serverStarted(event.getServer()));
+        bus.addListener(ServerStoppingEvent.class, event -> events.serverStopping());
         // NeoForge skips ServerStoppingEvent after a crash; ServerStoppedEvent always fires.
-        bus.addListener(ServerStoppedEvent.class, event -> bridge.serverStopped());
+        bus.addListener(ServerStoppedEvent.class, event -> events.serverStopped());
         bus.addListener(
                 EventPriority.LOWEST,
                 false,
                 ServerChatEvent.class,
-                event -> bridge.playerChatted(event.getPlayer(), event.getRawText()));
+                event -> events.playerChatted(event.getPlayer(), event.getRawText()));
         bus.addListener(PlayerEvent.PlayerLoggedInEvent.class, event -> {
             if (event.getEntity() instanceof ServerPlayer player) {
-                bridge.playerJoined(player);
+                events.playerJoined(player);
             }
         });
         bus.addListener(PlayerEvent.PlayerLoggedOutEvent.class, event -> {
             if (event.getEntity() instanceof ServerPlayer player) {
-                bridge.playerLeft(player);
+                events.playerLeft(player);
             }
         });
         bus.addListener(EventPriority.LOWEST, false, LivingDeathEvent.class, event -> {
             Entity entity = event.getEntity();
             if (entity instanceof ServerPlayer player) {
-                bridge.playerDied(player);
+                events.playerDied(player);
             }
         });
         bus.addListener(AdvancementEvent.AdvancementEarnEvent.class, event -> {
             if (event.getEntity() instanceof ServerPlayer player) {
-                bridge.advancementEarned(player, event.getAdvancement());
+                events.advancementEarned(player, event.getAdvancement());
             }
         });
     }

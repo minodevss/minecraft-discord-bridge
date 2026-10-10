@@ -34,6 +34,6 @@ abstract class PlayerAdvancementsMixin {
             *///?}
             String criterion,
             CallbackInfoReturnable<Boolean> callback) {
-        FabricMod.BRIDGE.advancementEarned(player, advancement);
+        FabricMod.EVENTS.advancementEarned(player, advancement);
     }
 }

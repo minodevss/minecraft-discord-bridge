@@ -1,25 +1,26 @@
 package com.minecraftdiscordbridge.modded.neoforge;
 
-import com.minecraftdiscordbridge.modded.common.ModdedBridge;
+import com.minecraftdiscordbridge.modded.common.LoaderHooks;
+import com.minecraftdiscordbridge.modded.common.ModdedEvents;
 import java.util.function.Consumer;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.network.ConfigurationTask;
 import net.minecraft.server.network.ServerConfigurationPacketListenerImpl;
 
 final class JoinGateTask implements ConfigurationTask {
-    static final ConfigurationTask.Type TYPE = new ConfigurationTask.Type(ModdedBridge.MOD_ID + ":join_gate");
+    static final ConfigurationTask.Type TYPE = new ConfigurationTask.Type(LoaderHooks.MOD_ID + ":join_gate");
 
     private final ServerConfigurationPacketListenerImpl listener;
-    private final ModdedBridge bridge;
+    private final ModdedEvents events;
 
-    JoinGateTask(ServerConfigurationPacketListenerImpl listener, ModdedBridge bridge) {
+    JoinGateTask(ServerConfigurationPacketListenerImpl listener, ModdedEvents events) {
         this.listener = listener;
-        this.bridge = bridge;
+        this.events = events;
     }
 
     @Override
     public void start(Consumer<Packet<?>> sender) {
-        var unused = bridge.checkJoin(listener.getOwner()).thenAccept(kick -> {
+        var unused = events.checkJoin(listener.getOwner()).thenAccept(kick -> {
             if (!listener.isAcceptingMessages()) {
                 return;
             }
