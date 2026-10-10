@@ -82,7 +82,7 @@ public final class ModdedEvents {
 
     public boolean canUse(CommandSourceStack source, GameCommand command) {
         Session current = session.get();
-        return current != null && current.bridge().canUse(ModdedCommandSource.of(source, loader), command);
+        return current != null && current.bridge().canUse(new ModdedCommandSource(source, loader), command);
     }
 
     public int command(CommandSourceStack source, GameCommand command) {
@@ -90,7 +90,7 @@ public final class ModdedEvents {
         if (current == null) {
             return 0;
         }
-        current.bridge().command(ModdedCommandSource.of(source, loader), command);
+        current.bridge().command(new ModdedCommandSource(source, loader), command);
         return Command.SINGLE_SUCCESS;
     }
 
@@ -99,7 +99,7 @@ public final class ModdedEvents {
         if (current == null) {
             return 0;
         }
-        current.bridge().help(ModdedCommandSource.of(source, loader));
+        current.bridge().help(new ModdedCommandSource(source, loader));
         return Command.SINGLE_SUCCESS;
     }
 

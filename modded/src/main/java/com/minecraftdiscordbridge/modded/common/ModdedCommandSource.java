@@ -8,12 +8,16 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.jspecify.annotations.Nullable;
 
-record ModdedCommandSource(@Nullable UUID playerId, String name, CommandSourceStack stack, LoaderHooks loader)
-        implements CommandSource {
-
-    static ModdedCommandSource of(CommandSourceStack stack, LoaderHooks loader) {
+record ModdedCommandSource(CommandSourceStack stack, LoaderHooks loader) implements CommandSource {
+    @Override
+    public @Nullable UUID playerId() {
         ServerPlayer player = stack.getPlayer();
-        return new ModdedCommandSource(player == null ? null : player.getUUID(), stack.getTextName(), stack, loader);
+        return player == null ? null : player.getUUID();
+    }
+
+    @Override
+    public String name() {
+        return stack.getTextName();
     }
 
     @Override
