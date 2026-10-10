@@ -8,6 +8,7 @@ import com.minecraftdiscordbridge.core.discord.CommandReply;
 import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import com.minecraftdiscordbridge.core.discord.CommandSpec.Access;
+import com.minecraftdiscordbridge.core.discord.CommandSpec.Choice;
 import com.minecraftdiscordbridge.core.discord.CommandSpec.Option;
 import com.minecraftdiscordbridge.core.discord.CommandSpec.OptionType;
 import com.minecraftdiscordbridge.core.discord.CommandSpec.Subcommand;
@@ -16,6 +17,7 @@ import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.linking.Linking;
 import com.minecraftdiscordbridge.core.setup.ChannelSetup;
 import com.minecraftdiscordbridge.core.status.Roster;
+import com.minecraftdiscordbridge.core.storage.ChannelRole;
 import com.minecraftdiscordbridge.core.text.markdown.DiscordEscaper;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,9 +62,7 @@ public final class DiscordCommands {
     }
 
     public void onAutocomplete(AutocompleteRequest request, AutocompleteReply reply) {
-        if (request.command().equals(SETUP) && request.option().equals(ChannelSetup.ROLE_OPTION)) {
-            setup.autocomplete(request.typed(), userLang(request.locale()), reply);
-        } else if (request.command().equals(KICK) && request.option().equals(Actions.PLAYER_OPTION)) {
+        if (request.command().equals(KICK) && request.option().equals(Actions.PLAYER_OPTION)) {
             reply.respond(onlineNamesStartingWith(request.typed()));
         } else {
             reply.respond(List.of());
@@ -139,11 +139,23 @@ public final class DiscordCommands {
         return command(
                 SETUP,
                 List.of(
-                        option(OptionType.STRING, ChannelSetup.ROLE_OPTION, "command.setup.as", false, true),
+                        new Option(
+                                OptionType.STRING,
+                                ChannelSetup.ROLE_OPTION,
+                                english("command.setup.as"),
+                                korean("command.setup.as"),
+                                false,
+                                false,
+                                List.of(roleChoice(ChannelRole.CHAT), roleChoice(ChannelRole.EVENTS))),
                         option(OptionType.STRING, ChannelSetup.CODE_OPTION, "command.setup.code", false, false)),
                 Access.MANAGE_SERVER,
                 true,
                 true);
+    }
+
+    private static Choice roleChoice(ChannelRole role) {
+        String key = "command.setup.as." + role.id();
+        return new Choice(english(key), role.id(), korean(key));
     }
 
     private static Subcommand whitelistChange(String change) {

@@ -62,6 +62,20 @@ class SetupTest {
     }
 
     @Test
+    void offersChatAndEventsAsFixedChoices() throws IOException {
+        try (Harness harness = Harness.started(directory, UNBOUND)) {
+            CommandSpec.Option as =
+                    harness.discord().settings.commands().get(0).options().get(0);
+
+            assertThat(as.name()).isEqualTo("as");
+            assertThat(as.autocomplete()).isFalse();
+            assertThat(as.choices()).extracting(CommandSpec.Choice::value).containsExactly("chat", "events");
+            assertThat(as.choices())
+                    .allSatisfy(choice -> assertThat(choice.koreanName()).isPresent());
+        }
+    }
+
+    @Test
     void addsAnEventsChannelToTheExistingChoice() throws IOException {
         try (Harness harness = Harness.started(directory, UNBOUND)) {
             harness.discord().owners = Set.of(OWNER);

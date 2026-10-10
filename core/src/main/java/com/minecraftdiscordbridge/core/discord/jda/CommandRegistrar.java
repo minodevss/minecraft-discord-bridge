@@ -19,6 +19,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.interactions.IntegrationType;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -99,9 +100,17 @@ final class CommandRegistrar {
 
     private static OptionData toData(CommandSpec.Option spec) {
         OptionData option = new OptionData(
-                type(spec.type()), spec.name(), spec.description(), spec.required(), spec.autocomplete());
+                        type(spec.type()), spec.name(), spec.description(), spec.required(), spec.autocomplete())
+                .addChoices(
+                        spec.choices().stream().map(CommandRegistrar::toData).toList());
         spec.koreanDescription().ifPresent(korean -> option.setDescriptionLocalization(DiscordLocale.KOREAN, korean));
         return option;
+    }
+
+    private static Command.Choice toData(CommandSpec.Choice spec) {
+        Command.Choice choice = new Command.Choice(spec.name(), spec.value());
+        spec.koreanName().ifPresent(korean -> choice.setNameLocalization(DiscordLocale.KOREAN, korean));
+        return choice;
     }
 
     private static DefaultMemberPermissions defaultPermissions(CommandSpec.Access access) {

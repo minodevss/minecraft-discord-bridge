@@ -4,7 +4,6 @@ import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
 import com.minecraftdiscordbridge.core.codes.Attempts;
 import com.minecraftdiscordbridge.core.config.DiscordConfig;
-import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.CommandReply;
 import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.Discord;
@@ -22,7 +21,6 @@ import com.minecraftdiscordbridge.core.text.Format.Slot;
 import java.time.Instant;
 import java.time.InstantSource;
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -64,21 +62,12 @@ public final class ChannelSetup {
         Lang userLang = Lang.forDiscordLocale(request.locale(), replies.lang());
         Optional<ChannelRole> role = role(request.options().get(ROLE_OPTION));
         if (role.isEmpty()) {
-            reply.replyEphemeral(userLang.text("discord.setup.bad-role"));
+            reply.replyEphemeral(userLang.text("discord.unknown-command"));
         } else if (config.consoleChannel().equals(Optional.of(request.channelId()))) {
             reply.replyEphemeral(userLang.text("discord.setup.console-channel"));
         } else if (authorized(request, reply, userLang)) {
             save(request, reply, userLang, role.get());
         }
-    }
-
-    public void autocomplete(String typed, Lang userLang, AutocompleteReply reply) {
-        String prefix = typed.strip().toLowerCase(Locale.ROOT);
-        reply.respond(List.of(ChannelRole.CHAT, ChannelRole.EVENTS).stream()
-                .map(role -> new AutocompleteReply.Choice(userLang.text("discord.setup.role." + role.id()), role.id()))
-                .filter(choice -> choice.value().startsWith(prefix)
-                        || choice.name().toLowerCase(Locale.ROOT).startsWith(prefix))
-                .toList());
     }
 
     public void issueCode(CommandSource source) {

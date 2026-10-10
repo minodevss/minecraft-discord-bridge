@@ -37,7 +37,27 @@ public record CommandSpec(
             String description,
             Optional<String> koreanDescription,
             boolean required,
-            boolean autocomplete) {}
+            boolean autocomplete,
+            List<Choice> choices) {
+        public Option {
+            choices = List.copyOf(choices);
+            if (autocomplete && !choices.isEmpty()) {
+                throw new IllegalArgumentException("Option " + name + " cannot have both autocomplete and choices");
+            }
+        }
+
+        public Option(
+                OptionType type,
+                String name,
+                String description,
+                Optional<String> koreanDescription,
+                boolean required,
+                boolean autocomplete) {
+            this(type, name, description, koreanDescription, required, autocomplete, List.of());
+        }
+    }
+
+    public record Choice(String name, String value, Optional<String> koreanName) {}
 
     public record Subcommand(
             String name, String description, Optional<String> koreanDescription, List<Option> options) {

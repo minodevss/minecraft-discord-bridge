@@ -63,6 +63,34 @@ class CommandRegistrarTest {
     }
 
     @Test
+    void carriesFixedChoicesWithKoreanNames() {
+        CommandSpec setup = new CommandSpec(
+                "setup",
+                "Set up",
+                Optional.empty(),
+                List.of(new CommandSpec.Option(
+                        CommandSpec.OptionType.STRING,
+                        "as",
+                        "What this channel shows",
+                        Optional.empty(),
+                        false,
+                        false,
+                        List.of(new CommandSpec.Choice("events", "events", Optional.of("게임 소식"))))),
+                CommandSpec.Access.MANAGE_SERVER,
+                true,
+                true);
+
+        DataObject option =
+                CommandRegistrar.toData(setup).toData().getArray("options").getObject(0);
+        DataObject choice = option.getArray("choices").getObject(0);
+
+        assertThat(option.getBoolean("autocomplete")).isFalse();
+        assertThat(choice.getString("name")).isEqualTo("events");
+        assertThat(choice.getString("value")).isEqualTo("events");
+        assertThat(choice.getObject("name_localizations").getString("ko")).isEqualTo("게임 소식");
+    }
+
+    @Test
     void carriesSubcommandsWithTheirOwnOptionsAndKoreanDescriptions() {
         CommandSpec whitelist = new CommandSpec(
                 "whitelist",
