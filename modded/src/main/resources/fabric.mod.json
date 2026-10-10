@@ -10,7 +10,7 @@
   },
   "environment": "server",
   "entrypoints": {
-    "server": ["com.minecraftdiscordbridge.modded.fabric.FabricEntrypoint"]
+    "server": ["com.minecraftdiscordbridge.modded.fabric.FabricMod"]
   },
   "mixins": ["minecraftdiscordbridge.mixins.json"],
   "depends": {

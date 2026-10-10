@@ -24,8 +24,8 @@ import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.server.permission.events.PermissionGatherEvent;
 
 @Mod(ModdedBridge.MOD_ID)
-public final class ForgeEntrypoint {
-    public ForgeEntrypoint() {
+public final class ForgeMod {
+    public ForgeMod() {
         if (!FMLEnvironment.dist.isDedicatedServer()) {
             return;
         }

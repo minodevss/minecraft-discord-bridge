@@ -11,7 +11,7 @@ import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerLoginConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 
-public final class FabricEntrypoint implements DedicatedServerModInitializer {
+public final class FabricMod implements DedicatedServerModInitializer {
     public static final ModdedBridge BRIDGE = new ModdedBridge(new FabricLoaderHooks());
 
     @Override

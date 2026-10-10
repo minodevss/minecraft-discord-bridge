@@ -22,8 +22,8 @@ import net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent;
 import net.neoforged.neoforge.server.permission.events.PermissionGatherEvent;
 
 @Mod(value = ModdedBridge.MOD_ID, dist = Dist.DEDICATED_SERVER)
-public final class NeoForgeEntrypoint {
-    public NeoForgeEntrypoint(IEventBus modBus) {
+public final class NeoForgeMod {
+    public NeoForgeMod(IEventBus modBus) {
         NeoForgeLoaderHooks hooks = new NeoForgeLoaderHooks();
         ModdedBridge bridge = new ModdedBridge(hooks);
         modBus.addListener(RegisterConfigurationTasksEvent.class, event -> {

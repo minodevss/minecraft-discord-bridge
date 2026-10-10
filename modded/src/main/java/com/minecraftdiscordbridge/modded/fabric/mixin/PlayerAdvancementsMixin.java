@@ -1,6 +1,6 @@
 package com.minecraftdiscordbridge.modded.fabric.mixin;
 
-import com.minecraftdiscordbridge.modded.fabric.FabricEntrypoint;
+import com.minecraftdiscordbridge.modded.fabric.FabricMod;
 import net.minecraft.server.PlayerAdvancements;
 import net.minecraft.server.level.ServerPlayer;
 import org.spongepowered.asm.mixin.Mixin;
@@ -34,6 +34,6 @@ abstract class PlayerAdvancementsMixin {
             *///?}
             String criterion,
             CallbackInfoReturnable<Boolean> callback) {
-        FabricEntrypoint.BRIDGE.advancementEarned(player, advancement);
+        FabricMod.BRIDGE.advancementEarned(player, advancement);
     }
 }
