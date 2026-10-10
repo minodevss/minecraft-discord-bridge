@@ -128,6 +128,7 @@ final class Sessions {
             secrets.add(snapshot.secrets().discordToken());
         }
         shared.setupCodes().active(shared.clock().instant()).ifPresent(secrets::add);
+        secrets.addAll(shared.pendingLinks().codes(shared.clock().instant()));
         return secrets;
     }
 }

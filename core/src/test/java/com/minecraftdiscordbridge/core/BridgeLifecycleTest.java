@@ -199,6 +199,26 @@ class BridgeLifecycleTest {
     }
 
     @Test
+    void hidesPendingLinkCodesInTheMirroredConsole() throws IOException {
+        try (Harness harness = Harness.started(directory, CHANNELS + """
+                  console-channel: "444444444444444444"
+                console:
+                  mirror: true
+                """)) {
+            String code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
+                    .nextPlain());
+
+            LogManager.getLogger("net.minecraft.server.MinecraftServer").error("Disconnecting Steve: {}", code);
+
+            OutboundMessage mirrored = harness.discord().nextSent();
+            assertThat(mirrored.channelId()).isEqualTo(Harness.CONSOLE);
+            assertThat(mirrored.text())
+                    .contains("Disconnecting Steve: [hidden]")
+                    .doesNotContain(code);
+        }
+    }
+
+    @Test
     void mirrorsTheConsoleOnlyWhileABotTokenIsSet() throws IOException {
         String mirrored = """
                 config-version: 1
