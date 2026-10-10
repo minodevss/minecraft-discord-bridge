@@ -64,6 +64,17 @@ class ArchitectureTest {
     }
 
     @Test
+    void onlyTheConsoleMirrorUsesLog4j() {
+        noClasses()
+                .that()
+                .resideOutsideOfPackage(CORE + ".console..")
+                .should()
+                .dependOnClassesThat()
+                .resideInAPackage("org.apache.logging.log4j..")
+                .check(PRODUCTION);
+    }
+
+    @Test
     void featurePackagesHaveNoCycles() {
         slices().matching(CORE + ".(*)..").should().beFreeOfCycles().check(PRODUCTION);
     }
