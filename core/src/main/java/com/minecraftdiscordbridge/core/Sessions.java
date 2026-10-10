@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 
 final class Sessions {
     private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
-    private static final String DEFAULT_CHAT_FORMAT = "<gray>[Discord]</gray> <author>: <message>";
 
     private Sessions() {}
 
@@ -102,7 +101,7 @@ final class Sessions {
             return DiscordChat.compileFormat(template);
         } catch (IllegalArgumentException invalid) {
             LOGGER.warn("{} Using the default chat.format until it is fixed", invalid.getMessage());
-            return DiscordChat.compileFormat(DEFAULT_CHAT_FORMAT);
+            return DiscordChat.compileFormat(BridgeConfig.defaults().chat().format());
         }
     }
 

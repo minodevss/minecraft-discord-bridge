@@ -252,6 +252,18 @@ class ChatRelayTest {
         }
     }
 
+    @Test
+    void usesTheDefaultFormatWhileChatFormatIsInvalid() throws IOException {
+        try (Harness harness = Harness.started(directory, CHANNELS + """
+                chat:
+                  format: "§a<author>: <message>"
+                """)) {
+            harness.discord().receive(Harness.message(CHAT, "hi"));
+
+            assertThat(plain(Waits.take(harness.platform.deliveries))).isEqualTo("[Discord] Alex: hi");
+        }
+    }
+
     private static DiscordMessage withExtras(
             String content,
             List<DiscordMessage.Attachment> attachments,
