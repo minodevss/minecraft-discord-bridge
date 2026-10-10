@@ -17,7 +17,7 @@ class DiscordMarkdownTest {
         return Markup.of(DiscordMarkdown.parse(markdown, FakeMentions.standard()));
     }
 
-    static Stream<Arguments> emphasis() {
+    static Stream<Arguments> stylesBoldItalicUnderlineAndStrikethroughMarkers() {
         return Stream.of(
                 arguments("**bold**", "<bold>bold"),
                 arguments("*italic*", "<italic>italic"),
@@ -45,11 +45,11 @@ class DiscordMarkdownTest {
 
     @ParameterizedTest
     @MethodSource
-    void emphasis(String markdown, String expected) {
+    void stylesBoldItalicUnderlineAndStrikethroughMarkers(String markdown, String expected) {
         assertThat(render(markdown)).isEqualTo(expected);
     }
 
-    static Stream<Arguments> code() {
+    static Stream<Arguments> showsCodeLiterallyInGray() {
         return Stream.of(
                 arguments("`code`", "<gray>code"),
                 arguments("`**not bold**`", "<gray>**not bold**"),
@@ -66,11 +66,11 @@ class DiscordMarkdownTest {
 
     @ParameterizedTest
     @MethodSource
-    void code(String markdown, String expected) {
+    void showsCodeLiterallyInGray(String markdown, String expected) {
         assertThat(render(markdown)).isEqualTo(expected);
     }
 
-    static Stream<Arguments> escapes() {
+    static Stream<Arguments> showsEscapedMarkersAsText() {
         return Stream.of(
                 arguments("\\*not italic\\*", "*not italic*"),
                 arguments("\\_\\_", "__"),
@@ -84,7 +84,7 @@ class DiscordMarkdownTest {
 
     @ParameterizedTest
     @MethodSource
-    void escapes(String markdown, String expectedPlain) {
+    void showsEscapedMarkersAsText(String markdown, String expectedPlain) {
         Component parsed = DiscordMarkdown.parse(markdown);
 
         assertThat(Markup.plain(parsed)).isEqualTo(expectedPlain);
@@ -98,7 +98,7 @@ class DiscordMarkdownTest {
         assertThat(render("\\\\*a*")).endsWith("<italic>a");
     }
 
-    static Stream<Arguments> links() {
+    static Stream<Arguments> makesOnlyHttpLinksClickable() {
         return Stream.of(
                 arguments(
                         "[text](https://example.com)",
@@ -143,11 +143,11 @@ class DiscordMarkdownTest {
 
     @ParameterizedTest
     @MethodSource
-    void links(String markdown, String expected) {
+    void makesOnlyHttpLinksClickable(String markdown, String expected) {
         assertThat(render(markdown)).isEqualTo(expected);
     }
 
-    static Stream<Arguments> mentions() {
+    static Stream<Arguments> showsMentionsEmojiAndCommandsByName() {
         return Stream.of(
                 arguments("hi <@123456789012345678>", "hi @Steve"),
                 arguments("<@!123456789012345678>", "@Steve"),
@@ -169,11 +169,11 @@ class DiscordMarkdownTest {
 
     @ParameterizedTest
     @MethodSource
-    void mentions(String markdown, String expected) {
+    void showsMentionsEmojiAndCommandsByName(String markdown, String expected) {
         assertThat(render(markdown)).isEqualTo(expected);
     }
 
-    static Stream<Arguments> timestamps() {
+    static Stream<Arguments> formatsTimestampsInUtc() {
         return Stream.of(
                 arguments("<t:1700000000>", "14 November 2023 22:13 UTC"),
                 arguments("<t:1700000000:t>", "22:13 UTC"),
@@ -190,11 +190,11 @@ class DiscordMarkdownTest {
 
     @ParameterizedTest
     @MethodSource
-    void timestamps(String markdown, String expected) {
+    void formatsTimestampsInUtc(String markdown, String expected) {
         assertThat(render(markdown)).isEqualTo(expected);
     }
 
-    static Stream<Arguments> lineStarts() {
+    static Stream<Arguments> stylesHeadingsQuotesAndSmallPrintAtLineStart() {
         return Stream.of(
                 arguments("# Heading", "<bold>Heading"),
                 arguments("## Second", "<bold>Second"),
@@ -219,7 +219,7 @@ class DiscordMarkdownTest {
 
     @ParameterizedTest
     @MethodSource
-    void lineStarts(String markdown, String expected) {
+    void stylesHeadingsQuotesAndSmallPrintAtLineStart(String markdown, String expected) {
         assertThat(render(markdown)).isEqualTo(expected);
     }
 
