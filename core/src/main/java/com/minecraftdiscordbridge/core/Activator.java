@@ -86,9 +86,10 @@ final class Activator implements BridgeCommand.Callbacks {
                         this::booted,
                         failure -> {
                             LOGGER.error(
-                                    "The bridge could not start: {}. Check that the plugin data folder is readable and"
-                                            + " writable, then restart the server",
-                                    Failures.describe(failure));
+                                    "The bridge could not start: {}. Check that {} is readable and writable, then"
+                                            + " restart the server",
+                                    Failures.describe(failure),
+                                    services.platform().dataDirectory().toAbsolutePath());
                             bootFailed = true;
                             joins.release();
                         });

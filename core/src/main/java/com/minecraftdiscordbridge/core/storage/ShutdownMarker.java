@@ -32,6 +32,10 @@ public final class ShutdownMarker {
         return leftOver;
     }
 
+    public Path file() {
+        return file;
+    }
+
     public void clear() throws IOException {
         Files.deleteIfExists(file);
     }
