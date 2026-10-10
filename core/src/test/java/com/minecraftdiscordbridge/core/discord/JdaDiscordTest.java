@@ -24,7 +24,9 @@ import com.minecraftdiscordbridge.core.loop.CoreLoop;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import mockwebserver3.RecordedRequest;
 import net.dv8tion.jda.api.utils.data.DataArray;
@@ -36,6 +38,7 @@ import org.junit.jupiter.api.Test;
 class JdaDiscordTest {
     private static final Author STEVE = Author.player("uuid-steve", "Steve", "https://mc-heads.net/avatar/Steve");
     private static final Author SERVER = Author.server("Survival", "https://example.com/server.png");
+    private static final int GUILD_MEMBERS_INTENT = 1 << 1;
     private static final Duration SHUTDOWN_LIMIT = JdaDiscord.SHUTDOWN_BUDGET.plusMillis(250);
     private static final CommandSpec LIST = new CommandSpec(
             "list",
@@ -676,6 +679,81 @@ class JdaDiscordTest {
                 base.relayBotMessages(),
                 base.relayWebhookMessages(),
                 base.commands());
+    }
+
+    @Test
+    void looksUpMemberRolesOverRestWithoutTheMembersIntent() throws Exception {
+        bridge = startReady();
+
+        MemberLookup found = bridge.member(PLAYER_ID).get(5, TimeUnit.SECONDS);
+
+        assertThat(found).isEqualTo(new MemberLookup.Member(PLAYER_ID, Set.of(ROLE_ID)));
+        assertThat(discord.requests("GET", "guilds/" + GUILD_ID + "/members/" + PLAYER_ID))
+                .hasSize(1);
+        assertThat(discord.identifies.get(0).getInt("intents") & GUILD_MEMBERS_INTENT)
+                .isZero();
+    }
+
+    @Test
+    void reportsUsersWhoAreNotInTheServer() throws Exception {
+        bridge = startReady();
+
+        assertThat(bridge.member(FRIEND_ID).get(5, TimeUnit.SECONDS)).isEqualTo(new MemberLookup.NotMember(FRIEND_ID));
+    }
+
+    @Test
+    void reportsMemberLookupsAsUnavailableBeforeConnecting() throws Exception {
+        bridge = new JdaDiscord(
+                TestSupport.settings(List.of()), discord.endpoints(), loop, listener, webhooks, commandHashes);
+
+        assertThat(bridge.member(PLAYER_ID).get(5, TimeUnit.SECONDS)).isInstanceOf(MemberLookup.Unavailable.class);
+        assertThat(bridge.roles()).isEmpty();
+    }
+
+    @Test
+    void describesRolesWithModeratorPermissions() {
+        bridge = startReady();
+
+        Map<Long, RoleInfo> roles = bridge.roles();
+
+        assertThat(roles.get(GUILD_ID).dangerousPermissions()).contains("Administrator");
+        assertThat(roles.get(ROLE_ID)).isEqualTo(new RoleInfo(ROLE_ID, "Builders", Set.of(), false));
+    }
+
+    @Test
+    void givesAndTakesRolesWithAnAuditLogReason() throws Exception {
+        discord.botManagesRoles = true;
+        bridge = startReady();
+        String route = "guilds/" + GUILD_ID + "/members/" + PLAYER_ID + "/roles/" + ROLE_ID;
+
+        assertThat(bridge.roles().get(ROLE_ID).assignable()).isTrue();
+        bridge.addRole(PLAYER_ID, ROLE_ID).get(5, TimeUnit.SECONDS);
+        bridge.removeRole(PLAYER_ID, ROLE_ID).get(5, TimeUnit.SECONDS);
+
+        assertThat(discord.requests("PUT", route))
+                .singleElement()
+                .satisfies(request -> assertThat(request.getHeaders().get("X-Audit-Log-Reason"))
+                        .isNotBlank());
+        assertThat(discord.requests("DELETE", route)).hasSize(1);
+    }
+
+    @Test
+    void forwardsMemberRoleUpdatesAndDepartures() {
+        bridge = startReady();
+
+        discord.dispatch(
+                "GUILD_MEMBER_UPDATE",
+                FakeDiscord.member("Alex")
+                        .put("guild_id", Long.toString(GUILD_ID))
+                        .put("user", DataObject.fromJson(FakeDiscord.user(PLAYER_ID, "Alex", false))));
+        discord.dispatch(
+                "GUILD_MEMBER_REMOVE",
+                DataObject.empty()
+                        .put("guild_id", Long.toString(GUILD_ID))
+                        .put("user", DataObject.fromJson(FakeDiscord.user(FRIEND_ID, "Friend", false))));
+
+        assertThat(take(listener.memberUpdates)).isEqualTo(new MemberLookup.Member(PLAYER_ID, Set.of(ROLE_ID)));
+        assertThat(take(listener.membersLeft)).isEqualTo(FRIEND_ID);
     }
 
     private JdaDiscord startReady() {
