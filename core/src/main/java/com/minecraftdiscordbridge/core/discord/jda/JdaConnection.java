@@ -37,7 +37,7 @@ import okhttp3.OkHttpClient;
 import org.jspecify.annotations.Nullable;
 
 final class JdaConnection {
-    private static final Duration RELEASE_MARGIN = Duration.ofMillis(200);
+    private static final Duration RELEASE_MARGIN = Duration.ofMillis(400);
     private static final Duration FIRST_RETRY = Duration.ofSeconds(5);
     private static final Duration MAX_RETRY = Duration.ofMinutes(5);
     private static final String PORTAL = "https://discord.com/developers/applications";
@@ -375,7 +375,8 @@ final class JdaConnection {
         }
     }
 
+    // JDA treats a zero awaitShutdown timeout as no limit.
     private static long remaining(Deadline deadline) {
-        return Math.max(0, deadline.remaining().minus(RELEASE_MARGIN).toNanos());
+        return Math.max(1, deadline.remaining().minus(RELEASE_MARGIN).toNanos());
     }
 }
