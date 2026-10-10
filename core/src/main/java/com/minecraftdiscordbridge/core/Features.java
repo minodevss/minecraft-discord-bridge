@@ -63,8 +63,7 @@ record Features(
                 services.linkAttempts(),
                 services.roster(),
                 () -> hasGuild && services.discord().status().isConnected());
-        GameActions gameActions =
-                new GameActions(services.platform(), services.loop()::control, services.actionTimeout());
+        GameActions gameActions = new GameActions(services.platform(), services.loop(), services.actionTimeout());
         Actions actions = new Actions(config.actions(), gameActions, lang);
         AccessContext access = services.accessContext(stores);
         return new Features(

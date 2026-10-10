@@ -32,6 +32,6 @@ record Services(
         PermissionGroups groups,
         AccessMemory access) {
     AccessContext accessContext(Stores stores) {
-        return new AccessContext(stores.links(), pendingLinks, discord, groups, access, clock, loop::control, loop);
+        return new AccessContext(stores.links(), pendingLinks, discord, groups, access, clock, loop, loop);
     }
 }

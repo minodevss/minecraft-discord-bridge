@@ -5,6 +5,7 @@ import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 import java.time.Duration;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -13,7 +14,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-public final class CoreLoop implements Scheduler, AutoCloseable {
+public final class CoreLoop implements Executor, Scheduler, AutoCloseable {
     private static final int CONTENT_CAPACITY = 1024;
     private static final long IDLE = 0;
     private static final Duration CLOSE_WAIT = Duration.ofMillis(200);
@@ -44,6 +45,11 @@ public final class CoreLoop implements Scheduler, AutoCloseable {
         }
         control.add(task);
         pending.release();
+    }
+
+    @Override
+    public void execute(Runnable task) {
+        control(task);
     }
 
     public boolean content(Runnable task) {
@@ -101,12 +107,12 @@ public final class CoreLoop implements Scheduler, AutoCloseable {
                 task = content.poll();
             }
             if (task != null) {
-                execute(task);
+                runTimed(task);
             }
         }
     }
 
-    private void execute(Runnable task) {
+    private void runTimed(Runnable task) {
         taskStartedNanos.set(System.nanoTime());
         try {
             task.run();

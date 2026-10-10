@@ -79,7 +79,7 @@ public final class JdaDiscord implements Discord {
         this.connection = new JdaConnection(settings, endpoints, rateLimits, new ConnectionCallbacks());
         this.guild = new JdaGuild(this::currentGuild);
         this.webhooks = new WebhookSender(connection::jda, webhookRepository, rateLimits, System::nanoTime);
-        this.outbox = new Outbox(settings.serverAuthor(), webhooks, loop::control);
+        this.outbox = new Outbox(settings.serverAuthor(), webhooks, loop);
         this.commands = new CommandRegistrar(settings.commands(), commandHashes);
         this.events = new JdaEvents(settings, scope, loop, listener, webhooks);
         this.appearance = new Appearance(connection::jda, System::nanoTime, loop);

@@ -22,7 +22,7 @@ public final class IoExecutor implements AutoCloseable {
     }
 
     public static IoExecutor forLoop(CoreLoop loop, String role) {
-        return new IoExecutor(loop::control, role);
+        return new IoExecutor(loop, role);
     }
 
     public <T> CompletableFuture<T> completeOnIo(Task<T> task) {
