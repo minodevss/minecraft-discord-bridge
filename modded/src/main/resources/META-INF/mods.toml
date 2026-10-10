@@ -1,0 +1,18 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+license = "Apache-2.0"
+issueTrackerURL = "https://github.com/minodevss/minecraft-discord-bridge/issues"
+
+[[mods]]
+modId = "minecraftdiscordbridge"
+version = "${version}"
+displayName = "Minecraft Discord Bridge"
+description = "Minecraft ↔ Discord bridge"
+displayTest = "IGNORE_ALL_VERSION"
+
+[[dependencies.minecraftdiscordbridge]]
+modId = "minecraft"
+mandatory = true
+versionRange = "${minecraft}"
+ordering = "NONE"
+side = "SERVER"

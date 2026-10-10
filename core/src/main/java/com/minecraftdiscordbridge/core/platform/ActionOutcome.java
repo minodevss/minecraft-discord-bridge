@@ -1,0 +1,11 @@
+package com.minecraftdiscordbridge.core.platform;
+
+public sealed interface ActionOutcome {
+    record Done() implements ActionOutcome {}
+
+    record NoSuchPlayer(String playerName) implements ActionOutcome {}
+
+    record Unchanged() implements ActionOutcome {}
+
+    record Failed(String reason) implements ActionOutcome {}
+}
