@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.discord.jda;
 import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
 import com.minecraftdiscordbridge.core.discord.Author;
+import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.discord.WebhookCredentials;
 import com.minecraftdiscordbridge.core.discord.WebhookRepository;
 import com.minecraftdiscordbridge.core.log.Failures;
@@ -52,24 +53,24 @@ final class WebhookSender implements MessageSender {
     }
 
     @Override
-    public CompletionStage<Void> send(long channelId, Post post) {
+    public CompletionStage<Void> send(OutboundMessage message) {
+        long channelId = message.channelId();
         JDA api = jda.get();
         if (api == null) {
             return CompletableFuture.failedFuture(new IllegalStateException("Discord is not connected yet"));
         }
         return webhookFor(api, channelId)
-                .thenCompose(webhook -> webhook.isPresent()
-                        ? execute(api, channelId, webhook.get(), post, true)
-                        : sendAsBot(api, channelId, post));
+                .thenCompose(webhook ->
+                        webhook.isPresent() ? execute(api, webhook.get(), message, true) : sendAsBot(api, message));
     }
 
-    CompletableFuture<Void> sendFinal(long channelId, Post post) {
+    CompletableFuture<Void> sendFinal(OutboundMessage message) {
         JDA api = jda.get();
         if (api == null) {
             return CompletableFuture.failedFuture(new IllegalStateException("Discord is not connected"));
         }
-        WebhookCredentials webhook = known.get(channelId);
-        return webhook == null ? sendAsBot(api, channelId, post) : execute(api, channelId, webhook, post, false);
+        WebhookCredentials webhook = known.get(message.channelId());
+        return webhook == null ? sendAsBot(api, message) : execute(api, webhook, message, false);
     }
 
     void prepare(long channelId) {
@@ -164,45 +165,47 @@ final class WebhookSender implements MessageSender {
     }
 
     private CompletableFuture<Void> execute(
-            JDA api, long channelId, WebhookCredentials webhook, Post post, boolean mayRecreate) {
-        rateLimits.bindWebhook(webhook.id(), channelId);
+            JDA api, WebhookCredentials webhook, OutboundMessage message, boolean mayRecreate) {
+        rateLimits.bindWebhook(webhook.id(), message.channelId());
         try {
             return WebhookClient.createClient(api, Long.toUnsignedString(webhook.id()), webhook.token())
-                    .sendMessage(Messages.create(post.content(), post.pingUserIds(), post.pingRoleIds()))
-                    .setUsername(WebhookNames.sanitize(name(api, post.author())))
-                    .setAvatarUrl(avatarUrl(api, post.author()))
+                    .sendMessage(Messages.create(message.text(), message.pingUserIds(), message.pingRoleIds()))
+                    .setUsername(WebhookNames.sanitize(name(api, message.author())))
+                    .setAvatarUrl(avatarUrl(api, message.author()))
                     .submit()
-                    .<Void>thenApply(message -> null)
+                    .<Void>thenApply(sent -> null)
                     .exceptionallyCompose(failure -> mayRecreate && isGone(failure)
-                            ? recreate(api, channelId, post)
+                            ? recreate(api, message)
                             : CompletableFuture.failedFuture(failure));
         } catch (RuntimeException failure) {
             return CompletableFuture.failedFuture(failure);
         }
     }
 
-    private CompletableFuture<Void> recreate(JDA api, long channelId, Post post) {
+    private CompletableFuture<Void> recreate(JDA api, OutboundMessage message) {
+        long channelId = message.channelId();
         known.remove(channelId);
         return repository
                 .forget(channelId)
                 .exceptionally(failure -> null)
                 .thenCompose(ignored -> discover(api, channelId))
-                .thenCompose(webhook -> webhook.isPresent()
-                        ? execute(api, channelId, webhook.get(), post, false)
-                        : sendAsBot(api, channelId, post))
+                .thenCompose(webhook ->
+                        webhook.isPresent() ? execute(api, webhook.get(), message, false) : sendAsBot(api, message))
                 .toCompletableFuture();
     }
 
-    private CompletableFuture<Void> sendAsBot(JDA api, long channelId, Post post) {
+    private CompletableFuture<Void> sendAsBot(JDA api, OutboundMessage message) {
+        long channelId = message.channelId();
         GuildMessageChannel channel = api.getChannelById(GuildMessageChannel.class, channelId);
         if (channel == null) {
             return CompletableFuture.failedFuture(
                     new IllegalStateException("the bot cannot see channel " + Long.toUnsignedString(channelId)));
         }
         try {
-            return channel.sendMessage(Messages.create(post.contentAsBot(), post.pingUserIds(), post.pingRoleIds()))
+            return channel.sendMessage(
+                            Messages.create(DiscordText.asBot(message), message.pingUserIds(), message.pingRoleIds()))
                     .submit()
-                    .thenApply(message -> null);
+                    .thenApply(sent -> null);
         } catch (RuntimeException failure) {
             return CompletableFuture.failedFuture(failure);
         }

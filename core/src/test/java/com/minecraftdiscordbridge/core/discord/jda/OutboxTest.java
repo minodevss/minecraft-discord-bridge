@@ -35,7 +35,7 @@ class OutboxTest {
 
         assertThat(sender.sent).isEmpty();
         waiting.open();
-        assertThat(sender.post(0).content()).isEqualTo("Server started");
+        assertThat(sender.message(0).text()).isEqualTo("Server started");
     }
 
     @Test
@@ -53,7 +53,7 @@ class OutboxTest {
         outbox.enqueue(OutboundMessage.of(CHANNEL, STEVE, "hi"));
 
         assertThat(sender.sent).hasSize(1);
-        assertThat(sender.post(0)).isEqualTo(new Post(STEVE, "hi", Set.of()));
+        assertThat(sender.message(0)).isEqualTo(new OutboundMessage(CHANNEL, STEVE, "hi", Set.of()));
     }
 
     @Test
@@ -64,7 +64,7 @@ class OutboxTest {
         assertThat(sender.sent).hasSize(1);
         sender.complete(0);
         assertThat(sender.sent).hasSize(2);
-        assertThat(sender.post(1).content()).isEqualTo("two");
+        assertThat(sender.message(1).text()).isEqualTo("two");
     }
 
     @Test
@@ -72,7 +72,7 @@ class OutboxTest {
         outbox.enqueue(OutboundMessage.of(CHANNEL, STEVE, "one"));
         outbox.enqueue(OutboundMessage.of(OTHER_CHANNEL, STEVE, "two"));
 
-        assertThat(sender.sent).extracting(Sent::channelId).containsExactly(CHANNEL, OTHER_CHANNEL);
+        assertThat(sender.sent).extracting(sent -> sent.message().channelId()).containsExactly(CHANNEL, OTHER_CHANNEL);
     }
 
     @Test
@@ -83,7 +83,7 @@ class OutboxTest {
 
         sender.complete(0);
 
-        assertThat(sender.post(1)).isEqualTo(new Post(STEVE, "two\nthree", Set.of()));
+        assertThat(sender.message(1)).isEqualTo(new OutboundMessage(CHANNEL, STEVE, "two\nthree", Set.of()));
     }
 
     @Test
@@ -95,8 +95,8 @@ class OutboxTest {
         sender.complete(0);
         sender.complete(1);
 
-        assertThat(sender.post(1)).isEqualTo(new Post(ALEX, "two", Set.of()));
-        assertThat(sender.post(2)).isEqualTo(new Post(STEVE, "three", Set.of()));
+        assertThat(sender.message(1)).isEqualTo(new OutboundMessage(CHANNEL, ALEX, "two", Set.of()));
+        assertThat(sender.message(2)).isEqualTo(new OutboundMessage(CHANNEL, STEVE, "three", Set.of()));
     }
 
     @Test
@@ -110,8 +110,8 @@ class OutboxTest {
 
         sender.complete(0);
 
-        assertThat(sender.post(1).author()).isEqualTo(SERVER);
-        assertThat(sender.post(1).content())
+        assertThat(sender.message(1).author()).isEqualTo(SERVER);
+        assertThat(sender.message(1).text())
                 .isEqualTo("**Steve**: one\n**Alex**: two\nAlex joined the game\n**Steve**: three\n**Alex**: four");
         assertThat(sender.sent).hasSize(2);
     }
@@ -126,7 +126,7 @@ class OutboxTest {
 
         sender.complete(0);
 
-        assertThat(sender.post(1).content()).startsWith("**Under\\_score\\***: line\n**Alex**: line");
+        assertThat(sender.message(1).text()).startsWith("**Under\\_score\\***: line\n**Alex**: line");
     }
 
     @Test
@@ -140,15 +140,15 @@ class OutboxTest {
         sender.complete(0);
         sender.complete(1);
 
-        assertThat(sender.post(1).content()).isEqualTo(block + "\n" + block);
-        assertThat(sender.post(2).content()).isEqualTo(block);
+        assertThat(sender.message(1).text()).isEqualTo(block + "\n" + block);
+        assertThat(sender.message(2).text()).isEqualTo(block);
     }
 
     @Test
     void shortensASingleOverlongMessage() {
         outbox.enqueue(OutboundMessage.of(CHANNEL, STEVE, "y".repeat(2500)));
 
-        assertThat(sender.post(0).content()).hasSize(2000).endsWith("…");
+        assertThat(sender.message(0).text()).hasSize(2000).endsWith("…");
     }
 
     @Test
@@ -161,8 +161,8 @@ class OutboxTest {
         assertThat(outbox.snapshot().get(CHANNEL).queued()).isEqualTo(200);
         sender.complete(0);
 
-        assertThat(sender.post(1).author()).isEqualTo(SERVER);
-        assertThat(sender.post(1).content()).startsWith("(5 messages skipped)\n**Steve**: m5\n**Steve**: m6");
+        assertThat(sender.message(1).author()).isEqualTo(SERVER);
+        assertThat(sender.message(1).text()).startsWith("(5 messages skipped)\n**Steve**: m5\n**Steve**: m6");
         assertThat(outbox.snapshot().get(CHANNEL).dropped()).isEqualTo(5);
     }
 
@@ -176,14 +176,14 @@ class OutboxTest {
         assertThat(outbox.snapshot().get(CHANNEL).dropped()).isEqualTo(1);
         assertThat(outbox.snapshot().get(CHANNEL).inFlight()).isZero();
         outbox.enqueue(OutboundMessage.of(CHANNEL, STEVE, "next"));
-        assertThat(sender.post(1).content()).isEqualTo("next");
+        assertThat(sender.message(1).text()).isEqualTo("next");
     }
 
     @Test
     void treatsASenderThatThrowsAsAFailedSend() {
         Outbox throwing = new Outbox(
                 SERVER,
-                (channel, post) -> {
+                message -> {
                     throw new IllegalStateException("boom");
                 },
                 Runnable::run);
@@ -202,7 +202,7 @@ class OutboxTest {
 
         sender.complete(0);
 
-        assertThat(sender.post(1).pingUserIds()).containsExactlyInAnyOrder(10L, 11L);
+        assertThat(sender.message(1).pingUserIds()).containsExactlyInAnyOrder(10L, 11L);
     }
 
     @Test
@@ -232,20 +232,20 @@ class OutboxTest {
         assertThat(sender.sent).hasSize(1);
     }
 
-    record Sent(long channelId, Post post, CompletableFuture<Void> result) {}
+    record Sent(OutboundMessage message, CompletableFuture<Void> result) {}
 
     static final class FakeSender implements MessageSender {
         final List<Sent> sent = new ArrayList<>();
 
         @Override
-        public CompletionStage<Void> send(long channelId, Post post) {
+        public CompletionStage<Void> send(OutboundMessage message) {
             CompletableFuture<Void> result = new CompletableFuture<>();
-            sent.add(new Sent(channelId, post, result));
+            sent.add(new Sent(message, result));
             return result;
         }
 
-        Post post(int index) {
-            return sent.get(index).post();
+        OutboundMessage message(int index) {
+            return sent.get(index).message();
         }
 
         void complete(int index) {

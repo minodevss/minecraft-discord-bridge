@@ -64,14 +64,14 @@ final class Outbox {
         if (closed || !open || channel.inFlight) {
             return;
         }
-        Optional<Batches.Batch> next = Batches.take(channel.queue, channel.skipped, server);
+        Optional<Batches.Batch> next = Batches.take(channelId, channel.queue, channel.skipped, server);
         if (next.isEmpty()) {
             return;
         }
         channel.skipped = 0;
         channel.inFlight = true;
         Batches.Batch batch = next.get();
-        var unused = start(channelId, batch.post())
+        var unused = start(batch.message())
                 .whenComplete((ignored, failure) -> serial.execute(() -> finish(channelId, channel, batch, failure)));
     }
 
@@ -96,9 +96,9 @@ final class Outbox {
         publish();
     }
 
-    private CompletionStage<Void> start(long channelId, Post post) {
+    private CompletionStage<Void> start(OutboundMessage message) {
         try {
-            return sender.send(channelId, post);
+            return sender.send(message);
         } catch (RuntimeException failure) {
             return CompletableFuture.failedFuture(failure);
         }

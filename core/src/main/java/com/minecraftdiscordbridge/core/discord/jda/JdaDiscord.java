@@ -552,11 +552,10 @@ public final class JdaDiscord implements Discord {
         JDA jda = active.jda();
         jda.cancelRequests();
         for (OutboundMessage message : farewell) {
-            var unused = webhooks.sendFinal(message.channelId(), Post.of(message))
-                    .exceptionally(failure -> {
-                        LOGGER.warn("Could not send the last message to Discord: {}", Failures.describe(failure));
-                        return null;
-                    });
+            var unused = webhooks.sendFinal(message).exceptionally(failure -> {
+                LOGGER.warn("Could not send the last message to Discord: {}", Failures.describe(failure));
+                return null;
+            });
         }
         jda.shutdown();
         try {

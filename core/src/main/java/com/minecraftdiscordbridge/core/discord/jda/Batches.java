@@ -14,9 +14,9 @@ final class Batches {
 
     private Batches() {}
 
-    static Optional<Batch> take(Deque<OutboundMessage> queue, long skipped, Author server) {
+    static Optional<Batch> take(long channelId, Deque<OutboundMessage> queue, long skipped, Author server) {
         if (skipped > 0 || isCrowded(queue)) {
-            return Optional.of(digest(queue, skipped, server));
+            return Optional.of(digest(channelId, queue, skipped, server));
         }
         if (queue.isEmpty()) {
             return Optional.empty();
@@ -43,30 +43,24 @@ final class Batches {
             lines.addMessage(next);
             next = queue.peekFirst();
         }
-        return lines.post(first.author());
+        return lines.batch(first.channelId(), first.author());
     }
 
-    private static Batch digest(Deque<OutboundMessage> queue, long skipped, Author server) {
+    private static Batch digest(long channelId, Deque<OutboundMessage> queue, long skipped, Author server) {
         Lines lines = new Lines();
         if (skipped > 0) {
             lines.add(skipped == 1 ? "(1 message skipped)" : "(" + skipped + " messages skipped)");
         }
         OutboundMessage next = queue.peekFirst();
-        while (next != null && (lines.isEmpty() || lines.fits(digestLine(next)))) {
+        while (next != null && (lines.isEmpty() || lines.fits(DiscordText.asBot(next)))) {
             queue.removeFirst();
-            lines.addMessage(digestLine(next), next);
+            lines.addMessage(DiscordText.asBot(next), next);
             next = queue.peekFirst();
         }
-        return lines.post(server);
+        return lines.batch(channelId, server);
     }
 
-    private static String digestLine(OutboundMessage message) {
-        return message.author().isServer()
-                ? message.text()
-                : DiscordText.speakerLine(message.author().name(), message.text());
-    }
-
-    record Batch(Post post, int messages) {}
+    record Batch(OutboundMessage message, int messages) {}
 
     private static final class Lines {
         private final StringBuilder content = new StringBuilder();
@@ -108,8 +102,8 @@ final class Batches {
             }
         }
 
-        Batch post(Author author) {
-            return new Batch(new Post(author, content.toString(), pings, rolePings), messages);
+        Batch batch(long channelId, Author author) {
+            return new Batch(new OutboundMessage(channelId, author, content.toString(), pings, rolePings), messages);
         }
     }
 }
