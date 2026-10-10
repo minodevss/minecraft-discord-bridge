@@ -114,7 +114,7 @@ publishMods {
 }
 
 hangarPublish {
-    if (hangarToken.isPresent) {
+    if (!dryRunOnly && hangarToken.isPresent) {
         publications.register("plugin") {
             id = projectId("hangar.id", "Hangar")
             version = bridgeVersion
