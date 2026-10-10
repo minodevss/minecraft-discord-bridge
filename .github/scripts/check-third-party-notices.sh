@@ -3,7 +3,6 @@ set -euo pipefail
 
 bundled=$(./gradlew -q :core:dependencies --configuration runtimeClasspath \
   | sed -nE 's/^[| ]*[+\\]--- ([^ ]+)( -> [^ ]+)?$/\1/p' \
-  | grep -v '^project:' \
   | cut -d: -f1,2 \
   | grep -vE '^(com\.google\.code\.gson|org\.slf4j|org\.jspecify):|^org\.jetbrains:annotations$|-bom$' \
   | sort -u)

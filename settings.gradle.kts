@@ -14,7 +14,7 @@ plugins {
 
 rootProject.name = "minecraft-discord-bridge"
 
-include("api", "core", "paper", "velocity")
+include("core", "paper", "velocity")
 
 val allNodes = listOf(
     "26.1.2" to "fabric",

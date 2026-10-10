@@ -6,7 +6,6 @@ plugins {
 }
 
 dependencies {
-    api(project(":api"))
     implementation(libs.jda) {
         exclude(group = "club.minnced", module = "opus-java")
         exclude(group = "com.google.crypto.tink", module = "tink")

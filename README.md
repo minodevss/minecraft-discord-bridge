@@ -126,7 +126,7 @@ The bridge connects one server or network to one Discord server, and each owner 
 ## Build
 
 ```sh
-./gradlew build                # api, core, paper, velocity and the Fabric 26.1.2 jar
+./gradlew build                # core, paper, velocity and the Fabric 26.1.2 jar
 ./gradlew build -Pnodes=all    # every Fabric, NeoForge and Forge jar
 ```
 
