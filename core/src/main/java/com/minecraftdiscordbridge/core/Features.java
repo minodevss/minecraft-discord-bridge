@@ -6,7 +6,6 @@ import com.minecraftdiscordbridge.core.access.AccessContext;
 import com.minecraftdiscordbridge.core.access.JoinGate;
 import com.minecraftdiscordbridge.core.access.RoleSync;
 import com.minecraftdiscordbridge.core.actions.Actions;
-import com.minecraftdiscordbridge.core.actions.GameActions;
 import com.minecraftdiscordbridge.core.chat.ChatToggle;
 import com.minecraftdiscordbridge.core.chat.DiscordChat;
 import com.minecraftdiscordbridge.core.chat.MinecraftChat;
@@ -69,8 +68,7 @@ record Features(
                 services.linkAttempts(),
                 services.roster(),
                 () -> hasGuild && services.discord().status().isConnected());
-        GameActions gameActions = new GameActions(services.platform(), services.loop(), services.actionTimeout());
-        Actions actions = new Actions(config.actions(), gameActions, lang);
+        Actions actions = new Actions(config.actions(), services.gameActions(), lang);
         AccessContext access = services.accessContext(stores);
         return new Features(
                 replies,
@@ -105,7 +103,7 @@ record Features(
                         context,
                         config.console(),
                         config.discord().consoleChannel(),
-                        gameActions,
+                        services.gameActions(),
                         () -> secrets(services, snapshot)));
     }
 

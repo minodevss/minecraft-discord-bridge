@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core;
 import com.minecraftdiscordbridge.core.access.AccessContext;
 import com.minecraftdiscordbridge.core.access.AccessMemory;
 import com.minecraftdiscordbridge.core.access.PermissionGroups;
+import com.minecraftdiscordbridge.core.actions.GameActions;
 import com.minecraftdiscordbridge.core.codes.Attempts;
 import com.minecraftdiscordbridge.core.discord.SwappableDiscord;
 import com.minecraftdiscordbridge.core.linking.PendingLinks;
@@ -13,7 +14,6 @@ import com.minecraftdiscordbridge.core.setup.SetupCodes;
 import com.minecraftdiscordbridge.core.status.Roster;
 import com.minecraftdiscordbridge.core.storage.Stores;
 import com.minecraftdiscordbridge.core.vanilla.VanillaTranslations;
-import java.time.Duration;
 import java.time.InstantSource;
 
 record Services(
@@ -27,7 +27,7 @@ record Services(
         SetupCodes setupCodes,
         Attempts linkAttempts,
         Attempts setupAttempts,
-        Duration actionTimeout,
+        GameActions gameActions,
         VanillaTranslations vanilla,
         PermissionGroups groups,
         AccessMemory access) {

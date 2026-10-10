@@ -86,7 +86,7 @@ public final class Bridge {
                 new SetupCodes(codes),
                 Attempts.standard(),
                 Attempts.standard(),
-                actionTimeout,
+                new GameActions(platform, loop, actionTimeout),
                 new VanillaTranslations(
                         new LanguageFiles(platform.dataDirectory(), fetcher),
                         downloads,
