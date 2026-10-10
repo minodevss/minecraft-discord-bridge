@@ -55,6 +55,7 @@ final class Activator implements BridgeCommand.Callbacks {
     private Lang lang = Lang.of(Language.EN);
     private volatile boolean linkingEnabled = BridgeConfig.defaults().linking().enabled();
     private boolean recovered;
+    private boolean bootFailed;
     private boolean serverStarted;
     private boolean startAnnounced;
     private long droppedEvents;
@@ -88,6 +89,7 @@ final class Activator implements BridgeCommand.Callbacks {
                                     "The bridge could not start: {}. Check that the plugin data folder is readable and"
                                             + " writable, then restart the server",
                                     Failures.describe(failure));
+                            bootFailed = true;
                             joins.release();
                         });
     }
@@ -185,7 +187,7 @@ final class Activator implements BridgeCommand.Callbacks {
     @Override
     public void reload(CommandSource source, Replies replies) {
         if (stores == null) {
-            replies.send(source, "game.not-ready");
+            replies.send(source, bootFailed ? "game.reload.start-failed" : "game.reload.starting");
             return;
         }
         services.io().completeOnLoop(loader::load, result -> apply(result, source), failure -> {
@@ -193,7 +195,7 @@ final class Activator implements BridgeCommand.Callbacks {
                     "Could not reload config.yml or secrets.yml: {}. Check that both files are readable and run"
                             + " /discord reload again",
                     Failures.describe(failure));
-            replies.send(source, "game.reload.failed");
+            replies.send(source, "game.reload.unreadable");
         });
     }
 

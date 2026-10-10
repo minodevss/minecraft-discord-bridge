@@ -35,8 +35,17 @@ class ReloadTest {
             harness.writeConfig(CHANNELS);
             RecordingSource console = harness.run(RecordingSource.console(), GameCommand.RELOAD);
 
-            assertThat(console.nextPlain()).isEqualTo("Reloaded config.yml. Reconnecting to Discord.");
+            assertThat(console.nextPlain()).isEqualTo("Reloaded config.yml and secrets.yml. Reconnecting to Discord.");
             assertThat(harness.discord().started).isTrue();
+        }
+    }
+
+    @Test
+    void asksToTryAgainWhileTheBridgeIsStillStarting() throws IOException {
+        try (Harness harness = Harness.create(directory, CHANNELS)) {
+            RecordingSource console = harness.run(RecordingSource.console(), GameCommand.RELOAD);
+
+            assertThat(console.nextPlain()).isEqualTo("The bridge is still starting. Try again in a moment.");
         }
     }
 
@@ -48,7 +57,7 @@ class ReloadTest {
 
             assertThat(console.nextPlain()).contains("old settings stay in use");
             assertThat(console.nextPlain()).contains("events.join: expected true or false");
-            assertThat(console.nextPlain()).isEqualTo("Fix config.yml and run /discord reload.");
+            assertThat(console.nextPlain()).isEqualTo("Fix them and run /discord reload.");
             harness.publish(new GameEvent.PlayerJoined(STEVE, false));
             assertThat(harness.discord().nextSent().text()).isEqualTo("**Steve** joined the server");
             assertThat(harness.discords).hasSize(1);
@@ -61,7 +70,7 @@ class ReloadTest {
             harness.writeConfig(Harness.withEventSettings("  join: false\n"));
             RecordingSource console = harness.run(RecordingSource.console(), GameCommand.RELOAD);
 
-            assertThat(console.nextPlain()).isEqualTo("Reloaded config.yml.");
+            assertThat(console.nextPlain()).isEqualTo("Reloaded config.yml and secrets.yml.");
             harness.publish(new GameEvent.PlayerJoined(STEVE, false));
             Waits.nothingIn(harness.discord().sent);
             assertThat(harness.discords).hasSize(1);
@@ -77,7 +86,7 @@ class ReloadTest {
 
             RecordingSource console = harness.run(RecordingSource.console(), GameCommand.RELOAD);
 
-            assertThat(console.nextPlain()).isEqualTo("Reloaded config.yml. Reconnecting to Discord.");
+            assertThat(console.nextPlain()).isEqualTo("Reloaded config.yml and secrets.yml. Reconnecting to Discord.");
             assertThat(harness.discord().settings.token()).isEqualTo(TOKEN);
             assertThat(harness.discord().started).isTrue();
         }
@@ -90,7 +99,7 @@ class ReloadTest {
 
             RecordingSource console = harness.run(RecordingSource.console(), GameCommand.RELOAD);
 
-            assertThat(console.nextPlain()).isEqualTo("Reloaded config.yml. Reconnecting to Discord.");
+            assertThat(console.nextPlain()).isEqualTo("Reloaded config.yml and secrets.yml. Reconnecting to Discord.");
             assertThat(harness.discord(2).started).isTrue();
         }
     }
