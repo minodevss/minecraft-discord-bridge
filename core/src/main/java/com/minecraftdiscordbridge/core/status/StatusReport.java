@@ -1,4 +1,4 @@
-package com.minecraftdiscordbridge.core;
+package com.minecraftdiscordbridge.core.status;
 
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.i18n.Replies;
@@ -7,10 +7,11 @@ import com.minecraftdiscordbridge.core.text.Format.Slot;
 import java.util.Locale;
 import net.kyori.adventure.text.Component;
 
-final class StatusReport {
+public final class StatusReport {
     private StatusReport() {}
 
-    static void send(Replies replies, CommandSource source, DiscordStatus status, int links, long droppedEvents) {
+    public static void send(
+            Replies replies, CommandSource source, DiscordStatus status, int links, long droppedEvents) {
         Component state =
                 replies.lang().component("game.state." + status.state().name().toLowerCase(Locale.ROOT));
         replies.send(source, "game.status.state", Slot.component("state", state));
