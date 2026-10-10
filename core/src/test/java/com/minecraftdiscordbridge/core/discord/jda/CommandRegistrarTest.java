@@ -8,7 +8,7 @@ import java.util.Optional;
 import net.dv8tion.jda.api.utils.data.DataObject;
 import org.junit.jupiter.api.Test;
 
-class SlashCommandsTest {
+class CommandRegistrarTest {
     private static final CommandSpec KICK = new CommandSpec(
             "kick",
             "Kick a player",
@@ -28,8 +28,8 @@ class SlashCommandsTest {
 
     @Test
     void limitsAdminCommandsToAdministratorsByDefault() {
-        DataObject kick = SlashCommands.toData(KICK).toData();
-        DataObject link = SlashCommands.toData(LINK).toData();
+        DataObject kick = CommandRegistrar.toData(KICK).toData();
+        DataObject link = CommandRegistrar.toData(LINK).toData();
 
         assertThat(kick.getString("default_member_permissions")).isEqualTo("0");
         assertThat(link.isNull("default_member_permissions")).isTrue();
@@ -37,7 +37,7 @@ class SlashCommandsTest {
 
     @Test
     void offersCommandsOnlyInsideServers() {
-        DataObject kick = SlashCommands.toData(KICK).toData();
+        DataObject kick = CommandRegistrar.toData(KICK).toData();
 
         assertThat(kick.getArray("contexts").length()).isEqualTo(1);
         assertThat(kick.getArray("contexts").getInt(0)).isZero();
@@ -45,7 +45,7 @@ class SlashCommandsTest {
 
     @Test
     void carriesKoreanNamesAndAutocomplete() {
-        DataObject kick = SlashCommands.toData(KICK).toData();
+        DataObject kick = CommandRegistrar.toData(KICK).toData();
         DataObject option = kick.getArray("options").getObject(0);
 
         assertThat(kick.getObject("name_localizations").getString("ko")).isEqualTo("추방");
@@ -78,7 +78,7 @@ class SlashCommandsTest {
                 false);
 
         DataObject add =
-                SlashCommands.toData(whitelist).toData().getArray("options").getObject(0);
+                CommandRegistrar.toData(whitelist).toData().getArray("options").getObject(0);
 
         assertThat(add.getInt("type")).isEqualTo(1);
         assertThat(add.getString("name")).isEqualTo("add");
@@ -88,16 +88,16 @@ class SlashCommandsTest {
 
     @Test
     void hashesTheSameCommandsTheSameWay() {
-        String first = new SlashCommands(List.of(KICK, LINK), new TestSupport.MemoryCommandHashes()).hash(1);
-        String second = new SlashCommands(List.of(KICK, LINK), new TestSupport.MemoryCommandHashes()).hash(1);
+        String first = new CommandRegistrar(List.of(KICK, LINK), new TestSupport.MemoryCommandHashes()).hash(1);
+        String second = new CommandRegistrar(List.of(KICK, LINK), new TestSupport.MemoryCommandHashes()).hash(1);
 
         assertThat(first).isEqualTo(second).hasSize(64);
     }
 
     @Test
     void hashesDifferentCommandsOrApplicationsDifferently() {
-        SlashCommands both = new SlashCommands(List.of(KICK, LINK), new TestSupport.MemoryCommandHashes());
-        SlashCommands one = new SlashCommands(List.of(KICK), new TestSupport.MemoryCommandHashes());
+        CommandRegistrar both = new CommandRegistrar(List.of(KICK, LINK), new TestSupport.MemoryCommandHashes());
+        CommandRegistrar one = new CommandRegistrar(List.of(KICK), new TestSupport.MemoryCommandHashes());
 
         assertThat(both.hash(1)).isNotEqualTo(one.hash(1)).isNotEqualTo(both.hash(2));
     }

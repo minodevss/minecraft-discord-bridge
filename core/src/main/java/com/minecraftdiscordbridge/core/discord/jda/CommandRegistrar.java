@@ -25,12 +25,12 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 
-final class SlashCommands {
+final class CommandRegistrar {
     private final List<SlashCommandData> data;
     private final CommandHashRepository hashes;
 
-    SlashCommands(List<CommandSpec> specs, CommandHashRepository hashes) {
-        this.data = specs.stream().map(SlashCommands::toData).toList();
+    CommandRegistrar(List<CommandSpec> specs, CommandHashRepository hashes) {
+        this.data = specs.stream().map(CommandRegistrar::toData).toList();
         this.hashes = hashes;
     }
 
@@ -85,9 +85,10 @@ final class SlashCommands {
                 .ifPresent(korean -> command.setNameLocalization(DiscordLocale.KOREAN, korean.name())
                         .setDescriptionLocalization(DiscordLocale.KOREAN, korean.description()));
         return command.addOptions(
-                        spec.options().stream().map(SlashCommands::toData).toList())
-                .addSubcommands(
-                        spec.subcommands().stream().map(SlashCommands::toData).toList());
+                        spec.options().stream().map(CommandRegistrar::toData).toList())
+                .addSubcommands(spec.subcommands().stream()
+                        .map(CommandRegistrar::toData)
+                        .toList());
     }
 
     private static SubcommandData toData(CommandSpec.Subcommand spec) {
@@ -97,7 +98,7 @@ final class SlashCommands {
                         .setNameLocalization(DiscordLocale.KOREAN, korean.name())
                         .setDescriptionLocalization(DiscordLocale.KOREAN, korean.description()));
         return subcommand.addOptions(
-                spec.options().stream().map(SlashCommands::toData).toList());
+                spec.options().stream().map(CommandRegistrar::toData).toList());
     }
 
     private static OptionData toData(CommandSpec.Option spec) {

@@ -103,7 +103,7 @@ public final class JdaDiscord implements Discord {
     private final Generations generations = new Generations();
     private final WebhookSender webhooks;
     private final Outbox outbox;
-    private final SlashCommands commands;
+    private final CommandRegistrar commands;
     private final JdaEvents events;
     private final Appearance appearance;
     private final Set<String> warnings = new CopyOnWriteArraySet<>();
@@ -134,7 +134,7 @@ public final class JdaDiscord implements Discord {
         this.lifecycle = Executors.newSingleThreadScheduledExecutor(Threads.named("Lifecycle"));
         this.webhooks = new WebhookSender(this::currentJda, webhookRepository, rateLimits, System::nanoTime);
         this.outbox = new Outbox(settings.serverAuthor(), webhooks, loop::control);
-        this.commands = new SlashCommands(settings.commands(), commandHashes);
+        this.commands = new CommandRegistrar(settings.commands(), commandHashes);
         this.events = new JdaEvents(settings, scope, loop, listener, webhooks);
         this.appearance = new Appearance(this::currentJda, System::nanoTime, loop);
     }
