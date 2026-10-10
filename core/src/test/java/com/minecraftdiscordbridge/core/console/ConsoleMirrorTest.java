@@ -95,6 +95,25 @@ class ConsoleMirrorTest {
     }
 
     @Test
+    void postsAtMostFiveMessagesPerFlushAndKeepsTheRestForLater() {
+        ConsoleBuffer large = new ConsoleBuffer(100);
+        ConsoleMirror chatty =
+                new ConsoleMirror(large, CHANNEL, discord, Lang.of(Language.EN), List::of, ZoneOffset.UTC);
+        for (int i = 0; i < 64; i++) {
+            large.offer(new ConsoleLine(NOON, "INFO", i + " " + "x".repeat(1900), null));
+        }
+
+        chatty.flush();
+        assertThat(discord.sent).hasSize(ConsoleMirror.MAX_MESSAGES_PER_FLUSH);
+
+        for (int flush = 0; flush < 20; flush++) {
+            chatty.flush();
+        }
+        assertThat(discord.sent).hasSize(64);
+        assertThat(discord.sent.get(5).text()).startsWith("```\n[12:00:00 INFO] 5 x");
+    }
+
+    @Test
     void countsLinesDroppedWhileTheBufferWasFull() {
         for (int i = 0; i < 13; i++) {
             buffer.offer(new ConsoleLine(NOON, "INFO", "line " + i, null));

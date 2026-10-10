@@ -38,6 +38,7 @@ public final class ConsoleMirror implements AutoCloseable {
     private final Lang lang;
     private final Supplier<Collection<String>> secrets;
     private final DateTimeFormatter time;
+    private @Nullable String carried;
     private volatile @Nullable Runnable detach;
     private volatile @Nullable ScheduledFuture<?> timer;
 
@@ -90,25 +91,22 @@ public final class ConsoleMirror implements AutoCloseable {
 
     void flush() {
         Collection<String> hidden = secrets.get();
-        List<String> lines = new ArrayList<>();
+        Blocks blocks = new Blocks();
         long skipped = buffer.takeDropped();
         if (skipped > 0) {
-            lines.add(lang.count("discord.console.skipped", skipped));
+            blocks.add(lang.count("discord.console.skipped", skipped));
         }
-        int budget = MAX_MESSAGES_PER_FLUSH * BODY_LENGTH;
-        int used = 0;
-        while (used < budget) {
-            List<ConsoleLine> drained = buffer.drain(64);
-            if (drained.isEmpty()) {
-                break;
-            }
-            for (ConsoleLine line : drained) {
-                String text = format(line, hidden);
-                lines.add(text);
-                used += text.length() + 1;
-            }
+        String line = carried != null ? carried : next(hidden);
+        while (line != null && blocks.add(line)) {
+            line = next(hidden);
         }
-        blocks(lines).forEach(block -> discord.send(OutboundMessage.of(channel, SERVER, block)));
+        carried = line;
+        blocks.finish().forEach(block -> discord.send(OutboundMessage.of(channel, SERVER, block)));
+    }
+
+    private @Nullable String next(Collection<String> hidden) {
+        List<ConsoleLine> drained = buffer.drain(1);
+        return drained.isEmpty() ? null : format(drained.get(0), hidden);
     }
 
     private String format(ConsoleLine line, Collection<String> hidden) {
@@ -127,27 +125,35 @@ public final class ConsoleMirror implements AutoCloseable {
         return Graphemes.fit(redacted, BODY_LENGTH, "…");
     }
 
-    static List<String> blocks(List<String> lines) {
-        List<String> blocks = new ArrayList<>();
-        StringBuilder body = new StringBuilder();
-        for (String line : lines) {
+    private static final class Blocks {
+        private final List<String> full = new ArrayList<>();
+        private final StringBuilder body = new StringBuilder();
+
+        boolean add(String line) {
             if (body.length() > 0 && body.length() + 1 + line.length() > BODY_LENGTH) {
-                blocks.add(fence(body));
+                if (full.size() + 1 >= MAX_MESSAGES_PER_FLUSH) {
+                    return false;
+                }
+                full.add(fence(body));
                 body.setLength(0);
             }
             if (body.length() > 0) {
                 body.append('\n');
             }
             body.append(line);
+            return true;
         }
-        if (body.length() > 0) {
-            blocks.add(fence(body));
-        }
-        return blocks;
-    }
 
-    private static String fence(CharSequence body) {
-        return FENCE + "\n" + body + "\n" + FENCE;
+        List<String> finish() {
+            if (body.length() > 0) {
+                full.add(fence(body));
+            }
+            return full;
+        }
+
+        private static String fence(CharSequence body) {
+            return FENCE + "\n" + body + "\n" + FENCE;
+        }
     }
 
     @Override
