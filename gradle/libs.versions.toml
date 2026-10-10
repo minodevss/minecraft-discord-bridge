@@ -9,6 +9,7 @@ assertj = "3.27.7"
 archunit = "1.5.1"
 mockwebserver = "5.5.0"
 jazzer = "0.30.0"
+paper-api = "1.21.1-R0.1-SNAPSHOT"
 gson = "2.11.0"
 slf4j = "2.0.17"
 log4j = "2.24.3"
@@ -34,3 +35,4 @@ assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 archunit = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
 mockwebserver = { module = "com.squareup.okhttp3:mockwebserver3", version.ref = "mockwebserver" }
 jazzer-junit = { module = "com.code-intelligence:jazzer-junit", version.ref = "jazzer" }
+paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper-api" }

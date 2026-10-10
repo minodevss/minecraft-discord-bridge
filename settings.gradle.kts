@@ -11,4 +11,4 @@ plugins {
 
 rootProject.name = "minecraft-discord-bridge"
 
-include("api", "core")
+include("api", "core", "paper")
