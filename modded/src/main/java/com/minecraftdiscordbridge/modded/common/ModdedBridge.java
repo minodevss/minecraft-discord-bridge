@@ -1,6 +1,7 @@
 package com.minecraftdiscordbridge.modded.common;
 
 import com.minecraftdiscordbridge.core.Bridge;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.JoinDecision;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
@@ -103,12 +104,26 @@ public final class ModdedBridge {
         }
     }
 
-    public int command(CommandSourceStack source, String arguments) {
+    public boolean canUse(CommandSourceStack source, GameCommand command) {
+        Session current = session.get();
+        return current != null && current.bridge().canUse(ServerCommandSource.of(source, loader), command);
+    }
+
+    public int command(CommandSourceStack source, GameCommand command) {
         Session current = session.get();
         if (current == null) {
             return 0;
         }
-        current.bridge().command(ServerCommandSource.of(source, loader), split(arguments));
+        current.bridge().command(ServerCommandSource.of(source, loader), command);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    public int help(CommandSourceStack source) {
+        Session current = session.get();
+        if (current == null) {
+            return 0;
+        }
+        current.bridge().help(ServerCommandSource.of(source, loader));
         return Command.SINGLE_SUCCESS;
     }
 
@@ -177,11 +192,6 @@ public final class ModdedBridge {
         return server.getPlayerList().isOp(profile);
     }
     *///?}
-
-    private static List<String> split(String arguments) {
-        String trimmed = arguments.trim();
-        return trimmed.isEmpty() ? List.of() : List.of(trimmed.split("\\s+"));
-    }
 
     private interface EventFactory {
         @Nullable
