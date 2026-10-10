@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import net.dv8tion.jda.api.JDA;
@@ -124,7 +123,7 @@ final class JdaEvents {
 
     void onMemberUpdate(GuildMemberUpdateEvent event) {
         if (scope.accepts(event.getGuild().getIdLong())) {
-            MemberLookup.Member member = member(event.getMember());
+            MemberLookup.Member member = JdaGuild.member(event.getMember());
             loop.control(() -> listener.onMemberUpdated(member));
         }
     }
@@ -134,13 +133,6 @@ final class JdaEvents {
             DiscordId userId = new DiscordId(event.getUser().getIdLong());
             loop.control(() -> listener.onMemberLeft(userId));
         }
-    }
-
-    static MemberLookup.Member member(Member member) {
-        Set<DiscordId> roles = member.getRoles().stream()
-                .map(role -> new DiscordId(role.getIdLong()))
-                .collect(Collectors.toUnmodifiableSet());
-        return new MemberLookup.Member(new DiscordId(member.getIdLong()), roles);
     }
 
     private Origin origin(Message message) {
