@@ -566,6 +566,118 @@ class JdaDiscordTest {
         assertThat(bridge.isApplicationOwner(12345)).isFalse();
     }
 
+    @Test
+    void registersCommandsInEveryServerItIsInUntilAChannelIsChosen() {
+        bridge = start(unbound(Set.of(), List.of(LIST)));
+        awaitState(State.READY);
+        await("registration", () -> registrations().size() == 1);
+
+        discord.dispatch("INTERACTION_CREATE", discord.command(GUILD_ID, "list", 2, DataArray.empty()));
+
+        assertThat(take(listener.commands).guildId()).isEqualTo(GUILD_ID);
+    }
+
+    @Test
+    void findsTheServerThroughTheConfiguredChannel() {
+        bridge = start(unbound(Set.of(CHANNEL_ID), List.of(LIST)));
+        awaitState(State.READY);
+        await("registration", () -> registrations().size() == 1);
+
+        discord.dispatch("INTERACTION_CREATE", discord.command(OTHER_GUILD_ID, "list", 2, DataArray.empty()));
+        discord.sendMessage(discord.message(PLAYER_ID, "hello"));
+
+        assertThat(take(listener.messages).content()).isEqualTo("hello");
+        await("refusal", () -> callbacks().size() == 1);
+        assertThat(listener.commands).isEmpty();
+    }
+
+    @Test
+    void reportsWhenNoConfiguredChannelIsVisible() {
+        bridge = start(unbound(Set.of(CHANNEL_ID + 1), List.of(LIST)));
+
+        awaitState(State.DEGRADED);
+        assertThat(bridge.status().reason()).contains("cannot see any of the configured channels");
+        assertThat(registrations()).isEmpty();
+    }
+
+    @Test
+    void passesTheSubcommandAndWhetherTheMemberCanManageTheServer() {
+        CommandSpec whitelist = new CommandSpec(
+                "whitelist",
+                "Change the whitelist",
+                null,
+                List.of(),
+                List.of(new CommandSpec.Subcommand(
+                        "add",
+                        "Add a player",
+                        null,
+                        List.of(new CommandSpec.Option(
+                                CommandSpec.OptionType.STRING, "player", "Player", null, true, false)))),
+                true,
+                false,
+                false);
+        bridge = start(TestSupport.settings(List.of(whitelist)));
+        awaitState(State.READY);
+        DataArray options = DataArray.empty()
+                .add(DataObject.empty()
+                        .put("name", "add")
+                        .put("type", 1)
+                        .put(
+                                "options",
+                                DataArray.empty()
+                                        .add(DataObject.empty()
+                                                .put("name", "player")
+                                                .put("type", 3)
+                                                .put("value", "Steve"))));
+
+        discord.dispatch("INTERACTION_CREATE", discord.command(GUILD_ID, "whitelist", 2, options));
+
+        InteractionRequest request = take(listener.commands);
+        assertThat(request.subcommand()).isEqualTo("add");
+        assertThat(request.options()).containsEntry("player", "Steve");
+        assertThat(request.canManageServer()).isTrue();
+    }
+
+    @Test
+    void allowsMentionsOfExactlyTheRequestedRoles() {
+        bridge = startReady();
+
+        bridge.send(new OutboundMessage(
+                CHANNEL_ID, SERVER, "<@&" + ROLE_ID + "> Server started", Set.of(), Set.of(ROLE_ID)));
+
+        await("message", () -> executions().size() == 1);
+        DataObject mentions = FakeDiscord.body(executions().get(0)).getObject("allowed_mentions");
+        assertThat(mentions.getArray("parse").length()).isZero();
+        assertThat(mentions.getArray("roles").length()).isEqualTo(1);
+        assertThat(mentions.getArray("roles").getString(0)).isEqualTo(Long.toString(ROLE_ID));
+    }
+
+    @Test
+    void postsServerMessagesUnderTheBotsNameAndAvatarWhenNoneIsGiven() {
+        bridge = startReady();
+
+        bridge.send(OutboundMessage.of(CHANNEL_ID, Author.server(), "Server started"));
+
+        await("message", () -> executions().size() == 1);
+        DataObject body = FakeDiscord.body(executions().get(0));
+        assertThat(body.getString("username")).isEqualTo("Bridge");
+        assertThat(body.getString("avatar_url")).startsWith("https://cdn.discordapp.com/embed/avatars/");
+    }
+
+    private static DiscordSettings unbound(Set<Long> channels, List<CommandSpec> commands) {
+        DiscordSettings base = TestSupport.settings(commands);
+        return new DiscordSettings(
+                base.token(),
+                DiscordSettings.NO_GUILD,
+                channels,
+                base.serverAuthor(),
+                base.autoEnableMessageContent(),
+                base.requestMembersIntent(),
+                base.relayBotMessages(),
+                base.relayWebhookMessages(),
+                base.commands());
+    }
+
     private JdaDiscord startReady() {
         JdaDiscord started = start(TestSupport.settings(List.of()));
         await("ready", () -> started.status().state() == State.READY);

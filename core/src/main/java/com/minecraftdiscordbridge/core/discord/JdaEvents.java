@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
@@ -22,13 +23,20 @@ final class JdaEvents {
     static final String UNKNOWN_COMMAND = "This command is no longer available.";
 
     private final DiscordSettings settings;
+    private final GuildScope scope;
     private final CoreLoop loop;
     private final DiscordListener listener;
     private final WebhookSender webhooks;
     private final Map<String, CommandSpec> commands;
 
-    JdaEvents(DiscordSettings settings, CoreLoop loop, DiscordListener listener, WebhookSender webhooks) {
+    JdaEvents(
+            DiscordSettings settings,
+            GuildScope scope,
+            CoreLoop loop,
+            DiscordListener listener,
+            WebhookSender webhooks) {
         this.settings = settings;
+        this.scope = scope;
         this.loop = loop;
         this.listener = listener;
         this.webhooks = webhooks;
@@ -38,7 +46,7 @@ final class JdaEvents {
 
     void onMessage(MessageReceivedEvent event) {
         if (!event.isFromGuild()
-                || event.getGuild().getIdLong() != settings.guildId()
+                || !scope.accepts(event.getGuild().getIdLong())
                 || !settings.channelIds().contains(event.getChannel().getIdLong())) {
             return;
         }
@@ -53,7 +61,7 @@ final class JdaEvents {
 
     void onCommand(SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
-        if (guild == null || guild.getIdLong() != settings.guildId()) {
+        if (guild == null || !scope.accepts(guild.getIdLong())) {
             refuse(event, NOT_SET_UP);
             return;
         }
@@ -70,14 +78,17 @@ final class JdaEvents {
         for (OptionMapping option : event.getOptions()) {
             options.put(option.getName(), option.getAsString());
         }
+        Member member = event.getMember();
         InteractionRequest request = new InteractionRequest(
                 event.getIdLong(),
                 event.getName(),
+                event.getSubcommandName(),
                 options,
                 guild.getIdLong(),
                 event.getChannelIdLong(),
                 event.getUser().getIdLong(),
-                displayName(event.getMember(), event.getUser().getEffectiveName()),
+                displayName(member, event.getUser().getEffectiveName()),
+                member != null && member.hasPermission(Permission.MANAGE_SERVER),
                 event.getUserLocale().getLocale());
         loop.control(() -> listener.onCommand(request, reply));
     }
@@ -85,7 +96,7 @@ final class JdaEvents {
     void onAutocomplete(CommandAutoCompleteInteractionEvent event) {
         JdaAutocompleteReply reply = new JdaAutocompleteReply(event);
         Guild guild = event.getGuild();
-        if (guild == null || guild.getIdLong() != settings.guildId() || !commands.containsKey(event.getName())) {
+        if (guild == null || !scope.accepts(guild.getIdLong()) || !commands.containsKey(event.getName())) {
             reply.respond(List.of());
             return;
         }

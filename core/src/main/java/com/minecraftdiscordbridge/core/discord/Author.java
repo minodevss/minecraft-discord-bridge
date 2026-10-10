@@ -5,6 +5,10 @@ import org.jspecify.annotations.Nullable;
 public record Author(String key, String name, @Nullable String avatarUrl) {
     static final String SERVER_KEY = "server";
 
+    public static Author server() {
+        return new Author(SERVER_KEY, "", null);
+    }
+
     public static Author server(String name, @Nullable String avatarUrl) {
         return new Author(SERVER_KEY, name, avatarUrl);
     }
