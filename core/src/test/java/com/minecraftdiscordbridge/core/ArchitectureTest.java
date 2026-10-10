@@ -15,10 +15,10 @@ class ArchitectureTest {
             .importPackages(CORE);
 
     @Test
-    void onlyTheDiscordPackageTalksToJdaOrOkHttp() {
+    void onlyTheJdaPackageTalksToJdaOrOkHttp() {
         noClasses()
                 .that()
-                .resideOutsideOfPackage(CORE + ".discord..")
+                .resideOutsideOfPackage(CORE + ".discord.jda..")
                 .should()
                 .dependOnClassesThat()
                 .resideInAnyPackage("net.dv8tion..", "okhttp3..", "okio..")

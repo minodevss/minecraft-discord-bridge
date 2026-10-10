@@ -1,8 +1,11 @@
 package com.minecraftdiscordbridge.core.loop;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import java.time.Duration;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -10,14 +13,12 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public final class CoreLoop implements AutoCloseable {
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
+public final class CoreLoop implements Executor, Scheduler, AutoCloseable {
     private static final int CONTENT_CAPACITY = 1024;
     private static final long IDLE = 0;
     private static final Duration CLOSE_WAIT = Duration.ofMillis(200);
+    private static final Duration SLOW_TASK = Duration.ofSeconds(1);
 
     private final BlockingQueue<Runnable> control = new LinkedBlockingQueue<>();
     private final BlockingQueue<Runnable> content = new ArrayBlockingQueue<>(CONTENT_CAPACITY);
@@ -25,22 +26,16 @@ public final class CoreLoop implements AutoCloseable {
     private final AtomicLong dropped = new AtomicLong();
     private final AtomicLong taskStartedNanos = new AtomicLong(IDLE);
     private final AtomicLong reportedTaskNanos = new AtomicLong(IDLE);
-    private final Duration slowTask;
     private final ScheduledExecutorService timer;
     private final Thread thread;
     private final ScheduledFuture<?> watchdog;
     private volatile boolean running = true;
 
     public CoreLoop() {
-        this(Duration.ofSeconds(1));
-    }
-
-    CoreLoop(Duration slowTask) {
-        this.slowTask = slowTask;
         this.timer = Executors.newSingleThreadScheduledExecutor(Threads.named("Timer"));
         this.thread = Threads.named("Core").newThread(this::run);
         this.thread.start();
-        long period = Math.max(10, slowTask.toMillis() / 2);
+        long period = SLOW_TASK.toMillis() / 2;
         this.watchdog = timer.scheduleAtFixedRate(this::checkSlowTask, period, period, TimeUnit.MILLISECONDS);
     }
 
@@ -50,6 +45,11 @@ public final class CoreLoop implements AutoCloseable {
         }
         control.add(task);
         pending.release();
+    }
+
+    @Override
+    public void execute(Runnable task) {
+        control(task);
     }
 
     public boolean content(Runnable task) {
@@ -68,8 +68,9 @@ public final class CoreLoop implements AutoCloseable {
         return dropped.getAndSet(0);
     }
 
-    public ScheduledFuture<?> schedule(Duration delay, Runnable task) {
-        return timer.schedule(() -> control(task), delay.toMillis(), TimeUnit.MILLISECONDS);
+    @Override
+    public void later(Duration delay, Runnable task) {
+        var unused = timer.schedule(() -> control(task), delay.toMillis(), TimeUnit.MILLISECONDS);
     }
 
     public ScheduledFuture<?> repeat(Duration period, Runnable task) {
@@ -106,12 +107,12 @@ public final class CoreLoop implements AutoCloseable {
                 task = content.poll();
             }
             if (task != null) {
-                execute(task);
+                runTimed(task);
             }
         }
     }
 
-    private void execute(Runnable task) {
+    private void runTimed(Runnable task) {
         taskStartedNanos.set(System.nanoTime());
         try {
             task.run();
@@ -127,11 +128,11 @@ public final class CoreLoop implements AutoCloseable {
         if (started == IDLE || started == reportedTaskNanos.get()) {
             return;
         }
-        if (System.nanoTime() - started < slowTask.toNanos()) {
+        if (System.nanoTime() - started < SLOW_TASK.toNanos()) {
             return;
         }
         reportedTaskNanos.set(started);
-        Throwable trace = new Throwable("Core loop task running for over " + slowTask.toMillis() + " ms");
+        Throwable trace = new Throwable("Core loop task running for over " + SLOW_TASK.toMillis() + " ms");
         trace.setStackTrace(thread.getStackTrace());
         LOGGER.warn("The bridge core loop is blocked", trace);
     }

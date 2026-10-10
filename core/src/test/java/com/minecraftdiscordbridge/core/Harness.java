@@ -1,8 +1,16 @@
 package com.minecraftdiscordbridge.core;
 
+import com.minecraftdiscordbridge.core.codes.Codes;
+import com.minecraftdiscordbridge.core.discord.CommandRequest;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
-import com.minecraftdiscordbridge.core.discord.InteractionRequest;
-import com.minecraftdiscordbridge.core.linking.Codes;
+import com.minecraftdiscordbridge.core.discord.OfflineDiscord;
+import com.minecraftdiscordbridge.core.fakes.FakeGroups;
+import com.minecraftdiscordbridge.core.fakes.FakePlatform;
+import com.minecraftdiscordbridge.core.fakes.MutableClock;
+import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
+import com.minecraftdiscordbridge.core.fakes.RecordingSource;
+import com.minecraftdiscordbridge.core.fakes.Waits;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.minecraftdiscordbridge.core.vanilla.FakeFetcher;
@@ -16,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -24,13 +34,13 @@ import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
 final class Harness implements AutoCloseable {
-    static final long GUILD = 111111111111111111L;
-    static final long CHAT = 222222222222222222L;
-    static final long EVENTS = 333333333333333333L;
-    static final long CONSOLE = 444444444444444444L;
-    static final long OWNER = 555555555555555555L;
-    static final long MEMBER = 666666666666666666L;
-    static final long ROLE = 777777777777777777L;
+    static final DiscordId GUILD = new DiscordId(111111111111111111L);
+    static final DiscordId CHAT = new DiscordId(222222222222222222L);
+    static final DiscordId EVENTS = new DiscordId(333333333333333333L);
+    static final DiscordId CONSOLE = new DiscordId(444444444444444444L);
+    static final DiscordId OWNER = new DiscordId(555555555555555555L);
+    static final DiscordId MEMBER = new DiscordId(666666666666666666L);
+    static final DiscordId ROLE = new DiscordId(777777777777777777L);
     static final String TOKEN = "test-token";
     static final String CHANNELS = """
             config-version: 1
@@ -126,25 +136,31 @@ final class Harness implements AutoCloseable {
         Files.writeString(directory.resolve("config.yml"), config, StandardCharsets.UTF_8);
     }
 
-    static InteractionRequest request(
-            String command, @Nullable String subcommand, Map<String, String> options, long user, long channel) {
-        return new InteractionRequest(command, subcommand, options, GUILD, channel, user, "Alex", false, "en-US");
+    static CommandRequest request(
+            String command,
+            @Nullable String subcommand,
+            Map<String, String> options,
+            DiscordId user,
+            DiscordId channel) {
+        return new CommandRequest(
+                command, Optional.ofNullable(subcommand), options, GUILD, channel, user, "Alex", false, "en-US");
     }
 
-    static InteractionRequest managerRequest(String command, Map<String, String> options, long user, long channel) {
-        return new InteractionRequest(command, null, options, GUILD, channel, user, "Alex", true, "en-US");
+    static CommandRequest managerRequest(
+            String command, Map<String, String> options, DiscordId user, DiscordId channel) {
+        return new CommandRequest(command, Optional.empty(), options, GUILD, channel, user, "Alex", true, "en-US");
     }
 
-    static DiscordMessage message(long channel, String content) {
+    static DiscordMessage message(DiscordId channel, String content) {
         return new DiscordMessage(
                 channel,
-                new DiscordMessage.Sender(MEMBER, "Alex", null, false, false),
+                new DiscordMessage.Sender(MEMBER, "Alex", OptionalInt.empty(), false, false),
                 content,
                 Map.of(),
                 Map.of(),
                 Map.of(),
                 List.of(),
-                null,
+                Optional.empty(),
                 List.of(),
                 false,
                 false,

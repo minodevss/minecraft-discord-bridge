@@ -1,17 +1,16 @@
 package com.minecraftdiscordbridge.core.vanilla;
 
-import com.minecraftdiscordbridge.core.config.Language;
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
+import com.minecraftdiscordbridge.core.i18n.Language;
+import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.text.Translations;
 import java.util.Map;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class VanillaTranslations implements Translations {
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
-
     private final LanguageFiles files;
     private final IoExecutor io;
     private final String minecraftVersion;
@@ -42,7 +41,7 @@ public final class VanillaTranslations implements Translations {
         if (!locale.equals(requested)) {
             requested = locale;
             patterns = Map.of();
-            io.call(
+            io.completeOnLoop(
                     () -> files.load(minecraftVersion, locale),
                     loaded -> loaded(locale, loaded),
                     failure -> failed(locale, failure));
@@ -51,8 +50,8 @@ public final class VanillaTranslations implements Translations {
     }
 
     @Override
-    public @Nullable String pattern(String key) {
-        return patterns.get(key);
+    public Optional<String> pattern(String key) {
+        return Optional.ofNullable(patterns.get(key));
     }
 
     public void close() {
@@ -76,6 +75,6 @@ public final class VanillaTranslations implements Translations {
                         + " resources.download.minecraft.net and you run /discord reload",
                 minecraftVersion,
                 locale,
-                failure.toString());
+                Failures.describe(failure));
     }
 }

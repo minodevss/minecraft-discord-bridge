@@ -8,6 +8,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
+import com.minecraftdiscordbridge.core.fakes.RecordingReply;
+import com.minecraftdiscordbridge.core.fakes.RecordingSource;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.storage.Edition;
 import com.minecraftdiscordbridge.core.storage.Link;
@@ -71,7 +73,7 @@ class LinkingTest {
                     .isEqualTo(new RecordingReply.Answer("Linked to the Minecraft account **Steve**.", true));
             assertThat(steve.nextPlain()).isEqualTo("Your account is now linked to the Discord account Alex.");
             Link stored = LinkStore.open(directory).byMinecraftId(STEVE.id()).orElseThrow();
-            assertThat(stored.discordId()).isEqualTo(new DiscordId(MEMBER));
+            assertThat(stored.discordId()).isEqualTo(MEMBER);
             assertThat(stored.minecraftName()).isEqualTo("Steve");
             assertThat(stored.edition()).isEqualTo(Edition.JAVA);
             assertThat(harness.run(steve, "link").nextPlain()).contains("already linked");
@@ -87,7 +89,10 @@ class LinkingTest {
 
             assertThat(link(harness, MEMBER, old).next().text()).contains("wrong or expired");
             assertThat(link(harness, MEMBER, fresh).next().text()).startsWith("Linked");
-            assertThat(link(harness, MEMBER + 1, fresh).next().text()).contains("wrong or expired");
+            assertThat(link(harness, new DiscordId(MEMBER.value() + 1), fresh)
+                            .next()
+                            .text())
+                    .contains("wrong or expired");
         }
     }
 
@@ -113,7 +118,10 @@ class LinkingTest {
 
             assertThat(link(harness, MEMBER, code).next().text())
                     .isEqualTo("Too many wrong codes. Try again in a few minutes.");
-            assertThat(link(harness, MEMBER + 1, code).next().text()).startsWith("Linked");
+            assertThat(link(harness, new DiscordId(MEMBER.value() + 1), code)
+                            .next()
+                            .text())
+                    .startsWith("Linked");
         }
     }
 
@@ -121,23 +129,28 @@ class LinkingTest {
     void refusesEveryoneForAWhileAfterManyWrongCodes() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             for (int i = 0; i < 50; i++) {
-                link(harness, MEMBER + i, "WRONG").next();
+                link(harness, new DiscordId(MEMBER.value() + i), "WRONG").next();
             }
             String code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
                     .nextPlain());
 
-            assertThat(link(harness, MEMBER + 100, code).next().text()).startsWith("Too many wrong codes");
+            assertThat(link(harness, new DiscordId(MEMBER.value() + 100), code)
+                            .next()
+                            .text())
+                    .startsWith("Too many wrong codes");
             harness.clock.advance(Duration.ofMinutes(10).plusSeconds(1));
             code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
                     .nextPlain());
-            assertThat(link(harness, MEMBER + 100, code).next().text()).startsWith("Linked");
+            assertThat(link(harness, new DiscordId(MEMBER.value() + 100), code)
+                            .next()
+                            .text())
+                    .startsWith("Linked");
         }
     }
 
     @Test
     void unlinksFromDiscordAndFromMinecraft() throws IOException {
-        LinkStore.open(directory)
-                .link(new Link(STEVE.id(), new DiscordId(MEMBER), "Steve", Edition.JAVA, Instant.EPOCH));
+        LinkStore.open(directory).link(new Link(STEVE.id(), MEMBER, "Steve", Edition.JAVA, Instant.EPOCH));
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             RecordingReply unlinked =
                     harness.discord().command(Harness.request("unlink", null, Map.of(), MEMBER, CHAT));
@@ -196,7 +209,7 @@ class LinkingTest {
         }
     }
 
-    private static RecordingReply link(Harness harness, long user, String code) {
+    private static RecordingReply link(Harness harness, DiscordId user, String code) {
         return harness.discord().command(Harness.request("link", null, Map.of("code", code), user, CHAT));
     }
 }

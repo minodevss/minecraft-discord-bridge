@@ -1,13 +1,11 @@
 package com.minecraftdiscordbridge.core.loop;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class Threads {
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
-
     private Threads() {}
 
     public static ThreadFactory named(String role) {

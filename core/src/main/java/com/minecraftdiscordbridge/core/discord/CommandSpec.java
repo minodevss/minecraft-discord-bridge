@@ -1,12 +1,12 @@
 package com.minecraftdiscordbridge.core.discord;
 
 import java.util.List;
-import org.jspecify.annotations.Nullable;
+import java.util.Optional;
 
 public record CommandSpec(
         String name,
         String description,
-        @Nullable Localized korean,
+        Optional<Localized> korean,
         List<Option> options,
         List<Subcommand> subcommands,
         boolean adminOnly,
@@ -23,7 +23,7 @@ public record CommandSpec(
     public CommandSpec(
             String name,
             String description,
-            @Nullable Localized korean,
+            Optional<Localized> korean,
             List<Option> options,
             boolean adminOnly,
             boolean slow,
@@ -37,12 +37,11 @@ public record CommandSpec(
             OptionType type,
             String name,
             String description,
-            @Nullable Localized korean,
+            Optional<Localized> korean,
             boolean required,
             boolean autocomplete) {}
 
-    public record Subcommand(
-            String name, String description, @Nullable Localized korean, List<Option> options) {
+    public record Subcommand(String name, String description, Optional<Localized> korean, List<Option> options) {
         public Subcommand {
             options = List.copyOf(options);
         }

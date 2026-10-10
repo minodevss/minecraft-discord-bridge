@@ -2,8 +2,8 @@ package com.minecraftdiscordbridge.core.vanilla;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.minecraftdiscordbridge.core.Waits;
-import com.minecraftdiscordbridge.core.config.Language;
+import com.minecraftdiscordbridge.core.fakes.Waits;
+import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.text.Translations;
 import java.nio.file.Path;
@@ -31,9 +31,11 @@ class VanillaTranslationsTest {
 
         Translations korean = translations().use(Language.KO).orElseThrow();
 
-        Waits.until("the Korean language file", () -> korean.pattern("death.attack.fall") != null);
-        assertThat(korean.pattern("death.attack.fall")).isEqualTo("%1$s이(가) 땅바닥으로 곤두박질쳤습니다");
-        assertThat(korean.pattern("death.attack.mymod.wisp")).isNull();
+        Waits.until(
+                "the Korean language file",
+                () -> korean.pattern("death.attack.fall").isPresent());
+        assertThat(korean.pattern("death.attack.fall")).contains("%1$s이(가) 땅바닥으로 곤두박질쳤습니다");
+        assertThat(korean.pattern("death.attack.mymod.wisp")).isEmpty();
     }
 
     @Test
@@ -47,12 +49,14 @@ class VanillaTranslationsTest {
         VanillaTranslations translations = translations();
 
         translations.use(Language.KO);
-        io.perform(() -> {}).join();
+        io.completeOnIo(() -> {}).join();
 
-        assertThat(translations.pattern("death.attack.fall")).isNull();
+        assertThat(translations.pattern("death.attack.fall")).isEmpty();
         mojang.serve("1.21.1", "ko_kr", KOREAN);
         translations.use(Language.KO);
-        Waits.until("the Korean language file", () -> translations.pattern("death.attack.fall") != null);
+        Waits.until(
+                "the Korean language file",
+                () -> translations.pattern("death.attack.fall").isPresent());
     }
 
     @Test
@@ -62,7 +66,7 @@ class VanillaTranslationsTest {
 
         translations.use(Language.KO);
         translations.use(Language.KO);
-        io.perform(() -> {}).join();
+        io.completeOnIo(() -> {}).join();
 
         assertThat(mojang.requests).hasSize(4);
     }
@@ -72,11 +76,11 @@ class VanillaTranslationsTest {
         mojang.serve("1.21.1", "ko_kr", KOREAN);
         VanillaTranslations translations = translations();
         translations.use(Language.KO);
-        io.perform(() -> {}).join();
+        io.completeOnIo(() -> {}).join();
 
         translations.use(Language.EN);
 
-        assertThat(translations.pattern("death.attack.fall")).isNull();
+        assertThat(translations.pattern("death.attack.fall")).isEmpty();
     }
 
     private VanillaTranslations translations() {

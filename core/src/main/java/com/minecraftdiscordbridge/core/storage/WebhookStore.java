@@ -1,6 +1,7 @@
 package com.minecraftdiscordbridge.core.storage;
 
 import com.minecraftdiscordbridge.core.discord.DiscordId;
+import com.minecraftdiscordbridge.core.discord.WebhookCredentials;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -10,7 +11,7 @@ import java.util.TreeMap;
 
 public final class WebhookStore {
     private final StoreFile file;
-    private volatile Map<DiscordId, Webhook> byChannel;
+    private volatile Map<DiscordId, WebhookCredentials> byChannel;
 
     private WebhookStore(StoreFile file) {
         this.file = file;
@@ -25,12 +26,12 @@ public final class WebhookStore {
         return file.readOnly();
     }
 
-    public Optional<Webhook> forChannel(DiscordId channelId) {
+    public Optional<WebhookCredentials> forChannel(DiscordId channelId) {
         return Optional.ofNullable(byChannel.get(channelId));
     }
 
-    public synchronized void put(DiscordId channelId, Webhook webhook) throws IOException {
-        Map<DiscordId, Webhook> next = new HashMap<>(byChannel);
+    public synchronized void put(DiscordId channelId, WebhookCredentials webhook) throws IOException {
+        Map<DiscordId, WebhookCredentials> next = new HashMap<>(byChannel);
         next.put(channelId, webhook);
         replace(next);
     }
@@ -39,12 +40,12 @@ public final class WebhookStore {
         if (!byChannel.containsKey(channelId)) {
             return;
         }
-        Map<DiscordId, Webhook> next = new HashMap<>(byChannel);
+        Map<DiscordId, WebhookCredentials> next = new HashMap<>(byChannel);
         next.remove(channelId);
         replace(next);
     }
 
-    private void replace(Map<DiscordId, Webhook> next) throws IOException {
+    private void replace(Map<DiscordId, WebhookCredentials> next) throws IOException {
         Map<String, WebhookJson> entries = new TreeMap<>();
         next.forEach((channel, webhook) ->
                 entries.put(channel.toString(), new WebhookJson(webhook.id().toString(), webhook.token())));
@@ -52,12 +53,12 @@ public final class WebhookStore {
         byChannel = Map.copyOf(next);
     }
 
-    private static Map<DiscordId, Webhook> decode(WebhooksJson json) {
-        Map<DiscordId, Webhook> byChannel = new HashMap<>();
+    private static Map<DiscordId, WebhookCredentials> decode(WebhooksJson json) {
+        Map<DiscordId, WebhookCredentials> byChannel = new HashMap<>();
         json.webhooks()
                 .forEach((channel, entry) -> byChannel.put(
                         DiscordId.require(channel, "channelId"),
-                        new Webhook(DiscordId.require(entry.id(), "webhook id"), entry.token())));
+                        new WebhookCredentials(DiscordId.require(entry.id(), "webhook id"), entry.token())));
         return Map.copyOf(byChannel);
     }
 

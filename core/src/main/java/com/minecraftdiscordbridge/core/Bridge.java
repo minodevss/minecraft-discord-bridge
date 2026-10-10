@@ -1,17 +1,23 @@
 package com.minecraftdiscordbridge.core;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.minecraftdiscordbridge.core.access.AccessMemory;
 import com.minecraftdiscordbridge.core.access.JoinGate;
 import com.minecraftdiscordbridge.core.access.PermissionGroups;
-import com.minecraftdiscordbridge.core.actions.Actions;
+import com.minecraftdiscordbridge.core.actions.GameActions;
+import com.minecraftdiscordbridge.core.codes.Attempts;
+import com.minecraftdiscordbridge.core.codes.Codes;
 import com.minecraftdiscordbridge.core.config.ConfigLoader;
 import com.minecraftdiscordbridge.core.discord.Discord;
-import com.minecraftdiscordbridge.core.discord.JdaDiscord;
+import com.minecraftdiscordbridge.core.discord.OfflineDiscord;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
-import com.minecraftdiscordbridge.core.linking.Attempts;
-import com.minecraftdiscordbridge.core.linking.Codes;
+import com.minecraftdiscordbridge.core.discord.SwappableDiscord;
+import com.minecraftdiscordbridge.core.discord.jda.JdaDiscord;
 import com.minecraftdiscordbridge.core.linking.PendingLinks;
+import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
+import com.minecraftdiscordbridge.core.loop.Deadline;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.loop.Threads;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
@@ -22,6 +28,7 @@ import com.minecraftdiscordbridge.core.platform.Platform;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.minecraftdiscordbridge.core.setup.SetupCodes;
 import com.minecraftdiscordbridge.core.status.Roster;
+import com.minecraftdiscordbridge.core.storage.ShutdownMarker;
 import com.minecraftdiscordbridge.core.vanilla.Fetcher;
 import com.minecraftdiscordbridge.core.vanilla.HttpFetcher;
 import com.minecraftdiscordbridge.core.vanilla.LanguageFiles;
@@ -39,19 +46,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class Bridge {
     static final Duration STOP_BUDGET = Duration.ofSeconds(3);
-    static final Duration DISCORD_STOP_BUDGET = Duration.ofMillis(2500);
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
+    private static final Duration AFTER_DISCORD = Duration.ofMillis(500);
+    static final Duration DISCORD_STOP_BUDGET = STOP_BUDGET.minus(AFTER_DISCORD);
 
     private final CoreLoop loop;
     private final IoExecutor io;
     private final IoExecutor downloads;
     private final ExecutorService lifecycle;
-    private final Engine engine;
+    private final Activator activator;
     private final AtomicBoolean started = new AtomicBoolean();
     private final AtomicBoolean stopped = new AtomicBoolean();
     private volatile boolean stopping;
@@ -59,7 +64,7 @@ public final class Bridge {
 
     Bridge(
             Platform platform,
-            DiscordFactory discordFactory,
+            DiscordConnection.Factory discordFactory,
             Map<String, String> environment,
             InstantSource clock,
             Codes codes,
@@ -70,26 +75,26 @@ public final class Bridge {
         this.io = IoExecutor.forLoop(loop, "I/O");
         this.downloads = IoExecutor.forLoop(loop, "Downloads");
         this.lifecycle = Executors.newSingleThreadExecutor(Threads.named("Reconnect"));
-        Shared shared = new Shared(
+        Services services = new Services(
                 platform,
                 loop,
                 io,
                 clock,
-                new DiscordHandle(OfflineDiscord.connecting(OfflineDiscord.STARTING)),
+                new SwappableDiscord(OfflineDiscord.connecting(OfflineDiscord.STARTING)),
                 new Roster(),
                 new PendingLinks(codes),
                 new SetupCodes(codes),
                 Attempts.standard(),
                 Attempts.standard(),
-                actionTimeout,
+                new GameActions(platform, loop, actionTimeout),
                 new VanillaTranslations(
                         new LanguageFiles(platform.dataDirectory(), fetcher),
                         downloads,
                         platform.info().minecraftVersion()),
                 groups,
                 new AccessMemory());
-        this.engine = new Engine(
-                shared,
+        this.activator = new Activator(
+                services,
                 lifecycle,
                 discordFactory,
                 new ConfigLoader(platform.dataDirectory(), environment),
@@ -104,14 +109,14 @@ public final class Bridge {
                 System.getenv(),
                 InstantSource.system(),
                 Codes.secure(),
-                Actions.TIMEOUT,
+                GameActions.TIMEOUT,
                 new HttpFetcher(),
                 PermissionGroups.detect());
     }
 
     public void start() {
         if (started.compareAndSet(false, true) && !stopped.get()) {
-            engine.boot();
+            activator.boot();
         }
     }
 
@@ -122,7 +127,7 @@ public final class Bridge {
             crashed = !stopping;
             stopping = true;
         } else {
-            loop.content(() -> engine.onGameEvent(event));
+            loop.content(() -> activator.onGameEvent(event));
         }
     }
 
@@ -134,28 +139,29 @@ public final class Bridge {
             }
         }
         List<String> copy = List.copyOf(arguments);
-        loop.control(() -> engine.command(source, granted, copy));
+        loop.control(() -> activator.command(source, granted, copy));
     }
 
     public CompletableFuture<JoinDecision> checkJoin(PlayerProfile player, boolean bypass) {
         if (stopped.get()) {
-            return CompletableFuture.completedFuture(engine.joinFallback(player, bypass));
+            return CompletableFuture.completedFuture(activator.joins().fallback(player, bypass));
         }
         CompletableFuture<JoinDecision> decision = new CompletableFuture<>();
-        loop.control(() -> engine.checkJoin(player, bypass, decision));
+        loop.control(() -> activator.joins().check(player, bypass, decision));
         return decision.orTimeout(JoinGate.BUDGET.toMillis(), TimeUnit.MILLISECONDS)
-                .handle((done, failure) -> done != null ? done : engine.joinFallback(player, bypass));
+                .handle((done, failure) ->
+                        done != null ? done : activator.joins().fallback(player, bypass));
     }
 
     public void stop() {
         if (!stopped.compareAndSet(false, true)) {
             return;
         }
-        long deadline = System.nanoTime() + STOP_BUDGET.toNanos();
-        List<OutboundMessage> farewell = engine.farewell(crashed);
-        CompletableFuture<Boolean> markerCleared = io.perform(engine::clearMarker);
-        Discord discord = engine.close();
-        stopDiscord(discord, farewell);
+        Deadline deadline = Deadline.after(STOP_BUDGET);
+        List<OutboundMessage> farewell = activator.farewell(crashed);
+        CompletableFuture<Void> markerCleared = io.completeOnIo(activator::clearMarker);
+        Discord discord = activator.close();
+        stopDiscord(discord, farewell, deadline.minus(AFTER_DISCORD));
         loop.close();
         awaitMarker(markerCleared, deadline);
         io.close();
@@ -163,17 +169,17 @@ public final class Bridge {
         lifecycle.shutdownNow();
     }
 
-    private static void stopDiscord(Discord discord, List<OutboundMessage> farewell) {
+    private static void stopDiscord(Discord discord, List<OutboundMessage> farewell, Deadline deadline) {
         Thread stopping = Threads.named("Shutdown").newThread(() -> {
             try {
-                discord.shutdown(farewell);
+                discord.shutdown(farewell, deadline);
             } catch (RuntimeException failure) {
-                LOGGER.warn("Discord did not stop cleanly: {}", failure.toString());
+                LOGGER.warn("Discord did not stop cleanly: {}", Failures.describe(failure));
             }
         });
         stopping.start();
         try {
-            stopping.join(DISCORD_STOP_BUDGET.toMillis());
+            stopping.join(Math.max(1, deadline.remaining().toMillis()));
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
         }
@@ -184,17 +190,14 @@ public final class Bridge {
         }
     }
 
-    private static void awaitMarker(CompletableFuture<Boolean> cleared, long deadline) {
-        long remaining = Math.max(0, deadline - System.nanoTime());
+    private static void awaitMarker(CompletableFuture<Void> cleared, Deadline deadline) {
         try {
-            cleared.get(remaining, TimeUnit.NANOSECONDS);
+            cleared.get(deadline.remaining().toNanos(), TimeUnit.NANOSECONDS);
         } catch (ExecutionException failure) {
             LOGGER.warn(
                     "Could not delete data/running: {}. The next start will report an unclean shutdown; check that"
                             + " the data folder is writable",
-                    failure.getCause() == null
-                            ? failure.toString()
-                            : failure.getCause().toString());
+                    Failures.describe(failure));
         } catch (TimeoutException late) {
             LOGGER.warn("Gave up deleting data/running during shutdown; the next start may report an unclean shutdown");
         } catch (InterruptedException interrupted) {

@@ -1,0 +1,37 @@
+package com.minecraftdiscordbridge.core;
+
+import com.minecraftdiscordbridge.core.access.AccessContext;
+import com.minecraftdiscordbridge.core.access.AccessMemory;
+import com.minecraftdiscordbridge.core.access.PermissionGroups;
+import com.minecraftdiscordbridge.core.actions.GameActions;
+import com.minecraftdiscordbridge.core.codes.Attempts;
+import com.minecraftdiscordbridge.core.discord.SwappableDiscord;
+import com.minecraftdiscordbridge.core.linking.PendingLinks;
+import com.minecraftdiscordbridge.core.loop.CoreLoop;
+import com.minecraftdiscordbridge.core.loop.IoExecutor;
+import com.minecraftdiscordbridge.core.platform.Platform;
+import com.minecraftdiscordbridge.core.setup.SetupCodes;
+import com.minecraftdiscordbridge.core.status.Roster;
+import com.minecraftdiscordbridge.core.storage.Stores;
+import com.minecraftdiscordbridge.core.vanilla.VanillaTranslations;
+import java.time.InstantSource;
+
+record Services(
+        Platform platform,
+        CoreLoop loop,
+        IoExecutor io,
+        InstantSource clock,
+        SwappableDiscord discord,
+        Roster roster,
+        PendingLinks pendingLinks,
+        SetupCodes setupCodes,
+        Attempts linkAttempts,
+        Attempts setupAttempts,
+        GameActions gameActions,
+        VanillaTranslations vanilla,
+        PermissionGroups groups,
+        AccessMemory access) {
+    AccessContext accessContext(Stores stores) {
+        return new AccessContext(stores.links(), pendingLinks, discord, groups, access, clock, loop, loop);
+    }
+}

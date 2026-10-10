@@ -1,12 +1,16 @@
 package com.minecraftdiscordbridge.core.discord;
 
 import java.util.Map;
-import org.jspecify.annotations.Nullable;
+import java.util.Optional;
 
 public record DiscordStatus(
-        State state, @Nullable String reason, long gatewayPingMillis, Map<Long, ChannelStatus> channels) {
+        State state, Optional<String> reason, long gatewayPingMillis, Map<DiscordId, ChannelStatus> channels) {
     public DiscordStatus {
         channels = Map.copyOf(channels);
+    }
+
+    public boolean isConnected() {
+        return state == State.READY || state == State.DEGRADED;
     }
 
     public enum State {
@@ -17,9 +21,9 @@ public record DiscordStatus(
     }
 
     public record ChannelStatus(int queued, int inFlight, long dropped, long rateLimited) {
-        static final ChannelStatus IDLE = new ChannelStatus(0, 0, 0, 0);
+        public static final ChannelStatus IDLE = new ChannelStatus(0, 0, 0, 0);
 
-        ChannelStatus withRateLimited(long count) {
+        public ChannelStatus withRateLimited(long count) {
             return new ChannelStatus(queued, inFlight, dropped, count);
         }
     }

@@ -1,11 +1,14 @@
 package com.minecraftdiscordbridge.core.access;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.minecraftdiscordbridge.core.config.RoleSyncConfig;
 import com.minecraftdiscordbridge.core.config.RoleSyncRule;
 import com.minecraftdiscordbridge.core.config.SyncDirection;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.RoleInfo;
+import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.minecraftdiscordbridge.core.storage.Link;
@@ -20,12 +23,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class RoleSync implements AutoCloseable {
     static final Duration GROUP_CHANGE_DELAY = Duration.ofSeconds(2);
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private enum Check {
         PENDING,
@@ -93,13 +93,13 @@ public final class RoleSync implements AutoCloseable {
     }
 
     public void discordReady() {
-        Map<Long, RoleInfo> roles = context.discord().roles();
+        Map<DiscordId, RoleInfo> roles = context.discord().roles();
         if (roles.isEmpty()) {
             return;
         }
         for (RuleState state : rules) {
             if (state.role != Check.REFUSED) {
-                state.role = checkRole(state.rule, roles.get(RolePlan.role(state.rule)));
+                state.role = checkRole(state.rule, roles.get(state.rule.discordRole()));
             }
         }
     }
@@ -117,13 +117,11 @@ public final class RoleSync implements AutoCloseable {
     }
 
     public void memberUpdated(MemberLookup.Member member) {
-        context.links().byDiscordId(new DiscordId(member.userId())).ifPresent(link -> sync(link, member));
+        context.links().byDiscordId(member.userId()).ifPresent(link -> sync(link, member));
     }
 
-    public void memberLeft(long userId) {
-        context.links()
-                .byDiscordId(new DiscordId(userId))
-                .ifPresent(link -> sync(link, new MemberLookup.NotMember(userId)));
+    public void memberLeft(DiscordId userId) {
+        context.links().byDiscordId(userId).ifPresent(link -> sync(link, new MemberLookup.NotMember(userId)));
     }
 
     @Override
@@ -136,7 +134,7 @@ public final class RoleSync implements AutoCloseable {
         if (closed || !changedGroups.add(player)) {
             return;
         }
-        context.later().schedule(GROUP_CHANGE_DELAY, () -> {
+        context.scheduler().later(GROUP_CHANGE_DELAY, () -> {
             changedGroups.remove(player);
             if (!closed && pushesGroups()) {
                 context.links().byMinecraftId(player).ifPresent(link -> sync(link, null));
@@ -156,7 +154,7 @@ public final class RoleSync implements AutoCloseable {
         if (activeRules().isEmpty()) {
             return;
         }
-        long userId = link.discordId().value();
+        DiscordId userId = link.discordId();
         MemberLookup recent = known != null
                 ? known
                 : context.memory().freshMember(userId, context.now()).orElse(null);
@@ -164,7 +162,7 @@ public final class RoleSync implements AutoCloseable {
                 ? CompletableFuture.completedFuture(recent)
                 : context.discord()
                         .member(userId)
-                        .exceptionally(failure -> new MemberLookup.Unavailable(String.valueOf(failure.getMessage())));
+                        .exceptionally(failure -> new MemberLookup.Unavailable(Failures.describe(failure)));
         CompletableFuture<Optional<PlayerGroups>> groups = context.groups()
                 .groupsOf(link.minecraftId())
                 .thenApply(Optional::of)
@@ -172,7 +170,7 @@ public final class RoleSync implements AutoCloseable {
                     LOGGER.warn(
                             "Could not read the LuckPerms groups of {}: {}. Role sync skips them until they rejoin",
                             link.minecraftName(),
-                            failure.getMessage());
+                            Failures.describe(failure));
                     return Optional.empty();
                 });
         var unused = member.thenAcceptBoth(
@@ -193,33 +191,35 @@ public final class RoleSync implements AutoCloseable {
                         link,
                         "remove from group " + remove.group());
             } else if (change instanceof RoleChange.AddRole add && assignable(add.roleId())) {
-                long userId = link.discordId().value();
-                report(context.discord().addRole(userId, add.roleId()), link, "give Discord role " + add.roleId());
-            } else if (change instanceof RoleChange.RemoveRole remove && assignable(remove.roleId())) {
-                long userId = link.discordId().value();
                 report(
-                        context.discord().removeRole(userId, remove.roleId()),
+                        context.discord().addRole(link.discordId(), add.roleId()),
+                        link,
+                        "give Discord role " + add.roleId());
+            } else if (change instanceof RoleChange.RemoveRole remove && assignable(remove.roleId())) {
+                report(
+                        context.discord().removeRole(link.discordId(), remove.roleId()),
                         link,
                         "take Discord role " + remove.roleId());
             }
         }
     }
 
-    private boolean assignable(long roleId) {
+    private boolean assignable(DiscordId roleId) {
         RoleInfo info = context.discord().roles().get(roleId);
         Check verdict = info == null ? Check.PENDING : checkRole(ruleFor(roleId), info);
         if (verdict == Check.REFUSED) {
             rules.stream()
-                    .filter(state -> RolePlan.role(state.rule) == roleId)
+                    .filter(state -> state.rule.discordRole().equals(roleId))
                     .forEach(state -> state.role = Check.REFUSED);
         }
         return verdict == Check.PASSED;
     }
 
-    private RoleSyncRule ruleFor(long roleId) {
+    private RoleSyncRule ruleFor(DiscordId roleId) {
         return rules.stream()
                 .map(state -> state.rule)
-                .filter(rule -> rule.direction() == SyncDirection.MINECRAFT_TO_DISCORD && RolePlan.role(rule) == roleId)
+                .filter(rule -> rule.direction() == SyncDirection.MINECRAFT_TO_DISCORD
+                        && rule.discordRole().equals(roleId))
                 .findFirst()
                 .orElseThrow();
     }
@@ -234,7 +234,7 @@ public final class RoleSync implements AutoCloseable {
                                 + " its role above the synced roles",
                         what,
                         link.minecraftName(),
-                        failure.getMessage());
+                        Failures.describe(failure));
             }
         });
     }
@@ -253,7 +253,7 @@ public final class RoleSync implements AutoCloseable {
             LOGGER.warn(
                     "Could not read LuckPerms group {}: {}. Its role-sync rule stays off until /discord reload",
                     group,
-                    failure == null ? "no answer" : failure.getMessage());
+                    failure == null ? "no answer" : Failures.describe(failure));
             return Check.REFUSED;
         }
         if (check instanceof GroupCheck.Missing) {
@@ -317,7 +317,7 @@ public final class RoleSync implements AutoCloseable {
     private static boolean hasReverse(List<RoleSyncRule> rules, RoleSyncRule rule) {
         return rules.stream()
                 .anyMatch(other -> other.direction() == SyncDirection.DISCORD_TO_MINECRAFT
-                        && RolePlan.role(other) == RolePlan.role(rule)
+                        && other.discordRole().equals(rule.discordRole())
                         && RolePlan.group(other).equals(RolePlan.group(rule)));
     }
 }

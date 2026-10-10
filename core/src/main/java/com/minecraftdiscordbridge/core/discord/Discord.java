@@ -1,12 +1,11 @@
 package com.minecraftdiscordbridge.core.discord;
 
+import com.minecraftdiscordbridge.core.loop.Deadline;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public interface Discord {
-    String NOT_CONNECTED = "Discord is not connected";
-
     void start();
 
     DiscordStatus status();
@@ -15,25 +14,17 @@ public interface Discord {
 
     void updatePresence(String text);
 
-    void updateTopic(long channelId, String topic);
+    void updateTopic(DiscordId channelId, String topic);
 
-    boolean isApplicationOwner(long userId);
+    boolean isApplicationOwner(DiscordId userId);
 
-    default CompletableFuture<MemberLookup> member(long userId) {
-        return CompletableFuture.completedFuture(new MemberLookup.Unavailable(NOT_CONNECTED));
-    }
+    CompletableFuture<MemberLookup> member(DiscordId userId);
 
-    default Map<Long, RoleInfo> roles() {
-        return Map.of();
-    }
+    Map<DiscordId, RoleInfo> roles();
 
-    default CompletableFuture<Void> addRole(long userId, long roleId) {
-        return CompletableFuture.failedFuture(new IllegalStateException(NOT_CONNECTED));
-    }
+    CompletableFuture<Void> addRole(DiscordId userId, DiscordId roleId);
 
-    default CompletableFuture<Void> removeRole(long userId, long roleId) {
-        return CompletableFuture.failedFuture(new IllegalStateException(NOT_CONNECTED));
-    }
+    CompletableFuture<Void> removeRole(DiscordId userId, DiscordId roleId);
 
-    void shutdown(List<OutboundMessage> finalMessages);
+    void shutdown(List<OutboundMessage> finalMessages, Deadline deadline);
 }

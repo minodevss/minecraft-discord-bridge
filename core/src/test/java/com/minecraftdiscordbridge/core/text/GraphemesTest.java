@@ -19,6 +19,7 @@ class GraphemesTest {
     @Test
     void neverSplitsASurrogatePair() {
         assertThat(Graphemes.fit("abc😀def", 4)).isEqualTo("abc");
+        assertThat(Graphemes.fit("abc😀def", 5, "…")).isEqualTo("abc…");
     }
 
     @Test

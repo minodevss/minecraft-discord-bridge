@@ -2,38 +2,41 @@ package com.minecraftdiscordbridge.core.console;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.minecraftdiscordbridge.core.FakePlatform;
+import com.minecraftdiscordbridge.core.actions.GameActions;
 import com.minecraftdiscordbridge.core.config.ConsoleConfig;
-import com.minecraftdiscordbridge.core.config.Language;
-import com.minecraftdiscordbridge.core.discord.Discord;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
-import com.minecraftdiscordbridge.core.discord.DiscordStatus;
-import com.minecraftdiscordbridge.core.discord.OutboundMessage;
+import com.minecraftdiscordbridge.core.fakes.FakePlatform;
+import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
+import com.minecraftdiscordbridge.core.feature.FeatureContext;
 import com.minecraftdiscordbridge.core.i18n.Lang;
+import com.minecraftdiscordbridge.core.i18n.Language;
+import com.minecraftdiscordbridge.core.i18n.Replies;
+import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.platform.ActionOutcome;
 import com.minecraftdiscordbridge.core.platform.GameAction;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class ConsoleInputTest {
-    private static final long CONSOLE = 444444444444444444L;
-    private static final long CHAT = 222222222222222222L;
-    private static final long ADMIN = 555555555555555555L;
-    private static final long MEMBER = 666666666666666666L;
-    private static final ConsoleConfig ADMIN_ONLY = new ConsoleConfig(false, List.of(new DiscordId(ADMIN)));
+    private static final DiscordId CONSOLE = new DiscordId(444444444444444444L);
+    private static final DiscordId CHAT = new DiscordId(222222222222222222L);
+    private static final DiscordId ADMIN = new DiscordId(555555555555555555L);
+    private static final DiscordId MEMBER = new DiscordId(666666666666666666L);
+    private static final ConsoleConfig ADMIN_ONLY = new ConsoleConfig(false, List.of(ADMIN));
 
     @TempDir
     Path directory;
 
-    private final SentMessages discord = new SentMessages();
+    private final RecordingDiscord discord = new RecordingDiscord();
 
     @Test
     void runsCommandsFromListedUsersAndRepliesWithTheOutput() {
@@ -135,14 +138,13 @@ class ConsoleInputTest {
     }
 
     private ConsoleInput input(ConsoleConfig config, FakePlatform platform) {
+        FeatureContext context = new FeatureContext(
+                discord, new IoExecutor(Runnable::run), Clock.systemUTC(), new Replies(Lang.of(Language.EN), 0));
         return new ConsoleInput(
+                context,
                 config,
-                Optional.of(new DiscordId(CONSOLE)),
-                platform,
-                discord,
-                Runnable::run,
-                Lang.of(Language.EN),
-                Duration.ofMillis(100),
+                Optional.of(CONSOLE),
+                new GameActions(platform, Runnable::run, Duration.ofMillis(100)),
                 List::of);
     }
 
@@ -152,62 +154,20 @@ class ConsoleInputTest {
         return platform;
     }
 
-    private static DiscordMessage message(long channel, long author, boolean bot, boolean webhook, String content) {
+    private static DiscordMessage message(
+            DiscordId channel, DiscordId author, boolean bot, boolean webhook, String content) {
         return new DiscordMessage(
                 channel,
-                new DiscordMessage.Sender(author, "Admin", null, bot, webhook),
+                new DiscordMessage.Sender(author, "Admin", OptionalInt.empty(), bot, webhook),
                 content,
                 Map.of(),
                 Map.of(),
                 Map.of(),
                 List.of(),
-                null,
+                Optional.empty(),
                 List.of(),
                 false,
                 false,
                 false);
-    }
-
-    private static final class SentMessages implements Discord {
-        final List<OutboundMessage> sent = new CopyOnWriteArrayList<>();
-
-        List<String> texts() {
-            return sent.stream().map(OutboundMessage::text).toList();
-        }
-
-        List<String> awaitTexts(int count) {
-            long deadline = System.nanoTime() + Duration.ofSeconds(5).toNanos();
-            while (sent.size() < count && System.nanoTime() < deadline) {
-                Thread.onSpinWait();
-            }
-            return texts();
-        }
-
-        @Override
-        public void start() {}
-
-        @Override
-        public DiscordStatus status() {
-            return new DiscordStatus(DiscordStatus.State.READY, null, 0, Map.of());
-        }
-
-        @Override
-        public void send(OutboundMessage message) {
-            sent.add(message);
-        }
-
-        @Override
-        public void updatePresence(String text) {}
-
-        @Override
-        public void updateTopic(long channelId, String topic) {}
-
-        @Override
-        public boolean isApplicationOwner(long userId) {
-            return false;
-        }
-
-        @Override
-        public void shutdown(List<OutboundMessage> finalMessages) {}
     }
 }

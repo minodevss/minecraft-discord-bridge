@@ -1,6 +1,6 @@
 package com.minecraftdiscordbridge.core.i18n;
 
-import com.minecraftdiscordbridge.core.config.Language;
+import com.minecraftdiscordbridge.core.text.ArgumentIndex;
 import com.minecraftdiscordbridge.core.text.Format;
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,10 +51,6 @@ public final class Lang {
         return language;
     }
 
-    public Set<String> keys() {
-        return new TreeSet<>(strings.keySet());
-    }
-
     public String raw(String key) {
         String value = strings.get(key);
         if (value != null) {
@@ -97,10 +93,7 @@ public final class Lang {
     }
 
     private static int index(String digits) {
-        if (digits.length() > 2 || !digits.chars().allMatch(Character::isDigit)) {
-            return -1;
-        }
-        return Integer.parseInt(digits);
+        return digits.length() > 2 ? ArgumentIndex.NONE : ArgumentIndex.parse(digits);
     }
 
     private static Lang load(Language language) {

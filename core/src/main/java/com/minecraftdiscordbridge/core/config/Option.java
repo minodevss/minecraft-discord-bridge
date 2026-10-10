@@ -2,7 +2,7 @@ package com.minecraftdiscordbridge.core.config;
 
 import java.util.List;
 
-record Option<T>(String path, ValueType<T> type, T defaultValue, List<String> comment, int since) {
+record Option<T>(String path, ValueType<T> type, T defaultValue, List<String> comment) {
     Option {
         comment = List.copyOf(comment);
     }

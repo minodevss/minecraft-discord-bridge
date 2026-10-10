@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core.storage;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
 import com.fasterxml.jackson.core.JsonLocation;
@@ -15,13 +17,10 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.DateTimeException;
 import java.util.function.Function;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 final class StoreFile {
     static final int FORMAT = 1;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
     private static final ObjectMapper JSON = JsonMapper.builder()
             .enable(
                     DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES,

@@ -1,21 +1,20 @@
 package com.minecraftdiscordbridge.core.storage;
 
-import java.util.Locale;
+import java.util.Optional;
 
 public enum ChannelRole {
     CHAT,
     EVENTS;
 
-    String id() {
-        return name().toLowerCase(Locale.ROOT);
+    public String id() {
+        return EnumIds.id(this);
+    }
+
+    public static Optional<ChannelRole> find(String id) {
+        return EnumIds.find(ChannelRole.class, id);
     }
 
     static ChannelRole fromId(String id) {
-        for (ChannelRole role : values()) {
-            if (role.id().equals(id)) {
-                return role;
-            }
-        }
-        throw new IllegalArgumentException("unknown channel role \"" + id + "\"; expected chat or events");
+        return EnumIds.fromId(ChannelRole.class, id, "channel role");
     }
 }

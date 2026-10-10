@@ -64,7 +64,7 @@ class CoreLoopTest {
         try (CoreLoop loop = new CoreLoop()) {
             CountDownLatch done = new CountDownLatch(1);
             List<Boolean> onLoop = new CopyOnWriteArrayList<>();
-            var unused = loop.schedule(Duration.ofMillis(20), () -> {
+            loop.later(Duration.ofMillis(20), () -> {
                 onLoop.add(loop.inLoop());
                 done.countDown();
             });

@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.text;
 
 import com.minecraftdiscordbridge.core.platform.RichText;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TranslatableComponent;
@@ -9,7 +10,6 @@ import net.kyori.adventure.text.flattener.ComponentFlattener;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.json.JSONOptions;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import org.jspecify.annotations.Nullable;
 
 public final class TextRenderer {
     private static final Map<Integer, GsonComponentSerializer> WRITERS = new ConcurrentHashMap<>();
@@ -69,9 +69,9 @@ public final class TextRenderer {
         }
 
         @Override
-        public @Nullable String pattern(String key) {
-            String pattern = translations.pattern(key);
-            if (pattern == null) {
+        public Optional<String> pattern(String key) {
+            Optional<String> pattern = translations.pattern(key);
+            if (pattern.isEmpty()) {
                 missing = true;
             }
             return pattern;

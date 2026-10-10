@@ -1,0 +1,160 @@
+package com.minecraftdiscordbridge.core;
+
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
+import com.minecraftdiscordbridge.core.access.AccessContext;
+import com.minecraftdiscordbridge.core.access.JoinGate;
+import com.minecraftdiscordbridge.core.access.RoleSync;
+import com.minecraftdiscordbridge.core.actions.Actions;
+import com.minecraftdiscordbridge.core.chat.ChatToggle;
+import com.minecraftdiscordbridge.core.chat.DiscordChat;
+import com.minecraftdiscordbridge.core.chat.MinecraftChat;
+import com.minecraftdiscordbridge.core.commands.BridgeCommand;
+import com.minecraftdiscordbridge.core.commands.DiscordCommands;
+import com.minecraftdiscordbridge.core.config.BridgeConfig;
+import com.minecraftdiscordbridge.core.config.ConfigSnapshot;
+import com.minecraftdiscordbridge.core.console.ConsoleInput;
+import com.minecraftdiscordbridge.core.console.ConsoleMirror;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
+import com.minecraftdiscordbridge.core.events.EventPosts;
+import com.minecraftdiscordbridge.core.feature.FeatureContext;
+import com.minecraftdiscordbridge.core.i18n.Lang;
+import com.minecraftdiscordbridge.core.i18n.Replies;
+import com.minecraftdiscordbridge.core.linking.Linking;
+import com.minecraftdiscordbridge.core.platform.GameEvent;
+import com.minecraftdiscordbridge.core.setup.ChannelSetup;
+import com.minecraftdiscordbridge.core.setup.Channels;
+import com.minecraftdiscordbridge.core.status.StatusBoard;
+import com.minecraftdiscordbridge.core.storage.Stores;
+import com.minecraftdiscordbridge.core.text.Format;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
+record Features(
+        Replies replies,
+        MinecraftChat minecraftChat,
+        DiscordChat discordChat,
+        EventPosts events,
+        StatusBoard status,
+        DiscordCommands discordCommands,
+        BridgeCommand command,
+        Optional<ConsoleMirror> consoleMirror,
+        JoinGate gate,
+        RoleSync roleSync,
+        ConsoleInput consoleInput) {
+    static Features build(
+            Services services,
+            Stores stores,
+            ConfigSnapshot snapshot,
+            Channels channels,
+            Runnable rebound,
+            BridgeCommand.Callbacks commandCallbacks) {
+        BridgeConfig config = snapshot.config();
+        Lang lang = Lang.of(config.language());
+        Replies replies = new Replies(lang, services.platform().info().dataVersion());
+        Optional<DiscordId> chat = channels.chat();
+        Optional<DiscordId> events = channels.events();
+        boolean hasGuild = !DiscordConnection.channelIds(config, channels).isEmpty();
+        FeatureContext context = new FeatureContext(services.discord(), services.io(), services.clock(), replies);
+        ChannelSetup setup = new ChannelSetup(
+                context, config.discord(), stores.bindings(), services.setupCodes(), services.setupAttempts(), rebound);
+        Linking linking = new Linking(
+                context,
+                config.linking(),
+                stores.links(),
+                services.pendingLinks(),
+                services.linkAttempts(),
+                services.roster(),
+                () -> hasGuild && services.discord().status().isConnected());
+        Actions actions = new Actions(config.actions(), services.gameActions(), lang);
+        AccessContext access = services.accessContext(stores);
+        return new Features(
+                replies,
+                new MinecraftChat(config.chat(), chat, services.discord(), stores.links()::all),
+                new DiscordChat(
+                        config.chat(),
+                        chat,
+                        chatFormat(config.chat().format()),
+                        lang,
+                        services.platform(),
+                        stores.preferences()::hidingDiscord),
+                new EventPosts(
+                        config.events(), events, lang, services.vanilla().use(config.language()), services.discord()),
+                new StatusBoard(config.status(), chat, lang, services.discord(), services.roster()),
+                new DiscordCommands(setup, linking, actions, services.roster(), lang),
+                BridgeCommand.active(
+                        replies,
+                        commandCallbacks,
+                        linking,
+                        new ChatToggle(stores.preferences(), services.io(), replies),
+                        setup),
+                ConsoleMirror.start(
+                        config.console(),
+                        snapshot.secrets().hasDiscordToken() ? config.discord().consoleChannel() : Optional.empty(),
+                        services.discord(),
+                        lang,
+                        services.loop(),
+                        () -> secrets(services, snapshot)),
+                JoinGate.create(config.linking(), services.platform().info(), access, replies),
+                RoleSync.create(config.roleSync(), services.platform().info(), access),
+                new ConsoleInput(
+                        context,
+                        config.console(),
+                        config.discord().consoleChannel(),
+                        services.gameActions(),
+                        () -> secrets(services, snapshot)));
+    }
+
+    private static Format chatFormat(String template) {
+        try {
+            Format format = DiscordChat.compileFormat(template);
+            format.legacyCodeWarning().ifPresent(LOGGER::warn);
+            return format;
+        } catch (IllegalArgumentException invalid) {
+            LOGGER.warn(
+                    "{} Using the default chat.format; fix chat.format in config.yml and run /discord reload",
+                    invalid.getMessage());
+            return DiscordChat.compileFormat(BridgeConfig.defaults().chat().format());
+        }
+    }
+
+    private static Collection<String> secrets(Services services, ConfigSnapshot snapshot) {
+        List<String> secrets = new ArrayList<>();
+        if (snapshot.secrets().hasDiscordToken()) {
+            secrets.add(snapshot.secrets().discordToken());
+        }
+        services.setupCodes().active(services.clock().instant()).ifPresent(secrets::add);
+        secrets.addAll(services.pendingLinks().codes(services.clock().instant()));
+        return secrets;
+    }
+
+    void onGameEvent(GameEvent event, boolean stopping) {
+        if (event instanceof GameEvent.ServerStarted) {
+            status.refresh();
+        } else if (event instanceof GameEvent.PlayerJoined joined) {
+            events.joined(joined);
+            roleSync.playerJoined(joined.player());
+            status.refresh();
+        } else if (event instanceof GameEvent.PlayerLeft left) {
+            if (!stopping) {
+                events.left(left);
+            }
+            status.refresh();
+        } else if (event instanceof GameEvent.PlayerSwitchedServer switched) {
+            events.switched(switched);
+        } else if (event instanceof GameEvent.PlayerChatted chatted) {
+            minecraftChat.onChat(chatted);
+        } else if (event instanceof GameEvent.PlayerDied died) {
+            events.died(died);
+        } else if (event instanceof GameEvent.AdvancementEarned earned) {
+            events.advanced(earned);
+        }
+    }
+
+    void close() {
+        consoleMirror.ifPresent(ConsoleMirror::close);
+        roleSync.close();
+    }
+}

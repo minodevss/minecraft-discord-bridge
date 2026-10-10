@@ -6,17 +6,18 @@ import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.platform.Delivery;
 import com.minecraftdiscordbridge.core.platform.Platform;
-import com.minecraftdiscordbridge.core.text.DiscordMarkdown;
 import com.minecraftdiscordbridge.core.text.Format;
 import com.minecraftdiscordbridge.core.text.Format.Slot;
 import com.minecraftdiscordbridge.core.text.SafeText;
 import com.minecraftdiscordbridge.core.text.TextRenderer;
+import com.minecraftdiscordbridge.core.text.markdown.DiscordMarkdown;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -59,7 +60,7 @@ public final class DiscordChat {
     public void onMessage(DiscordMessage message) {
         if (!config.discordToMinecraft()
                 || channel.isEmpty()
-                || message.channelId() != channel.get().value()) {
+                || !message.channelId().equals(channel.get())) {
             return;
         }
         if (Blocklist.blocks(config.blockedWords(), message.content())) {
@@ -71,9 +72,8 @@ public final class DiscordChat {
         }
         Component line =
                 format.render(Slot.component("author", author(message.author())), Slot.component("message", body));
-        DiscordMessage.Reply reply = message.reply();
-        if (reply != null) {
-            line = Component.textOfChildren(replyLine(reply), Component.newline(), line);
+        if (message.reply().isPresent()) {
+            line = Component.textOfChildren(replyLine(message.reply().get()), Component.newline(), line);
         }
         platform.deliver(new Delivery(TextRenderer.toJson(line, platform.info().dataVersion()), hidden.get()));
     }
@@ -100,8 +100,8 @@ public final class DiscordChat {
 
     private static Component author(DiscordMessage.Sender sender) {
         Component name = Component.text(SafeText.strip(sender.displayName()));
-        Integer color = sender.roleColor();
-        return color == null ? name : name.color(TextColor.color(color));
+        OptionalInt color = sender.roleColor();
+        return color.isEmpty() ? name : name.color(TextColor.color(color.getAsInt()));
     }
 
     private Component replyLine(DiscordMessage.Reply reply) {

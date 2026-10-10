@@ -3,13 +3,20 @@ package com.minecraftdiscordbridge.core.i18n;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
-import com.minecraftdiscordbridge.core.config.Language;
 import com.minecraftdiscordbridge.core.text.Format;
 import com.minecraftdiscordbridge.core.text.TextRenderer;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Properties;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -23,14 +30,14 @@ class LangTest {
 
     @Test
     void bothLanguagesHaveTheSameKeys() {
-        assertThat(Lang.of(Language.KO).keys()).isEqualTo(Lang.of(Language.EN).keys());
+        assertThat(keys(Language.KO)).isEqualTo(keys(Language.EN));
     }
 
     @ParameterizedTest
     @EnumSource(Language.class)
     void everyMinecraftMessageIsValidMiniMessageWithItsPlaceholders(Language language) {
         Lang lang = Lang.of(language);
-        for (String key : lang.keys()) {
+        for (String key : keys(language)) {
             if (!key.startsWith("game.")) {
                 continue;
             }
@@ -50,7 +57,7 @@ class LangTest {
     @EnumSource(Language.class)
     void slashCommandDescriptionsFitDiscordLimits(Language language) {
         Lang lang = Lang.of(language);
-        lang.keys().stream()
+        keys(language).stream()
                 .filter(key -> key.startsWith("command."))
                 .forEach(key -> assertThat(lang.raw(key))
                         .as(language + " " + key)
@@ -100,5 +107,16 @@ class LangTest {
             }
         }
         return names;
+    }
+
+    private static Set<String> keys(Language language) {
+        String resource = "/lang/" + language.name().toLowerCase(Locale.ROOT) + ".properties";
+        Properties properties = new Properties();
+        try (InputStream stream = LangTest.class.getResourceAsStream(resource)) {
+            properties.load(new InputStreamReader(stream, StandardCharsets.UTF_8));
+        } catch (IOException failure) {
+            throw new UncheckedIOException(failure);
+        }
+        return new TreeSet<>(properties.stringPropertyNames());
     }
 }

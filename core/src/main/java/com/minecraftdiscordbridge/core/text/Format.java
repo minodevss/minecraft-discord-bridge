@@ -58,10 +58,6 @@ public final class Format {
         return name;
     }
 
-    public String template() {
-        return template;
-    }
-
     public Component render(Slot... slots) {
         return render(List.of(slots));
     }
@@ -70,11 +66,11 @@ public final class Format {
         TagResolver.Builder resolvers = TagResolver.builder();
         Set<String> filled = new HashSet<>();
         for (Slot slot : slots) {
-            if (!placeholders.contains(slot.key)) {
-                throw new IllegalArgumentException("Format '" + name + "' has no placeholder <" + slot.key + ">");
+            if (!placeholders.contains(slot.key())) {
+                throw new IllegalArgumentException("Format '" + name + "' has no placeholder <" + slot.key() + ">");
             }
-            resolvers.resolver(slot.resolver);
-            filled.add(slot.key);
+            resolvers.resolver(slot.resolver());
+            filled.add(slot.key());
         }
         for (String placeholder : placeholders) {
             if (!filled.contains(placeholder)) {
@@ -153,25 +149,13 @@ public final class Format {
         return detail == null ? String.valueOf(invalid.getMessage()) : detail;
     }
 
-    public static final class Slot {
-        private final String key;
-        private final TagResolver resolver;
-
-        private Slot(String key, TagResolver resolver) {
-            this.key = key;
-            this.resolver = resolver;
-        }
-
+    public record Slot(String key, TagResolver resolver) {
         public static Slot text(String key, String text) {
             return new Slot(key, Placeholder.unparsed(key, SafeText.strip(text)));
         }
 
         public static Slot component(String key, ComponentLike component) {
             return new Slot(key, Placeholder.component(key, component));
-        }
-
-        public String key() {
-            return key;
         }
     }
 

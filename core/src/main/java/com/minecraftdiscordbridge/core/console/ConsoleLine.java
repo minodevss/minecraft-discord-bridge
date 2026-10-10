@@ -1,9 +1,5 @@
 package com.minecraftdiscordbridge.core.console;
 
-import org.jspecify.annotations.Nullable;
+import java.util.Optional;
 
-record ConsoleLine(
-        long timeMillis,
-        String level,
-        String message,
-        @Nullable String thrown) {}
+record ConsoleLine(long timeMillis, String level, String message, Optional<String> thrown) {}

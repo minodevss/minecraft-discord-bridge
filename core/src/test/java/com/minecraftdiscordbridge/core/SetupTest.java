@@ -11,6 +11,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
+import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
+import com.minecraftdiscordbridge.core.fakes.RecordingReply;
+import com.minecraftdiscordbridge.core.fakes.RecordingSource;
 import com.minecraftdiscordbridge.core.storage.BindingStore;
 import com.minecraftdiscordbridge.core.storage.ChannelRole;
 import java.io.IOException;
@@ -39,9 +42,9 @@ class SetupTest {
             assertThat(reply.next())
                     .isEqualTo(new RecordingReply.Answer("This channel now shows the Minecraft chat.", true));
             assertThat(BindingStore.open(directory).current().orElseThrow().channel(ChannelRole.CHAT))
-                    .contains(new DiscordId(CHAT));
+                    .contains(CHAT);
             RecordingDiscord bound = harness.discord(2);
-            assertThat(bound.settings.guildId()).isEqualTo(GUILD);
+            assertThat(bound.settings.guild()).contains(GUILD);
             assertThat(bound.settings.channelIds()).containsExactly(CHAT);
             assertThat(bound.settings.commands()).extracting(CommandSpec::name).contains("list", "link");
             assertThat(waiting.shutDown).isTrue();
@@ -99,7 +102,8 @@ class SetupTest {
         try (Harness harness = Harness.started(directory, UNBOUND)) {
             RecordingDiscord waiting = harness.discord();
             for (int i = 0; i < 50; i++) {
-                waiting.command(Harness.request("link", null, Map.of("code", "WRONG"), MEMBER + i, CHAT))
+                waiting.command(Harness.request(
+                                "link", null, Map.of("code", "WRONG"), new DiscordId(MEMBER.value() + i), CHAT))
                         .next();
             }
             String code =

@@ -7,18 +7,18 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
-final class Markup {
+public final class Markup {
     private Markup() {}
 
-    static String of(Component component) {
+    public static String of(Component component) {
         return MiniMessage.miniMessage().serialize(component).replace("<br>", "\n");
     }
 
-    static String plain(Component component) {
+    public static String plain(Component component) {
         return TextRenderer.plain(component);
     }
 
-    static List<ClickEvent> clickEvents(Component component) {
+    public static List<ClickEvent> clickEvents(Component component) {
         List<ClickEvent> events = new ArrayList<>();
         collect(component, events);
         return events;

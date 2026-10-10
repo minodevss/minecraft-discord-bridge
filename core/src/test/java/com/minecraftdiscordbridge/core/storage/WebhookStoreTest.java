@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.minecraftdiscordbridge.core.discord.DiscordId;
+import com.minecraftdiscordbridge.core.discord.WebhookCredentials;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -14,7 +15,8 @@ import org.junit.jupiter.api.io.TempDir;
 
 class WebhookStoreTest {
     private static final DiscordId CHANNEL = new DiscordId(100000000000000001L);
-    private static final Webhook WEBHOOK = new Webhook(new DiscordId(200000000000000001L), "very-secret-token");
+    private static final WebhookCredentials WEBHOOK =
+            new WebhookCredentials(new DiscordId(200000000000000001L), "very-secret-token");
 
     @TempDir
     Path directory;

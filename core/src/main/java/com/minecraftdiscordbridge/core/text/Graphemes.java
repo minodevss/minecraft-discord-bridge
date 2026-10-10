@@ -1,6 +1,7 @@
 package com.minecraftdiscordbridge.core.text;
 
 public final class Graphemes {
+    public static final String ELLIPSIS = "…";
     private static final int ZERO_WIDTH_JOINER = 0x200D;
 
     private Graphemes() {}

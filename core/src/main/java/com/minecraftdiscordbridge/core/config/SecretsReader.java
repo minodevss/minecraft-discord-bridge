@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core.config;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.minecraftdiscordbridge.core.config.RawConfig.Entry;
 import com.minecraftdiscordbridge.core.storage.AtomicFile;
 import java.io.IOException;
@@ -12,8 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 final class SecretsReader {
     static final String FILE = "secrets.yml";
@@ -29,8 +29,6 @@ final class SecretsReader {
 
     private static final String DETAILS_HIDDEN = "is not written as discord-token: \"your token\". Fix it; the"
             + " details are not shown because this file holds the token.";
-
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private SecretsReader() {}
 

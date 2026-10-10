@@ -1,71 +1,54 @@
 package com.minecraftdiscordbridge.core.console;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
+import com.minecraftdiscordbridge.core.actions.GameActions;
 import com.minecraftdiscordbridge.core.config.ConsoleConfig;
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.Discord;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
+import com.minecraftdiscordbridge.core.feature.FeatureContext;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.platform.ActionOutcome;
 import com.minecraftdiscordbridge.core.platform.GameAction;
-import com.minecraftdiscordbridge.core.platform.Platform;
-import com.minecraftdiscordbridge.core.text.DiscordEscaper;
-import com.minecraftdiscordbridge.core.text.Graphemes;
 import com.minecraftdiscordbridge.core.text.SafeText;
-import java.time.Duration;
+import com.minecraftdiscordbridge.core.text.markdown.DiscordEscaper;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class ConsoleInput {
     public static final int MAX_COMMAND_LENGTH = 256;
     static final int MAX_OUTPUT_LENGTH = 1900;
-    private static final String FENCE = "```";
     private static final Author SERVER = Author.server();
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private final Optional<DiscordId> channel;
-    private final Set<Long> users;
-    private final Platform platform;
+    private final Set<DiscordId> users;
+    private final GameActions game;
     private final Discord discord;
-    private final Executor loop;
     private final Lang lang;
-    private final Duration timeout;
     private final Supplier<Collection<String>> secrets;
 
     public ConsoleInput(
+            FeatureContext context,
             ConsoleConfig config,
             Optional<DiscordId> channel,
-            Platform platform,
-            Discord discord,
-            Executor loop,
-            Lang lang,
-            Duration timeout,
+            GameActions game,
             Supplier<Collection<String>> secrets) {
         this.channel = config.inputUsers().isEmpty() ? Optional.empty() : channel;
-        this.users = config.inputUsers().stream().map(DiscordId::value).collect(Collectors.toUnmodifiableSet());
-        this.platform = platform;
-        this.discord = discord;
-        this.loop = loop;
-        this.lang = lang;
-        this.timeout = timeout;
+        this.users = Set.copyOf(config.inputUsers());
+        this.game = game;
+        this.discord = context.discord();
+        this.lang = context.replies().lang();
         this.secrets = secrets;
     }
 
     public void onMessage(DiscordMessage message) {
         if (channel.isEmpty()
-                || message.channelId() != channel.get().value()
+                || !message.channelId().equals(channel.get())
                 || !allowed(message.author())
                 || message.content().isBlank()) {
             return;
@@ -75,14 +58,14 @@ public final class ConsoleInput {
             post(lang.text("discord.console.invalid", MAX_COMMAND_LENGTH));
             return;
         }
-        String user = Long.toUnsignedString(message.author().id());
+        String user = message.author().id().toString();
         LOGGER.info(
                 "Discord user {} ({}) ran the console command: {}",
                 user,
                 SafeText.strip(message.author().displayName()).replaceAll("\\s+", " "),
                 command);
         post(lang.text("discord.console.ran", user, DiscordEscaper.escape(command)));
-        run(command);
+        game.run(new GameAction.RunConsoleCommand(command), lang, outcome -> post(reply(outcome)));
     }
 
     static String command(String content) {
@@ -94,46 +77,21 @@ public final class ConsoleInput {
         return !author.bot() && !author.webhook() && users.contains(author.id());
     }
 
-    private void run(String command) {
-        CompletableFuture<ActionOutcome> outcome;
-        try {
-            outcome = platform.perform(new GameAction.RunConsoleCommand(command))
-                    .copy()
-                    .orTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS);
-        } catch (RuntimeException failure) {
-            outcome = CompletableFuture.failedFuture(failure);
-        }
-        var unused = outcome.whenComplete((result, failure) -> loop.execute(() -> post(reply(result, failure))));
-    }
-
-    private String reply(@Nullable ActionOutcome outcome, @Nullable Throwable failure) {
+    private String reply(ActionOutcome outcome) {
         if (outcome instanceof ActionOutcome.Output output && !output.text().isBlank()) {
             return block(output.text());
         }
         if (outcome instanceof ActionOutcome.Failed failed) {
             return lang.text("discord.console.failed", DiscordEscaper.escape(failed.reason()));
         }
-        if (outcome == null) {
-            return lang.text("discord.console.failed", describe(failure));
-        }
         return lang.text("discord.console.no-output");
     }
 
     private String block(String output) {
-        String body = DiscordEscaper.escapeCodeBlock(ConsoleRedactor.redact(output.strip(), secrets.get()));
-        return FENCE + "\n" + Graphemes.fit(body, MAX_OUTPUT_LENGTH, "…") + "\n" + FENCE;
-    }
-
-    private String describe(@Nullable Throwable failure) {
-        Throwable cause =
-                failure instanceof CompletionException && failure.getCause() != null ? failure.getCause() : failure;
-        if (cause instanceof TimeoutException) {
-            return lang.text("discord.action.timeout");
-        }
-        return cause == null ? "" : DiscordEscaper.escape(String.valueOf(cause.getMessage()));
+        return ConsoleBlock.fence(ConsoleBlock.body(output.strip(), secrets.get(), MAX_OUTPUT_LENGTH));
     }
 
     private void post(String text) {
-        discord.send(OutboundMessage.of(channel.get().value(), SERVER, text));
+        discord.send(OutboundMessage.of(channel.get(), SERVER, text));
     }
 }

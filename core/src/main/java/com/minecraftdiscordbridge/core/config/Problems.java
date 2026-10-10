@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.config;
 import com.minecraftdiscordbridge.core.config.ConfigProblem.Severity;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.jspecify.annotations.Nullable;
 
 final class Problems {
@@ -40,8 +41,8 @@ final class Problems {
         String hidden = replacement;
         all.add(
                 hidden == null
-                        ? new ConfigProblem(severity, source, at, path, message)
-                        : new ConfigProblem(severity, source, at, "", hidden));
+                        ? new ConfigProblem(severity, source, Optional.ofNullable(at), path, message)
+                        : new ConfigProblem(severity, source, Optional.ofNullable(at), "", hidden));
     }
 
     boolean hasErrors() {

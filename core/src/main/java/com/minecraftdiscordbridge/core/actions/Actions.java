@@ -1,72 +1,58 @@
 package com.minecraftdiscordbridge.core.actions;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.minecraftdiscordbridge.core.config.ActionsConfig;
-import com.minecraftdiscordbridge.core.discord.InteractionReply;
-import com.minecraftdiscordbridge.core.discord.InteractionRequest;
+import com.minecraftdiscordbridge.core.discord.CommandReply;
+import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.platform.ActionOutcome;
 import com.minecraftdiscordbridge.core.platform.GameAction;
-import com.minecraftdiscordbridge.core.platform.Platform;
-import com.minecraftdiscordbridge.core.text.DiscordEscaper;
 import com.minecraftdiscordbridge.core.text.Graphemes;
 import com.minecraftdiscordbridge.core.text.SafeText;
-import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import com.minecraftdiscordbridge.core.text.markdown.DiscordEscaper;
 import java.util.regex.Pattern;
-import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class Actions {
     public static final String PLAYER_OPTION = "player";
     public static final String REASON_OPTION = "reason";
     public static final String ADD = "add";
     public static final String REMOVE = "remove";
-    public static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final Pattern PLAYER_NAME = Pattern.compile("[A-Za-z0-9_.]{1,16}");
     private static final int MAX_REASON_LENGTH = 256;
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private final ActionsConfig config;
-    private final Platform platform;
-    private final Executor loop;
+    private final GameActions game;
     private final Lang lang;
-    private final Duration timeout;
 
-    public Actions(ActionsConfig config, Platform platform, Executor loop, Lang lang, Duration timeout) {
+    public Actions(ActionsConfig config, GameActions game, Lang lang) {
         this.config = config;
-        this.platform = platform;
-        this.loop = loop;
+        this.game = game;
         this.lang = lang;
-        this.timeout = timeout;
     }
 
     public static boolean isPlayerName(String name) {
         return PLAYER_NAME.matcher(name).matches();
     }
 
-    public void whitelist(InteractionRequest request, InteractionReply reply) {
-        Lang reader = Lang.forDiscordLocale(request.locale(), lang);
-        String change = request.subcommand();
+    public void whitelist(CommandRequest request, CommandReply reply) {
+        Lang userLang = Lang.forDiscordLocale(request.locale(), lang);
+        String change = request.subcommand().orElse("");
         if (!config.whitelist()) {
-            reply.replyEphemeral(reader.text("discord.action.disabled"));
+            reply.replyEphemeral(userLang.text("discord.action.disabled"));
         } else if (ADD.equals(change)) {
-            perform(request, reply, reader, new GameAction.WhitelistAdd(player(request)));
+            perform(request, reply, userLang, new GameAction.WhitelistAdd(player(request)));
         } else if (REMOVE.equals(change)) {
-            perform(request, reply, reader, new GameAction.WhitelistRemove(player(request)));
+            perform(request, reply, userLang, new GameAction.WhitelistRemove(player(request)));
         } else {
-            reply.replyEphemeral(reader.text("discord.unknown-command"));
+            reply.replyEphemeral(userLang.text("discord.unknown-command"));
         }
     }
 
-    public void kick(InteractionRequest request, InteractionReply reply) {
-        Lang reader = Lang.forDiscordLocale(request.locale(), lang);
+    public void kick(CommandRequest request, CommandReply reply) {
+        Lang userLang = Lang.forDiscordLocale(request.locale(), lang);
         if (!config.kick()) {
-            reply.replyEphemeral(reader.text("discord.action.disabled"));
+            reply.replyEphemeral(userLang.text("discord.action.disabled"));
             return;
         }
         String reason = SafeText.strip(request.options().getOrDefault(REASON_OPTION, ""))
@@ -74,32 +60,29 @@ public final class Actions {
         if (reason.isEmpty()) {
             reason = lang.text("plain.kick-reason", SafeText.strip(request.userDisplayName()));
         }
-        perform(request, reply, reader, new GameAction.Kick(player(request), Graphemes.fit(reason, MAX_REASON_LENGTH)));
+        perform(
+                request,
+                reply,
+                userLang,
+                new GameAction.Kick(player(request), Graphemes.fit(reason, MAX_REASON_LENGTH)));
     }
 
-    private void perform(InteractionRequest request, InteractionReply reply, Lang reader, GameAction action) {
+    private void perform(CommandRequest request, CommandReply reply, Lang userLang, GameAction action) {
         String name = name(action);
         if (!isPlayerName(name)) {
-            reply.replyEphemeral(reader.text("discord.action.invalid-name", DiscordEscaper.escape(name)));
+            reply.replyEphemeral(userLang.text("discord.action.invalid-name", DiscordEscaper.escape(name)));
             return;
         }
-        CompletableFuture<ActionOutcome> outcome;
-        try {
-            outcome = platform.perform(action).copy().orTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS);
-        } catch (RuntimeException failure) {
-            outcome = CompletableFuture.failedFuture(failure);
-        }
-        var unused = outcome.whenComplete((result, failure) -> loop.execute(() -> {
-            ActionOutcome done = result != null ? result : new ActionOutcome.Failed(describe(failure, reader));
+        game.run(action, userLang, done -> {
             audit(request, action, done);
-            reply.reply(reader.text(outcomeKey(action, done), DiscordEscaper.escape(name), detail(done)));
-        }));
+            reply.reply(userLang.text(outcomeKey(action, done), DiscordEscaper.escape(name), detail(done)));
+        });
     }
 
-    private static void audit(InteractionRequest request, GameAction action, ActionOutcome outcome) {
+    private static void audit(CommandRequest request, GameAction action, ActionOutcome outcome) {
         LOGGER.info(
                 "Discord user {} ({}) ran {} {}: {}",
-                Long.toUnsignedString(request.userId()),
+                request.userId(),
                 SafeText.strip(request.userDisplayName()).replaceAll("\\s+", " "),
                 verb(action),
                 name(action),
@@ -124,15 +107,6 @@ public final class Actions {
         return outcome instanceof ActionOutcome.Failed failed ? DiscordEscaper.escape(failed.reason()) : "";
     }
 
-    private static String describe(@Nullable Throwable failure, Lang reader) {
-        Throwable cause =
-                failure instanceof CompletionException && failure.getCause() != null ? failure.getCause() : failure;
-        if (cause instanceof TimeoutException) {
-            return reader.text("discord.action.timeout");
-        }
-        return cause == null ? "" : String.valueOf(cause.getMessage());
-    }
-
     private static String verb(GameAction action) {
         if (action instanceof GameAction.WhitelistAdd) {
             return "whitelist-add";
@@ -153,7 +127,7 @@ public final class Actions {
         return ((GameAction.Kick) action).playerName();
     }
 
-    private static String player(InteractionRequest request) {
+    private static String player(CommandRequest request) {
         return request.options().getOrDefault(PLAYER_OPTION, "").strip();
     }
 }

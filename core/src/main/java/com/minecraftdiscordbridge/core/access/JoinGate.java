@@ -1,16 +1,19 @@
 package com.minecraftdiscordbridge.core.access;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.minecraftdiscordbridge.core.config.LinkingConfig;
 import com.minecraftdiscordbridge.core.config.UnreachablePolicy;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.RoleInfo;
 import com.minecraftdiscordbridge.core.i18n.Replies;
-import com.minecraftdiscordbridge.core.platform.CommandSource;
+import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.platform.JoinDecision;
 import com.minecraftdiscordbridge.core.platform.Permission;
 import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
+import com.minecraftdiscordbridge.core.storage.Edition;
 import com.minecraftdiscordbridge.core.storage.Link;
 import com.minecraftdiscordbridge.core.text.Format.Slot;
 import com.minecraftdiscordbridge.core.text.TextRenderer;
@@ -18,14 +21,10 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class JoinGate {
     public static final Duration BUDGET = Duration.ofSeconds(3);
     private static final JoinDecision ALLOW = new JoinDecision.Allow();
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private final boolean active;
     private final UnreachablePolicy policy;
@@ -92,8 +91,8 @@ public final class JoinGate {
     private void checkLink(PlayerProfile player, CompletableFuture<JoinDecision> result) {
         Optional<Link> link = context.links().byMinecraftId(player.id());
         if (link.isEmpty()) {
-            String code =
-                    context.pending().issue(player.id(), player.name(), player.bedrock(), Silent.SOURCE, context.now());
+            Edition edition = player.bedrock() ? Edition.BEDROCK : Edition.JAVA;
+            String code = context.pending().issue(player.id(), player.name(), edition, context.now());
             LOGGER.info(
                     "Kept {} out because their account is not linked; the kick screen shows a link code",
                     player.name());
@@ -104,7 +103,7 @@ public final class JoinGate {
             allow(player, result);
             return;
         }
-        long userId = link.get().discordId().value();
+        DiscordId userId = link.get().discordId();
         Optional<MemberLookup> cached = context.memory().freshMember(userId, context.now());
         if (cached.isPresent()) {
             judge(player, cached.get(), result);
@@ -112,7 +111,7 @@ public final class JoinGate {
         }
         var unused = context.discord()
                 .member(userId)
-                .exceptionally(failure -> new MemberLookup.Unavailable(String.valueOf(failure.getMessage())))
+                .exceptionally(failure -> new MemberLookup.Unavailable(Failures.describe(failure)))
                 .thenAccept(lookup -> context.loop().execute(() -> {
                     context.memory().remember(lookup, context.now());
                     judge(player, lookup, result);
@@ -120,7 +119,7 @@ public final class JoinGate {
     }
 
     private void judge(PlayerProfile player, MemberLookup lookup, CompletableFuture<JoinDecision> result) {
-        long role = requiredRole.orElseThrow().value();
+        DiscordId role = requiredRole.orElseThrow();
         if (lookup instanceof MemberLookup.Member member && member.roleIds().contains(role)) {
             allow(player, result);
         } else if (lookup instanceof MemberLookup.Member) {
@@ -158,9 +157,9 @@ public final class JoinGate {
         result.complete(ALLOW);
     }
 
-    private String roleName(long role) {
+    private String roleName(DiscordId role) {
         RoleInfo info = context.discord().roles().get(role);
-        return info == null ? Long.toUnsignedString(role) : info.name();
+        return info == null ? role.toString() : info.name();
     }
 
     private JoinDecision deny(String key, Slot... slots) {
@@ -178,27 +177,5 @@ public final class JoinGate {
             return false;
         }
         return true;
-    }
-
-    private static final class Silent implements CommandSource {
-        private static final Silent SOURCE = new Silent();
-
-        @Override
-        public @Nullable UUID playerId() {
-            return null;
-        }
-
-        @Override
-        public String name() {
-            return "join gate";
-        }
-
-        @Override
-        public boolean hasPermission(Permission permission) {
-            return false;
-        }
-
-        @Override
-        public void reply(String json) {}
     }
 }

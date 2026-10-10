@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.access;
 
 import com.minecraftdiscordbridge.core.config.RoleSyncRule;
 import com.minecraftdiscordbridge.core.config.SyncDirection;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -20,10 +21,10 @@ final class RolePlan {
             return List.of();
         }
         Map<String, Boolean> wantedGroups = new LinkedHashMap<>();
-        Map<Long, Boolean> wantedRoles = new LinkedHashMap<>();
-        Set<Long> roles = member instanceof MemberLookup.Member found ? found.roleIds() : Set.of();
+        Map<DiscordId, Boolean> wantedRoles = new LinkedHashMap<>();
+        Set<DiscordId> roles = member instanceof MemberLookup.Member found ? found.roleIds() : Set.of();
         for (RoleSyncRule rule : rules) {
-            long role = role(rule);
+            DiscordId role = rule.discordRole();
             String group = group(rule);
             if (rule.direction() == SyncDirection.DISCORD_TO_MINECRAFT) {
                 wantedGroups.merge(group, roles.contains(role), Boolean::logicalOr);
@@ -59,15 +60,11 @@ final class RolePlan {
                     changes.add(new RoleChange.RemoveGroup(group(rule)));
                 }
             } else if (member instanceof MemberLookup.Member found
-                    && found.roleIds().contains(role(rule))) {
-                changes.add(new RoleChange.RemoveRole(role(rule)));
+                    && found.roleIds().contains(rule.discordRole())) {
+                changes.add(new RoleChange.RemoveRole(rule.discordRole()));
             }
         }
         return List.copyOf(changes);
-    }
-
-    static long role(RoleSyncRule rule) {
-        return rule.discordRole().value();
     }
 
     static String group(RoleSyncRule rule) {

@@ -21,7 +21,7 @@ class PlayerPingsTest {
         PlayerPings.Pinged pinged = PlayerPings.escape("# hi @.bedrock_kid, *you*", List.of(BEDROCK));
 
         assertThat(pinged.text()).isEqualTo("\\# hi <@100000000000000001>, \\*you\\*");
-        assertThat(pinged.userIds()).containsExactly(100000000000000001L);
+        assertThat(pinged.userIds()).containsExactly(new DiscordId(100000000000000001L));
     }
 
     @Test
@@ -59,9 +59,9 @@ class PlayerPingsTest {
         UUID id = UUID.fromString("00000000-0000-4000-8000-000000000001");
 
         assertThat(Avatars.url(chat, new PlayerProfile(id, "Steve", "Steve", "abc123", false)))
-                .isEqualTo("https://crafthead.net/helm/abc123");
+                .contains("https://crafthead.net/helm/abc123");
         assertThat(Avatars.url(chat, new PlayerProfile(id, ".Kid Two", ".Kid Two", null, true)))
-                .isEqualTo("https://example.com/.Kid%20Two/" + id);
+                .contains("https://example.com/.Kid%20Two/" + id);
     }
 
     @Test

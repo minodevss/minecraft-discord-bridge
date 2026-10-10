@@ -28,7 +28,7 @@ public final class StatusBoard {
             discord.updatePresence(online);
         }
         if (config.topic() && topicChannel.isPresent()) {
-            discord.updateTopic(topicChannel.get().value(), online);
+            discord.updateTopic(topicChannel.get(), online);
         }
     }
 }

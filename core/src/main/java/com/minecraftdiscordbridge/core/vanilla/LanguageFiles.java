@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core.vanilla;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
@@ -20,13 +22,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class LanguageFiles {
     static final URI MANIFEST = URI.create("https://piston-meta.mojang.com/mc/game/version_manifest_v2.json");
     static final String RESOURCES = "https://resources.download.minecraft.net/";
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
     private static final Pattern SHA1 = Pattern.compile("[0-9a-f]{40}");
     private static final Pattern UNSAFE = Pattern.compile("[^A-Za-z0-9._-]");
 

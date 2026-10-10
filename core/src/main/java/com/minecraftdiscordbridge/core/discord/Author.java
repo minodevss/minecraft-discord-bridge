@@ -1,19 +1,19 @@
 package com.minecraftdiscordbridge.core.discord;
 
-import org.jspecify.annotations.Nullable;
+import java.util.Optional;
 
-public record Author(String key, String name, @Nullable String avatarUrl) {
+public record Author(String key, String name, Optional<String> avatarUrl) {
     static final String SERVER_KEY = "server";
 
     public static Author server() {
-        return new Author(SERVER_KEY, "", null);
+        return new Author(SERVER_KEY, "", Optional.empty());
     }
 
-    public static Author server(String name, @Nullable String avatarUrl) {
+    public static Author server(String name, Optional<String> avatarUrl) {
         return new Author(SERVER_KEY, name, avatarUrl);
     }
 
-    public static Author player(String playerId, String name, @Nullable String avatarUrl) {
+    public static Author player(String playerId, String name, Optional<String> avatarUrl) {
         return new Author("player:" + playerId, name, avatarUrl);
     }
 

@@ -2,17 +2,18 @@ package com.minecraftdiscordbridge.core.discord;
 
 import java.util.List;
 import java.util.Map;
-import org.jspecify.annotations.Nullable;
+import java.util.Optional;
+import java.util.OptionalInt;
 
 public record DiscordMessage(
-        long channelId,
+        DiscordId channelId,
         Sender author,
         String content,
-        Map<Long, String> mentionedUsers,
-        Map<Long, MentionedRole> mentionedRoles,
-        Map<Long, String> mentionedChannels,
+        Map<DiscordId, String> mentionedUsers,
+        Map<DiscordId, MentionedRole> mentionedRoles,
+        Map<DiscordId, String> mentionedChannels,
         List<Attachment> attachments,
-        @Nullable Reply reply,
+        Optional<Reply> reply,
         List<String> stickers,
         boolean forwarded,
         boolean poll,
@@ -25,10 +26,9 @@ public record DiscordMessage(
         stickers = List.copyOf(stickers);
     }
 
-    public record Sender(
-            long id, String displayName, @Nullable Integer roleColor, boolean bot, boolean webhook) {}
+    public record Sender(DiscordId id, String displayName, OptionalInt roleColor, boolean bot, boolean webhook) {}
 
-    public record MentionedRole(String name, @Nullable Integer color) {}
+    public record MentionedRole(String name, OptionalInt color) {}
 
     public record Attachment(String fileName, String url, boolean image) {}
 
