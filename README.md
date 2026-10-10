@@ -69,6 +69,8 @@ In Minecraft or the server console:
 /discord setup           Get a one-time code for /setup in Discord (console only)
 ```
 
+`link`, `unlink` and `toggle` are for players. `link` and `unlink` exist while linking is on.
+
 | Permission | Default |
 | --- | --- |
 | `minecraftdiscordbridge.command.link` | everyone |
@@ -78,12 +80,12 @@ In Minecraft or the server console:
 | `minecraftdiscordbridge.command.setup` | operators |
 | `minecraftdiscordbridge.gate.bypass` | operators |
 
-On Fabric, NeoForge and Forge, a permissions mod such as LuckPerms can grant these nodes.
+`command.link` covers both `link` and `unlink`. `gate.bypass` lets a player join without the linked account or role that `linking` asks for. Velocity has no operators, so only its console has the operator nodes until a permissions plugin grants them. A permissions plugin or mod such as LuckPerms can grant any node.
 
 In Discord:
 
 ```
-/setup [as] [code]                 Use this channel for chat or events
+/setup [as:chat|events] [code]     Use this channel for chat or events
 /list                              Show who is online
 /link <code>                       Link your Discord account
 /unlink                            Unlink your Discord account
@@ -91,7 +93,7 @@ In Discord:
 /kick <player> [reason]            Kick a player (discord-commands.kick)
 ```
 
-`/link` and `/unlink` exist while linking is on. `/whitelist` and `/kick` exist only when you turn them on in `config.yml`, and by default only Discord administrators can use them. To let other roles use them, change the command permissions under **Server Settings > Integrations** in Discord.
+Until the bridge has a channel, Discord shows only `/setup`. `/link` and `/unlink` exist while linking is on. `/whitelist` and `/kick` exist only when you turn them on in `config.yml`, and by default only Discord administrators can use them. To let other roles use them, change the command permissions under **Server Settings > Integrations** in Discord.
 
 ## Configuration
 
