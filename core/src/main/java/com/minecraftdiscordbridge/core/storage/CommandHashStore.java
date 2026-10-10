@@ -40,7 +40,7 @@ public final class CommandHashStore {
 
     private static Map<DiscordId, String> decode(CommandHashesJson json) {
         Map<DiscordId, String> byGuild = new HashMap<>();
-        json.guilds().forEach((guild, hash) -> byGuild.put(DiscordId.require(guild, "guild id"), hash));
+        json.guilds().forEach((guild, hash) -> DiscordId.parse(guild).ifPresent(id -> byGuild.put(id, hash)));
         return Map.copyOf(byGuild);
     }
 
