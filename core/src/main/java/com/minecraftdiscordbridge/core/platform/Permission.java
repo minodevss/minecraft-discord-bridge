@@ -5,7 +5,8 @@ public enum Permission {
     TOGGLE("minecraftdiscordbridge.command.toggle", true),
     STATUS("minecraftdiscordbridge.command.status", false),
     RELOAD("minecraftdiscordbridge.command.reload", false),
-    SETUP("minecraftdiscordbridge.command.setup", false);
+    SETUP("minecraftdiscordbridge.command.setup", false),
+    GATE_BYPASS("minecraftdiscordbridge.gate.bypass", false);
 
     private final String node;
     private final boolean everyoneByDefault;
