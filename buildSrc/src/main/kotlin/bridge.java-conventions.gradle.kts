@@ -25,8 +25,8 @@ java {
 dependencies {
     compileOnly(lib("jspecify"))
     testCompileOnly(lib("jspecify"))
-    errorprone("com.google.errorprone:error_prone_core:2.50.0")
-    errorprone("com.uber.nullaway:nullaway:0.14.2")
+    errorprone(lib("errorprone-core"))
+    errorprone(lib("nullaway"))
     testImplementation(platform(lib("junit-bom")))
     testImplementation(lib("junit-jupiter"))
     testImplementation(lib("assertj"))
@@ -54,7 +54,7 @@ tasks.withType<Test>().configureEach {
 
 spotless {
     java {
-        palantirJavaFormat("2.102.0")
+        palantirJavaFormat(lib("palantir-java-format").get().versionConstraint.requiredVersion)
         removeUnusedImports()
         forbidWildcardImports()
     }

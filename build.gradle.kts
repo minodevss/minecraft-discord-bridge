@@ -1,11 +1,11 @@
 import me.modmuss50.mpp.ReleaseType
 
 plugins {
-    id("net.fabricmc.fabric-loom") version "1.18.3" apply false
-    id("net.neoforged.moddev") version "2.0.148" apply false
-    id("net.neoforged.moddev.legacyforge") version "2.0.148" apply false
-    id("me.modmuss50.mod-publish-plugin") version "2.2.1"
-    id("io.papermc.hangar-publish-plugin") version "0.1.4"
+    alias(libs.plugins.loom) apply false
+    alias(libs.plugins.moddev) apply false
+    alias(libs.plugins.moddev.legacyforge) apply false
+    alias(libs.plugins.mod.publish)
+    alias(libs.plugins.hangar.publish)
 }
 
 class ModJar(val minecraft: String, val loader: String, val gameVersions: List<String>) {
