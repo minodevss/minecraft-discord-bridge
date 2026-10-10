@@ -21,9 +21,9 @@ import com.minecraftdiscordbridge.core.loop.Deadline;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.loop.Threads;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.JoinDecision;
-import com.minecraftdiscordbridge.core.platform.Permission;
 import com.minecraftdiscordbridge.core.platform.Platform;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.minecraftdiscordbridge.core.setup.SetupCodes;
@@ -35,8 +35,10 @@ import com.minecraftdiscordbridge.core.vanilla.LanguageFiles;
 import com.minecraftdiscordbridge.core.vanilla.VanillaTranslations;
 import java.time.Duration;
 import java.time.InstantSource;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -131,15 +133,31 @@ public final class Bridge {
         }
     }
 
-    public void command(CommandSource source, List<String> arguments) {
-        Set<Permission> granted = EnumSet.noneOf(Permission.class);
-        for (Permission permission : Permission.values()) {
-            if (source.hasPermission(permission)) {
-                granted.add(permission);
+    public boolean canUse(CommandSource source, GameCommand command) {
+        return command.permits(source) && command.available(activator.linkingEnabled());
+    }
+
+    public void command(CommandSource source, GameCommand command) {
+        boolean permitted = command.permits(source);
+        loop.control(() -> activator.command(source, command, permitted));
+    }
+
+    public void help(CommandSource source) {
+        Set<GameCommand> permitted = EnumSet.noneOf(GameCommand.class);
+        for (GameCommand command : GameCommand.values()) {
+            if (command.permits(source)) {
+                permitted.add(command);
             }
         }
-        List<String> copy = List.copyOf(arguments);
-        loop.control(() -> activator.command(source, granted, copy));
+        loop.control(() -> activator.help(source, permitted));
+    }
+
+    public void command(CommandSource source, List<String> arguments) {
+        String literal = arguments.isEmpty() ? "" : arguments.get(0).toLowerCase(Locale.ROOT);
+        Arrays.stream(GameCommand.values())
+                .filter(command -> command.literal().equals(literal))
+                .findFirst()
+                .ifPresentOrElse(command -> command(source, command), () -> help(source));
     }
 
     public CompletableFuture<JoinDecision> checkJoin(PlayerProfile player, boolean bypass) {

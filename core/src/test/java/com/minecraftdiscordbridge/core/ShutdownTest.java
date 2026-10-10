@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
 import com.minecraftdiscordbridge.core.fakes.RecordingSource;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -106,7 +107,7 @@ class ShutdownTest {
                     harness.bridge.stop();
                     harness.bridge.stop();
                     harness.bridge.publish(new GameEvent.PlayerChatted(STEVE, "late"));
-                    harness.bridge.command(RecordingSource.console(), List.of("status"));
+                    harness.bridge.command(RecordingSource.console(), GameCommand.STATUS);
                 })
                 .doesNotThrowAnyException();
     }

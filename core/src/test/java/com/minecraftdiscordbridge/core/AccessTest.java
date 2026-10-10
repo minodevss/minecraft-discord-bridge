@@ -18,6 +18,7 @@ import com.minecraftdiscordbridge.core.fakes.RecordingReply;
 import com.minecraftdiscordbridge.core.fakes.RecordingSource;
 import com.minecraftdiscordbridge.core.fakes.Waits;
 import com.minecraftdiscordbridge.core.platform.GameAction;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.JoinDecision;
 import com.minecraftdiscordbridge.core.text.TextRenderer;
@@ -151,8 +152,8 @@ class AccessTest {
     }
 
     private static void linkSteve(Harness harness) {
-        String reply =
-                harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link").nextPlain();
+        String reply = harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.LINK)
+                .nextPlain();
         assertThat(link(harness, Harness.code(reply)).next().text()).startsWith("Linked");
         Waits.until("the link to be stored", () -> harness.status().contains("Linked accounts: 1"));
     }

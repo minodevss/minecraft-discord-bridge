@@ -13,6 +13,7 @@ import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.fakes.RecordingLogs;
 import com.minecraftdiscordbridge.core.fakes.RecordingSource;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.setup.SetupGuide;
 import java.io.IOException;
@@ -113,7 +114,8 @@ class StartupTest {
             assertThat(consoleMirrorAttached()).isTrue();
 
             Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"\"\n");
-            assertThat(harness.run(RecordingSource.console(), "reload").nextPlain())
+            assertThat(harness.run(RecordingSource.console(), GameCommand.RELOAD)
+                            .nextPlain())
                     .contains("no bot token is set");
 
             assertThat(consoleMirrorAttached()).isFalse();
@@ -127,7 +129,7 @@ class StartupTest {
                 console:
                   mirror: true
                 """)) {
-            String code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
+            String code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.LINK)
                     .nextPlain());
 
             LogManager.getLogger("net.minecraft.server.MinecraftServer").error("Disconnecting Steve: {}", code);

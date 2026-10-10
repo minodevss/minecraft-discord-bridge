@@ -62,12 +62,9 @@ public final class Linking {
         this.discordConnected = discordConnected;
     }
 
-    public void linkInGame(CommandSource source) {
-        UUID player = source.playerId();
+    public void linkInGame(CommandSource source, UUID player) {
         if (!config.enabled()) {
             replies.send(source, "game.link.disabled");
-        } else if (player == null) {
-            replies.send(source, "game.players-only");
         } else if (store.byMinecraftId(player).isPresent()) {
             replies.send(source, "game.link.already");
         } else if (!discordConnected.getAsBoolean()) {
@@ -78,12 +75,7 @@ public final class Linking {
         }
     }
 
-    public void unlinkInGame(CommandSource source) {
-        UUID player = source.playerId();
-        if (player == null) {
-            replies.send(source, "game.players-only");
-            return;
-        }
+    public void unlinkInGame(CommandSource source, UUID player) {
         io.completeOnLoop(
                 () -> store.unlinkMinecraft(player),
                 removed -> replies.send(source, removed.isPresent() ? "game.unlink.done" : "game.unlink.none"),

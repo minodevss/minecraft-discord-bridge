@@ -16,8 +16,8 @@ import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.i18n.Replies;
 import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
-import com.minecraftdiscordbridge.core.platform.Permission;
 import com.minecraftdiscordbridge.core.setup.Channels;
 import com.minecraftdiscordbridge.core.setup.SetupGuide;
 import com.minecraftdiscordbridge.core.status.StatusReport;
@@ -52,6 +52,7 @@ final class Activator implements BridgeCommand.Callbacks {
     private @Nullable Stores stores;
     private @Nullable ConfigSnapshot snapshot;
     private Lang lang = Lang.of(Language.EN);
+    private volatile boolean linkingEnabled = BridgeConfig.defaults().linking().enabled();
     private boolean recovered;
     private boolean serverStarted;
     private boolean startAnnounced;
@@ -109,10 +110,21 @@ final class Activator implements BridgeCommand.Callbacks {
         }
     }
 
-    void command(CommandSource source, Set<Permission> granted, List<String> arguments) {
+    void command(CommandSource source, GameCommand command, boolean permitted) {
+        bridgeCommand().run(source, command, permitted);
+    }
+
+    void help(CommandSource source, Set<GameCommand> permitted) {
+        bridgeCommand().help(source, permitted, linkingEnabled);
+    }
+
+    boolean linkingEnabled() {
+        return linkingEnabled;
+    }
+
+    private BridgeCommand bridgeCommand() {
         Features current = features;
-        BridgeCommand command = current == null ? BridgeCommand.idle(replies(), this) : current.command();
-        command.run(source, granted, arguments);
+        return current == null ? BridgeCommand.idle(replies(), this) : current.command();
     }
 
     JoinQueue joins() {
@@ -228,6 +240,7 @@ final class Activator implements BridgeCommand.Callbacks {
         snapshot = loaded;
         BridgeConfig config = loaded.config();
         lang = Lang.of(config.language());
+        linkingEnabled = config.linking().enabled();
         Channels channels = Channels.resolve(config.discord(), ready.bindings().current());
         synchronized (lock) {
             if (closed) {

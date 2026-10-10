@@ -11,6 +11,7 @@ import com.minecraftdiscordbridge.core.fakes.MutableClock;
 import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
 import com.minecraftdiscordbridge.core.fakes.RecordingSource;
 import com.minecraftdiscordbridge.core.fakes.Waits;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.minecraftdiscordbridge.core.vanilla.FakeFetcher;
@@ -21,7 +22,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -111,8 +111,13 @@ final class Harness implements AutoCloseable {
         bridge.publish(event);
     }
 
-    RecordingSource run(RecordingSource source, String... arguments) {
-        bridge.command(source, Arrays.asList(arguments));
+    RecordingSource run(RecordingSource source, GameCommand command) {
+        bridge.command(source, command);
+        return source;
+    }
+
+    RecordingSource help(RecordingSource source) {
+        bridge.help(source);
         return source;
     }
 
@@ -122,7 +127,7 @@ final class Harness implements AutoCloseable {
     }
 
     String status() {
-        RecordingSource console = run(RecordingSource.console(), "status");
+        RecordingSource console = run(RecordingSource.console(), GameCommand.STATUS);
         List<String> lines = new ArrayList<>();
         String line;
         do {

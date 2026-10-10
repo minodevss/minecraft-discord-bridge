@@ -9,7 +9,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
 import com.minecraftdiscordbridge.core.fakes.RecordingReply;
-import com.minecraftdiscordbridge.core.fakes.RecordingSource;
 import com.minecraftdiscordbridge.core.fakes.Waits;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
@@ -94,29 +93,6 @@ class StatusTest {
                     .contains("Discord: connected")
                     .contains("Gateway ping: 42 ms")
                     .contains("Linked accounts: 0");
-        }
-    }
-
-    @Test
-    void refusesStatusAndReloadWithoutPermission() throws IOException {
-        try (Harness harness = Harness.started(directory, CHANNELS)) {
-            RecordingSource player = RecordingSource.player(STEVE.id(), "Steve");
-
-            assertThat(harness.run(player, "status").nextPlain()).isEqualTo("You do not have permission to do that.");
-            assertThat(harness.run(player, "reload").nextPlain()).isEqualTo("You do not have permission to do that.");
-        }
-    }
-
-    @Test
-    void showsHelpForTheCommandsTheSourceMayUse() throws IOException {
-        try (Harness harness = Harness.started(directory, CHANNELS)) {
-            RecordingSource player = harness.run(RecordingSource.player(STEVE.id(), "Steve"));
-
-            assertThat(player.nextPlain()).isEqualTo("Minecraft Discord Bridge");
-            assertThat(player.nextPlain()).startsWith("/discord link");
-            assertThat(player.nextPlain()).startsWith("/discord unlink");
-            assertThat(player.nextPlain()).startsWith("/discord toggle");
-            Waits.nothingIn(player.replies);
         }
     }
 }

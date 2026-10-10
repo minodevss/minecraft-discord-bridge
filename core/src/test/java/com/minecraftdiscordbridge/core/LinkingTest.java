@@ -10,6 +10,7 @@ import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.fakes.RecordingReply;
 import com.minecraftdiscordbridge.core.fakes.RecordingSource;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.storage.Edition;
 import com.minecraftdiscordbridge.core.storage.Link;
@@ -36,7 +37,7 @@ class LinkingTest {
                 console:
                   input-users: ["555555555555555555"]
                 """)) {
-            String reply = harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
+            String reply = harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.LINK)
                     .nextPlain();
 
             assertThat(reply).startsWith("Run /link ");
@@ -50,7 +51,7 @@ class LinkingTest {
             harness.mojang.hold = download;
             harness.bridge.start();
             harness.discord();
-            String code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
+            String code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.LINK)
                     .nextPlain());
 
             assertThat(link(harness, MEMBER, code).next().text()).contains("Steve");
@@ -64,7 +65,7 @@ class LinkingTest {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             harness.publish(new GameEvent.PlayerJoined(STEVE, false));
             RecordingSource steve = RecordingSource.player(STEVE.id(), "Steve");
-            String reply = harness.run(steve, "link").nextPlain();
+            String reply = harness.run(steve, GameCommand.LINK).nextPlain();
             assertThat(reply).startsWith("Run /link ").contains(" in Discord within 5 minutes");
 
             RecordingReply linked = link(harness, MEMBER, Harness.code(reply));
@@ -76,7 +77,7 @@ class LinkingTest {
             assertThat(stored.discordId()).isEqualTo(MEMBER);
             assertThat(stored.minecraftName()).isEqualTo("Steve");
             assertThat(stored.edition()).isEqualTo(Edition.JAVA);
-            assertThat(harness.run(steve, "link").nextPlain()).contains("already linked");
+            assertThat(harness.run(steve, GameCommand.LINK).nextPlain()).contains("already linked");
         }
     }
 
@@ -84,8 +85,8 @@ class LinkingTest {
     void acceptsEachCodeOnceAndOnlyTheNewestPerPlayer() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             RecordingSource steve = RecordingSource.player(STEVE.id(), "Steve");
-            String old = Harness.code(harness.run(steve, "link").nextPlain());
-            String fresh = Harness.code(harness.run(steve, "link").nextPlain());
+            String old = Harness.code(harness.run(steve, GameCommand.LINK).nextPlain());
+            String fresh = Harness.code(harness.run(steve, GameCommand.LINK).nextPlain());
 
             assertThat(link(harness, MEMBER, old).next().text()).contains("wrong or expired");
             assertThat(link(harness, MEMBER, fresh).next().text()).startsWith("Linked");
@@ -99,7 +100,7 @@ class LinkingTest {
     @Test
     void expiresCodesAfterFiveMinutes() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
-            String code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
+            String code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.LINK)
                     .nextPlain());
             harness.clock.advance(Duration.ofMinutes(5));
 
@@ -113,7 +114,7 @@ class LinkingTest {
             for (int i = 0; i < 5; i++) {
                 assertThat(link(harness, MEMBER, "WRONG" + i).next().text()).contains("wrong or expired");
             }
-            String code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
+            String code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.LINK)
                     .nextPlain());
 
             assertThat(link(harness, MEMBER, code).next().text())
@@ -131,7 +132,7 @@ class LinkingTest {
             for (int i = 0; i < 50; i++) {
                 link(harness, new DiscordId(MEMBER.value() + i), "WRONG").next();
             }
-            String code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
+            String code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.LINK)
                     .nextPlain());
 
             assertThat(link(harness, new DiscordId(MEMBER.value() + 100), code)
@@ -139,7 +140,7 @@ class LinkingTest {
                             .text())
                     .startsWith("Too many wrong codes");
             harness.clock.advance(Duration.ofMinutes(10).plusSeconds(1));
-            code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
+            code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.LINK)
                     .nextPlain());
             assertThat(link(harness, new DiscordId(MEMBER.value() + 100), code)
                             .next()
@@ -161,7 +162,8 @@ class LinkingTest {
                             .text())
                     .isEqualTo("Your Discord account is not linked.");
             RecordingSource steve = RecordingSource.player(STEVE.id(), "Steve");
-            assertThat(harness.run(steve, "unlink").nextPlain()).isEqualTo("Your account is not linked to Discord.");
+            assertThat(harness.run(steve, GameCommand.UNLINK).nextPlain())
+                    .isEqualTo("Your account is not linked to Discord.");
             assertThat(LinkStore.open(directory).all()).isEmpty();
         }
     }
@@ -172,7 +174,7 @@ class LinkingTest {
             assertThat(harness.discord().settings.commands())
                     .extracting(CommandSpec::name)
                     .doesNotContain("link");
-            assertThat(harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
+            assertThat(harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.LINK)
                             .nextPlain())
                     .isEqualTo("Account linking is turned off on this server.");
             assertThat(link(harness, MEMBER, "ABCDEFGH").next().text())
@@ -186,7 +188,7 @@ class LinkingTest {
             harness.bridge.start();
             harness.settledStatus();
 
-            assertThat(harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
+            assertThat(harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.LINK)
                             .nextPlain())
                     .isEqualTo("Discord is not connected right now. Try again later.");
         }
@@ -195,17 +197,9 @@ class LinkingTest {
     @Test
     void givesNoCodeUntilTheBotHasAChannel() throws IOException {
         try (Harness harness = Harness.started(directory, "config-version: 1\n")) {
-            assertThat(harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
+            assertThat(harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.LINK)
                             .nextPlain())
                     .isEqualTo("Discord is not connected right now. Try again later.");
-        }
-    }
-
-    @Test
-    void onlyPlayersCanLink() throws IOException {
-        try (Harness harness = Harness.started(directory, CHANNELS)) {
-            assertThat(harness.run(RecordingSource.console(), "link").nextPlain())
-                    .isEqualTo("Only players can do that.");
         }
     }
 

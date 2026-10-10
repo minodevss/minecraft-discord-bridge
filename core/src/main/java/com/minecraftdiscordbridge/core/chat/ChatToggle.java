@@ -20,12 +20,7 @@ public final class ChatToggle {
         this.replies = replies;
     }
 
-    public void toggle(CommandSource source) {
-        UUID player = source.playerId();
-        if (player == null) {
-            replies.send(source, "game.players-only");
-            return;
-        }
+    public void toggle(CommandSource source, UUID player) {
         boolean hide = !preferences.hidingDiscord().contains(player);
         io.completeOnLoop(
                 () -> preferences.hideDiscord(player, hide),

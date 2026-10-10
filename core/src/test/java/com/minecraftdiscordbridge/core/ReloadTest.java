@@ -11,6 +11,7 @@ import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
 import com.minecraftdiscordbridge.core.fakes.RecordingReply;
 import com.minecraftdiscordbridge.core.fakes.RecordingSource;
 import com.minecraftdiscordbridge.core.fakes.Waits;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,7 +33,7 @@ class ReloadTest {
             assertThat(harness.discords).isEmpty();
 
             harness.writeConfig(CHANNELS);
-            RecordingSource console = harness.run(RecordingSource.console(), "reload");
+            RecordingSource console = harness.run(RecordingSource.console(), GameCommand.RELOAD);
 
             assertThat(console.nextPlain()).isEqualTo("Reloaded config.yml. Reconnecting to Discord.");
             assertThat(harness.discord().started).isTrue();
@@ -43,7 +44,7 @@ class ReloadTest {
     void keepsTheOldSettingsWhenAReloadedConfigIsBroken() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             harness.writeConfig(CHANNELS + "events:\n  join: maybe\n");
-            RecordingSource console = harness.run(RecordingSource.console(), "reload");
+            RecordingSource console = harness.run(RecordingSource.console(), GameCommand.RELOAD);
 
             assertThat(console.nextPlain()).contains("old settings stay in use");
             assertThat(console.nextPlain()).contains("events.join: expected true or false");
@@ -58,7 +59,7 @@ class ReloadTest {
     void appliesFeatureChangesOnReloadWithoutReconnecting() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             harness.writeConfig(CHANNELS + "events:\n  join: false\n");
-            RecordingSource console = harness.run(RecordingSource.console(), "reload");
+            RecordingSource console = harness.run(RecordingSource.console(), GameCommand.RELOAD);
 
             assertThat(console.nextPlain()).isEqualTo("Reloaded config.yml.");
             harness.publish(new GameEvent.PlayerJoined(STEVE, false));
@@ -74,7 +75,7 @@ class ReloadTest {
             assertThat(harness.settledStatus()).contains("No bot token is set");
             Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"" + TOKEN + "\"\n");
 
-            RecordingSource console = harness.run(RecordingSource.console(), "reload");
+            RecordingSource console = harness.run(RecordingSource.console(), GameCommand.RELOAD);
 
             assertThat(console.nextPlain()).isEqualTo("Reloaded config.yml. Reconnecting to Discord.");
             assertThat(harness.discord().settings.token()).isEqualTo(TOKEN);
@@ -87,7 +88,7 @@ class ReloadTest {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             harness.discord().state = DiscordStatus.State.STOPPED;
 
-            RecordingSource console = harness.run(RecordingSource.console(), "reload");
+            RecordingSource console = harness.run(RecordingSource.console(), GameCommand.RELOAD);
 
             assertThat(console.nextPlain()).isEqualTo("Reloaded config.yml. Reconnecting to Discord.");
             assertThat(harness.discord(2).started).isTrue();
@@ -101,7 +102,7 @@ class ReloadTest {
             harness.bridge.start();
             RecordingDiscord first = harness.discord(1);
             Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"second\"\n");
-            harness.run(RecordingSource.console(), "reload");
+            harness.run(RecordingSource.console(), GameCommand.RELOAD);
             harness.discord(2);
 
             RecordingReply reply = first.command(Harness.request("list", null, Map.of(), Harness.MEMBER, CHAT));
@@ -120,8 +121,8 @@ class ReloadTest {
             first.shutdownTime = Duration.ofMillis(500);
             Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"second\"\n");
 
-            harness.run(RecordingSource.console(), "reload");
-            harness.run(RecordingSource.console(), "reload");
+            harness.run(RecordingSource.console(), GameCommand.RELOAD);
+            harness.run(RecordingSource.console(), GameCommand.RELOAD);
 
             harness.discord(2);
             assertThat(first.shutDown).isTrue();
@@ -136,7 +137,7 @@ class ReloadTest {
             RecordingDiscord first = harness.discord(1);
             Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"second\"\n");
 
-            harness.run(RecordingSource.console(), "reload");
+            harness.run(RecordingSource.console(), GameCommand.RELOAD);
 
             RecordingDiscord second = harness.discord(2);
             assertThat(second.settings.token()).isEqualTo("second");

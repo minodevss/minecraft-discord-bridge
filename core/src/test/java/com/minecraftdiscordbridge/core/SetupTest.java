@@ -6,7 +6,6 @@ import static com.minecraftdiscordbridge.core.Harness.EVENTS;
 import static com.minecraftdiscordbridge.core.Harness.GUILD;
 import static com.minecraftdiscordbridge.core.Harness.MEMBER;
 import static com.minecraftdiscordbridge.core.Harness.OWNER;
-import static com.minecraftdiscordbridge.core.Harness.STEVE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
@@ -14,6 +13,7 @@ import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
 import com.minecraftdiscordbridge.core.fakes.RecordingReply;
 import com.minecraftdiscordbridge.core.fakes.RecordingSource;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.storage.BindingStore;
 import com.minecraftdiscordbridge.core.storage.ChannelRole;
 import java.io.IOException;
@@ -83,8 +83,8 @@ class SetupTest {
     @Test
     void acceptsAOneTimeConsoleCodeFromAServerManager() throws IOException {
         try (Harness harness = Harness.started(directory, UNBOUND)) {
-            String code =
-                    Harness.code(harness.run(RecordingSource.console(), "setup").nextPlain());
+            String code = Harness.code(
+                    harness.run(RecordingSource.console(), GameCommand.SETUP).nextPlain());
             RecordingDiscord waiting = harness.discord();
 
             RecordingReply first = waiting.command(
@@ -106,8 +106,8 @@ class SetupTest {
                                 "link", null, Map.of("code", "WRONG"), new DiscordId(MEMBER.value() + i), CHAT))
                         .next();
             }
-            String code =
-                    Harness.code(harness.run(RecordingSource.console(), "setup").nextPlain());
+            String code = Harness.code(
+                    harness.run(RecordingSource.console(), GameCommand.SETUP).nextPlain());
 
             RecordingReply reply = waiting.command(Harness.managerRequest("setup", Map.of("code", code), MEMBER, CHAT));
 
@@ -118,8 +118,8 @@ class SetupTest {
     @Test
     void refusesCodesFromMembersWhoCannotManageTheServer() throws IOException {
         try (Harness harness = Harness.started(directory, UNBOUND)) {
-            String code =
-                    Harness.code(harness.run(RecordingSource.console(), "setup").nextPlain());
+            String code = Harness.code(
+                    harness.run(RecordingSource.console(), GameCommand.SETUP).nextPlain());
 
             RecordingReply reply =
                     harness.discord().command(Harness.request("setup", null, Map.of("code", code), MEMBER, CHAT));
@@ -132,23 +132,14 @@ class SetupTest {
     @Test
     void expiresConsoleCodesAfterTenMinutes() throws IOException {
         try (Harness harness = Harness.started(directory, UNBOUND)) {
-            String code =
-                    Harness.code(harness.run(RecordingSource.console(), "setup").nextPlain());
+            String code = Harness.code(
+                    harness.run(RecordingSource.console(), GameCommand.SETUP).nextPlain());
             harness.clock.advance(Duration.ofMinutes(10));
 
             RecordingReply reply =
                     harness.discord().command(Harness.managerRequest("setup", Map.of("code", code), MEMBER, CHAT));
 
             assertThat(reply.next().text()).contains("wrong or expired");
-        }
-    }
-
-    @Test
-    void givesSetupCodesOnlyInTheConsole() throws IOException {
-        try (Harness harness = Harness.started(directory, UNBOUND)) {
-            RecordingSource operator = harness.run(RecordingSource.operator(STEVE.id(), "Steve"), "setup");
-
-            assertThat(operator.nextPlain()).isEqualTo("Run /discord setup in the server console.");
         }
     }
 

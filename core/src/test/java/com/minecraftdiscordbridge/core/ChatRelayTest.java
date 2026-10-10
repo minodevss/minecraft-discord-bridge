@@ -16,6 +16,7 @@ import com.minecraftdiscordbridge.core.fakes.RecordingLogs;
 import com.minecraftdiscordbridge.core.fakes.RecordingSource;
 import com.minecraftdiscordbridge.core.fakes.Waits;
 import com.minecraftdiscordbridge.core.platform.Delivery;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.storage.Edition;
 import com.minecraftdiscordbridge.core.storage.Link;
@@ -145,7 +146,7 @@ class ChatRelayTest {
     @Test
     void showsDiscordChatToPlayersExceptThoseWhoHidIt() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
-            RecordingSource steve = harness.run(RecordingSource.player(STEVE.id(), "Steve"), "toggle");
+            RecordingSource steve = harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.TOGGLE);
             assertThat(steve.nextPlain()).startsWith("Messages from Discord are hidden");
 
             harness.discord()
@@ -174,8 +175,9 @@ class ChatRelayTest {
     void showsHiddenMessagesAgainAfterASecondToggle() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             RecordingSource steve = RecordingSource.player(STEVE.id(), "Steve");
-            harness.run(steve, "toggle").nextPlain();
-            assertThat(harness.run(steve, "toggle").nextPlain()).isEqualTo("Messages from Discord are shown again.");
+            harness.run(steve, GameCommand.TOGGLE).nextPlain();
+            assertThat(harness.run(steve, GameCommand.TOGGLE).nextPlain())
+                    .isEqualTo("Messages from Discord are shown again.");
 
             harness.discord().receive(Harness.message(CHAT, "hi"));
 

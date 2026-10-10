@@ -14,6 +14,7 @@ import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
 import com.minecraftdiscordbridge.core.fakes.RecordingSource;
 import com.minecraftdiscordbridge.core.fakes.Waits;
 import com.minecraftdiscordbridge.core.platform.AdvancementFrame;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.RichText;
 import java.io.IOException;
@@ -127,7 +128,7 @@ class EventPostsTest {
             harness.publish(new GameEvent.ServerStarted(List.of()));
             assertThat(harness.discord().nextSent().text()).isEqualTo("The server has started.");
 
-            harness.run(RecordingSource.console(), "reload").nextPlain();
+            harness.run(RecordingSource.console(), GameCommand.RELOAD).nextPlain();
 
             Waits.nothingIn(harness.discord().sent);
         }

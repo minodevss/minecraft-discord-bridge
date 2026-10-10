@@ -4,22 +4,15 @@ import com.minecraftdiscordbridge.core.chat.ChatToggle;
 import com.minecraftdiscordbridge.core.i18n.Replies;
 import com.minecraftdiscordbridge.core.linking.Linking;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
-import com.minecraftdiscordbridge.core.platform.Permission;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.setup.ChannelSetup;
-import java.util.List;
-import java.util.Locale;
 import java.util.Set;
+import java.util.UUID;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 
 public final class BridgeCommand {
-    public static final String LINK = "link";
-    public static final String UNLINK = "unlink";
-    public static final String TOGGLE = "toggle";
-    public static final String STATUS = "status";
-    public static final String RELOAD = "reload";
-    public static final String SETUP = "setup";
-    public static final String HELP = "help";
-
     public interface Callbacks {
         void status(CommandSource source, Replies replies);
 
@@ -47,82 +40,45 @@ public final class BridgeCommand {
         return new BridgeCommand(replies, callbacks, new Features(linking, toggle, setup));
     }
 
-    public void run(CommandSource source, Set<Permission> granted, List<String> arguments) {
-        String subcommand = arguments.isEmpty() ? "" : arguments.get(0).toLowerCase(Locale.ROOT);
-        Features active = features;
-        if (subcommand.equals(STATUS)) {
-            if (allowed(source, granted, Permission.STATUS)) {
-                callbacks.status(source, replies);
-            }
-        } else if (subcommand.equals(RELOAD)) {
-            if (allowed(source, granted, Permission.RELOAD)) {
-                callbacks.reload(source, replies);
-            }
-        } else if (active != null) {
-            handle(active, source, granted, subcommand);
-        } else if (subcommand.isEmpty() || subcommand.equals(HELP)) {
-            help(source, granted);
-        } else {
-            replies.send(source, "game.not-ready");
+    public void run(CommandSource source, GameCommand command, boolean permitted) {
+        if (!permitted) {
+            replies.send(source, "game.no-permission");
+            return;
+        }
+        switch (command) {
+            case STATUS -> callbacks.status(source, replies);
+            case RELOAD -> callbacks.reload(source, replies);
+            case LINK -> whenActive(source, active -> asPlayer(source, active.linking()::linkInGame));
+            case UNLINK -> whenActive(source, active -> asPlayer(source, active.linking()::unlinkInGame));
+            case TOGGLE -> whenActive(source, active -> asPlayer(source, active.toggle()::toggle));
+            case SETUP -> whenActive(source, active -> active.setup().issueCode(source));
         }
     }
 
-    private void handle(Features active, CommandSource source, Set<Permission> granted, String subcommand) {
-        switch (subcommand) {
-            case LINK -> {
-                if (allowed(source, granted, Permission.LINK)) {
-                    active.linking().linkInGame(source);
-                }
-            }
-            case UNLINK -> {
-                if (allowed(source, granted, Permission.LINK)) {
-                    active.linking().unlinkInGame(source);
-                }
-            }
-            case TOGGLE -> {
-                if (allowed(source, granted, Permission.TOGGLE)) {
-                    active.toggle().toggle(source);
-                }
-            }
-            case SETUP -> {
-                if (!allowed(source, granted, Permission.SETUP)) {
-                    return;
-                }
-                if (source.playerId() != null) {
-                    replies.send(source, "game.setup.console-only");
-                } else {
-                    active.setup().issueCode(source);
-                }
-            }
-            default -> help(source, granted);
-        }
-    }
-
-    private boolean allowed(CommandSource source, Set<Permission> granted, Permission permission) {
-        if (granted.contains(permission)) {
-            return true;
-        }
-        replies.send(source, "game.no-permission");
-        return false;
-    }
-
-    private void help(CommandSource source, Set<Permission> granted) {
+    public void help(CommandSource source, Set<GameCommand> permitted, boolean linkingEnabled) {
         replies.send(source, "game.help.header");
-        if (granted.contains(Permission.LINK)) {
-            replies.send(source, "game.help.link");
-            replies.send(source, "game.help.unlink");
+        for (GameCommand command : GameCommand.values()) {
+            if (permitted.contains(command) && command.available(linkingEnabled)) {
+                replies.send(source, "game.help." + command.literal());
+            }
         }
-        if (granted.contains(Permission.TOGGLE)) {
-            replies.send(source, "game.help.toggle");
+    }
+
+    private void whenActive(CommandSource source, Consumer<Features> action) {
+        Features active = features;
+        if (active == null) {
+            replies.send(source, "game.not-ready");
+        } else {
+            action.accept(active);
         }
-        if (granted.contains(Permission.STATUS)) {
-            replies.send(source, "game.help.status");
-        }
-        if (granted.contains(Permission.RELOAD)) {
-            replies.send(source, "game.help.reload");
-        }
-        if (granted.contains(Permission.SETUP) && source.playerId() == null) {
-            replies.send(source, "game.help.setup");
+    }
+
+    private void asPlayer(CommandSource source, BiConsumer<CommandSource, UUID> action) {
+        UUID player = source.playerId();
+        if (player == null) {
+            replies.send(source, "game.no-permission");
+        } else {
+            action.accept(source, player);
         }
     }
 }
