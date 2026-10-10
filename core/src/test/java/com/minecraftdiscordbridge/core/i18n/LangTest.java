@@ -3,6 +3,8 @@ package com.minecraftdiscordbridge.core.i18n;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
+import com.minecraftdiscordbridge.core.discord.StatusReason;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.text.Format;
 import com.minecraftdiscordbridge.core.text.TextRenderer;
 import java.io.IOException;
@@ -63,6 +65,18 @@ class LangTest {
                         .as(language + " " + key)
                         .isNotBlank()
                         .hasSizeLessThanOrEqualTo(DISCORD_DESCRIPTION_LIMIT));
+    }
+
+    @ParameterizedTest
+    @EnumSource(Language.class)
+    void hasAHelpLineForEveryGameCommandAndATextForEveryStatusReason(Language language) {
+        Set<String> keys = keys(language);
+        for (GameCommand command : GameCommand.values()) {
+            assertThat(keys).contains("game.help." + command.literal());
+        }
+        for (StatusReason.Kind kind : StatusReason.Kind.values()) {
+            assertThat(keys).contains("status." + kind.key());
+        }
     }
 
     @Test
