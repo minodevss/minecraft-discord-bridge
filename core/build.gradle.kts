@@ -20,6 +20,7 @@ dependencies {
     compileOnly(libs.gson)
     compileOnly(libs.slf4j.api)
     compileOnly(libs.log4j.core)
+    compileOnly(libs.luckperms.api)
     testImplementation(libs.gson)
     testImplementation(libs.slf4j.api)
     testImplementation(libs.log4j.core)
