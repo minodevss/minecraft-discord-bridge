@@ -42,19 +42,17 @@ final class Sessions {
             Stores stores,
             ConfigSnapshot snapshot,
             Channels channels,
-            Optional<DiscordId> console,
             Consumer<ChannelBinding> rebound) {
         BridgeConfig config = snapshot.config();
         Lang lang = Lang.of(config.language());
         Replies replies = new Replies(lang, shared.platform().info().dataVersion());
         Optional<DiscordId> chat = channels.chat();
         Optional<DiscordId> events = channels.events();
-        boolean hasGuild = chat.isPresent() || events.isPresent() || console.isPresent();
+        boolean hasGuild = !DiscordPlan.channelIds(config, channels).isEmpty();
         ChannelSetup setup = new ChannelSetup(
                 shared.discord(),
                 stores.bindings(),
                 config.discord(),
-                channels.console(),
                 shared.io(),
                 shared.setupCodes(),
                 shared.setupAttempts(),
@@ -91,7 +89,7 @@ final class Sessions {
                 new GameCommands(replies, linking, new ChatToggle(stores.preferences(), shared.io(), replies), setup),
                 ConsoleMirror.start(
                         config.console(),
-                        console,
+                        snapshot.secrets().hasDiscordToken() ? config.discord().consoleChannel() : Optional.empty(),
                         shared.discord(),
                         lang,
                         shared.loop(),

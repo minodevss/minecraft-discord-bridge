@@ -11,19 +11,14 @@ import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 final class DiscordPlan {
     private DiscordPlan() {}
 
-    static DiscordSettings settings(ConfigSnapshot snapshot, Channels channels, Optional<DiscordId> console) {
+    static DiscordSettings settings(ConfigSnapshot snapshot, Channels channels) {
         BridgeConfig config = snapshot.config();
-        Set<Long> channelIds = new LinkedHashSet<>();
-        channels.chat().ifPresent(id -> channelIds.add(id.value()));
-        channels.events().ifPresent(id -> channelIds.add(id.value()));
-        console.ifPresent(id -> channelIds.add(id.value()));
-        consoleInput(config).ifPresent(id -> channelIds.add(id.value()));
+        Set<Long> channelIds = channelIds(config, channels);
         List<CommandSpec> commands =
                 channelIds.isEmpty() ? SlashCommandCatalog.setupOnly() : SlashCommandCatalog.forConfig(config);
         return new DiscordSettings(
@@ -43,10 +38,14 @@ final class DiscordPlan {
                 || config.linking().requiredRole().isPresent();
     }
 
-    static Optional<DiscordId> consoleInput(BridgeConfig config) {
-        return config.console().inputUsers().isEmpty()
-                ? Optional.empty()
-                : config.discord().consoleChannel();
+    static Set<Long> channelIds(BridgeConfig config, Channels channels) {
+        Set<Long> ids = new LinkedHashSet<>();
+        channels.chat().ifPresent(id -> ids.add(id.value()));
+        channels.events().ifPresent(id -> ids.add(id.value()));
+        if (config.console().mirror() || !config.console().inputUsers().isEmpty()) {
+            config.discord().consoleChannel().ifPresent(id -> ids.add(id.value()));
+        }
+        return ids;
     }
 
     private static long guild(DiscordConfig config, Channels channels) {

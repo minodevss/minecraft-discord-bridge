@@ -4,8 +4,7 @@ import java.util.Locale;
 
 public enum ChannelRole {
     CHAT,
-    EVENTS,
-    CONSOLE;
+    EVENTS;
 
     String id() {
         return name().toLowerCase(Locale.ROOT);
@@ -17,6 +16,6 @@ public enum ChannelRole {
                 return role;
             }
         }
-        throw new IllegalArgumentException("unknown channel role \"" + id + "\"; expected chat, events or console");
+        throw new IllegalArgumentException("unknown channel role \"" + id + "\"; expected chat or events");
     }
 }

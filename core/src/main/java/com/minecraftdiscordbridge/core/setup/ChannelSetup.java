@@ -35,7 +35,6 @@ public final class ChannelSetup {
     private final Discord discord;
     private final BindingStore bindings;
     private final DiscordConfig config;
-    private final Optional<DiscordId> consoleChannel;
     private final IoExecutor io;
     private final SetupCodes codes;
     private final Attempts attempts;
@@ -47,7 +46,6 @@ public final class ChannelSetup {
             Discord discord,
             BindingStore bindings,
             DiscordConfig config,
-            Optional<DiscordId> consoleChannel,
             IoExecutor io,
             SetupCodes codes,
             Attempts attempts,
@@ -57,7 +55,6 @@ public final class ChannelSetup {
         this.discord = discord;
         this.bindings = bindings;
         this.config = config;
-        this.consoleChannel = consoleChannel;
         this.io = io;
         this.codes = codes;
         this.attempts = attempts;
@@ -71,7 +68,7 @@ public final class ChannelSetup {
         Optional<ChannelRole> role = role(request.options().get(ROLE_OPTION));
         if (role.isEmpty()) {
             reply.replyEphemeral(reader.text("discord.setup.bad-role"));
-        } else if (consoleChannel.isPresent() && consoleChannel.get().value() == request.channelId()) {
+        } else if (config.consoleChannel().equals(Optional.of(new DiscordId(request.channelId())))) {
             reply.replyEphemeral(reader.text("discord.setup.console-channel"));
         } else if (authorized(request, reply, reader)) {
             save(request, reply, reader, role.get());

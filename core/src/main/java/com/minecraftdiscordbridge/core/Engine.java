@@ -11,7 +11,6 @@ import com.minecraftdiscordbridge.core.config.Language;
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
 import com.minecraftdiscordbridge.core.discord.Discord;
-import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordListener;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
@@ -37,7 +36,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -308,10 +306,6 @@ final class Engine {
         BridgeConfig config = loaded.config();
         lang = Lang.of(config.language());
         Channels channels = Channels.resolve(config.discord(), ready.bindings().current());
-        Optional<DiscordId> console =
-                config.console().mirror() && loaded.secrets().hasDiscordToken()
-                        ? config.discord().consoleChannel()
-                        : Optional.empty();
         synchronized (lock) {
             if (closed) {
                 return Outcome.APPLIED;
@@ -320,7 +314,7 @@ final class Engine {
             if (previous != null) {
                 previous.close();
             }
-            session = Sessions.build(shared, ready, loaded, channels, console, this::rebound);
+            session = Sessions.build(shared, ready, loaded, channels, this::rebound);
         }
         Outcome outcome;
         if (!loaded.secrets().hasDiscordToken()) {
@@ -329,7 +323,7 @@ final class Engine {
             replaceDiscord(OfflineDiscord.stopped(OfflineDiscord.NO_TOKEN));
             outcome = Outcome.NO_TOKEN;
         } else {
-            DiscordSettings next = DiscordPlan.settings(loaded, channels, console);
+            DiscordSettings next = DiscordPlan.settings(loaded, channels);
             if (next.equals(settings)) {
                 outcome = Outcome.APPLIED;
             } else {
