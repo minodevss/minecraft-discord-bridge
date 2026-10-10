@@ -1,10 +1,13 @@
 package com.minecraftdiscordbridge.paper;
 
+import com.destroystokyo.paper.profile.ProfileProperty;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
+import com.minecraftdiscordbridge.core.platform.SkinTextures;
 import java.util.UUID;
 import java.util.function.Predicate;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.Nullable;
 
 final class PaperProfiles {
     private final Predicate<UUID> bedrock;
@@ -22,7 +25,16 @@ final class PaperProfiles {
                 player.getUniqueId(),
                 player.getName(),
                 PlainTextComponentSerializer.plainText().serialize(player.displayName()),
-                SkinTextures.id(player.getPlayerProfile().getTextures().getSkin()),
+                skinTexture(player),
                 bedrock.test(player.getUniqueId()));
+    }
+
+    private static @Nullable String skinTexture(Player player) {
+        for (ProfileProperty property : player.getPlayerProfile().getProperties()) {
+            if (SkinTextures.PROPERTY.equals(property.getName())) {
+                return SkinTextures.id(property.getValue());
+            }
+        }
+        return null;
     }
 }

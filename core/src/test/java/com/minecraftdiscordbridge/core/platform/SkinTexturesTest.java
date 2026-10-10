@@ -1,4 +1,4 @@
-package com.minecraftdiscordbridge.velocity;
+package com.minecraftdiscordbridge.core.platform;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -10,7 +10,7 @@ class SkinTexturesTest {
     private static final String HASH = "1a4af718455d4aab528e7a61f86fa25e6a369d1768dcb13f7df319a713eb810b";
 
     @Test
-    void readsSkinTextureIdFromTexturesProperty() {
+    void readsTheSkinTextureIdFromTheTexturesProperty() {
         String textures = encode("""
                 {"timestamp":1700000000000,"profileId":"069a79f444e94726a5befca90e38aaf5","profileName":"Notch",
                  "textures":{"SKIN":{"url":"http://textures.minecraft.net/texture/%s"},
@@ -21,7 +21,7 @@ class SkinTexturesTest {
     }
 
     @Test
-    void readsSlimSkinWithMetadata() {
+    void readsSlimSkinsWithMetadata() {
         String textures = encode("""
                 {"textures":{"SKIN":{"url":"https://textures.minecraft.net/texture/%s","metadata":{"model":"slim"}}}}
                 """.formatted(HASH));
@@ -30,17 +30,34 @@ class SkinTexturesTest {
     }
 
     @Test
-    void returnsNullWithoutSkin() {
+    void ignoresTheQueryString() {
+        String textures =
+                encode("{\"textures\":{\"SKIN\":{\"url\":\"https://textures.minecraft.net/texture/abc123?v=2\"}}}");
+
+        assertThat(SkinTextures.id(textures)).isEqualTo("abc123");
+    }
+
+    @Test
+    void returnsNullWithoutASkin() {
         assertThat(SkinTextures.id(encode("{\"textures\":{}}"))).isNull();
         assertThat(SkinTextures.id(encode("{}"))).isNull();
     }
 
     @Test
-    void returnsNullForMalformedProperty() {
+    void returnsNullWhenTheUrlHasNoTextureId() {
+        assertThat(SkinTextures.id(
+                        encode("{\"textures\":{\"SKIN\":{\"url\":\"http://textures.minecraft.net/texture/\"}}}")))
+                .isNull();
+        assertThat(SkinTextures.id(encode("{\"textures\":{\"SKIN\":{\"url\":\"http://textures.minecraft.net\"}}}")))
+                .isNull();
+    }
+
+    @Test
+    void returnsNullForAMalformedProperty() {
         assertThat(SkinTextures.id("not base64!")).isNull();
         assertThat(SkinTextures.id(encode("not json"))).isNull();
         assertThat(SkinTextures.id(encode("{\"textures\":[]}"))).isNull();
-        assertThat(SkinTextures.id(encode("{\"textures\":{\"SKIN\":{\"url\":\"http://textures.minecraft.net/\"}}}")))
+        assertThat(SkinTextures.id(encode("{\"textures\":{\"SKIN\":{\"url\":\"not a uri\"}}}")))
                 .isNull();
     }
 

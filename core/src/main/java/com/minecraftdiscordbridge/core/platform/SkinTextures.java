@@ -1,4 +1,4 @@
-package com.minecraftdiscordbridge.velocity;
+package com.minecraftdiscordbridge.core.platform;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -8,12 +8,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import org.jspecify.annotations.Nullable;
 
-final class SkinTextures {
+public final class SkinTextures {
+    public static final String PROPERTY = "textures";
+
     private SkinTextures() {}
 
-    static @Nullable String id(String encodedTextures) {
+    public static @Nullable String id(String encodedProperty) {
         try {
-            String json = new String(Base64.getDecoder().decode(encodedTextures), StandardCharsets.UTF_8);
+            String json = new String(Base64.getDecoder().decode(encodedProperty), StandardCharsets.UTF_8);
             JsonObject textures = JsonParser.parseString(json).getAsJsonObject().getAsJsonObject("textures");
             JsonObject skin = textures == null ? null : textures.getAsJsonObject("SKIN");
             JsonElement url = skin == null ? null : skin.get("url");

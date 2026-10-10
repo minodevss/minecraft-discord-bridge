@@ -1,6 +1,7 @@
 package com.minecraftdiscordbridge.velocity;
 
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
+import com.minecraftdiscordbridge.core.platform.SkinTextures;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.util.GameProfile;
 import java.util.UUID;
@@ -8,8 +9,6 @@ import java.util.function.Predicate;
 import org.jspecify.annotations.Nullable;
 
 final class VelocityProfiles {
-    private static final String TEXTURES = "textures";
-
     private final Predicate<UUID> bedrock;
 
     VelocityProfiles(Predicate<UUID> bedrock) {
@@ -27,7 +26,7 @@ final class VelocityProfiles {
 
     private static @Nullable String skinTexture(Player player) {
         for (GameProfile.Property property : player.getGameProfileProperties()) {
-            if (TEXTURES.equals(property.getName())) {
+            if (SkinTextures.PROPERTY.equals(property.getName())) {
                 return SkinTextures.id(property.getValue());
             }
         }
