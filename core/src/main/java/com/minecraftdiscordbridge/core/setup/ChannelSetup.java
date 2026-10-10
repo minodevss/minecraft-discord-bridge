@@ -132,7 +132,9 @@ public final class ChannelSetup {
                     bound.accept(next);
                 },
                 failure -> {
-                    LOGGER.warn("Could not save the channel from /setup: {}", failure.getMessage());
+                    LOGGER.warn(
+                            "Could not save the channel from /setup: {}. Check that the data folder is writable",
+                            failure.getMessage());
                     reply.replyEphemeral(reader.text("discord.save-failed"));
                 });
     }

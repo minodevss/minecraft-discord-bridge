@@ -4,10 +4,13 @@ import com.minecraftdiscordbridge.core.i18n.Replies;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
 import com.minecraftdiscordbridge.core.storage.PreferenceStore;
-import com.minecraftdiscordbridge.core.text.Format.Slot;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class ChatToggle {
+    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
+
     private final PreferenceStore preferences;
     private final IoExecutor io;
     private final Replies replies;
@@ -28,7 +31,13 @@ public final class ChatToggle {
         io.run(
                 () -> preferences.hideDiscord(player, hide),
                 () -> replies.send(source, hide ? "game.toggle.hidden" : "game.toggle.shown"),
-                failure -> replies.send(
-                        source, "game.toggle.failed", Slot.text("reason", String.valueOf(failure.getMessage()))));
+                failure -> {
+                    LOGGER.warn(
+                            "Could not save the Discord message setting for {}: {}. Check that the data folder is"
+                                    + " writable",
+                            source.name(),
+                            failure.getMessage());
+                    replies.send(source, "game.save-failed");
+                });
     }
 }

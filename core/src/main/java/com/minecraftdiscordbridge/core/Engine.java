@@ -182,7 +182,9 @@ final class Engine {
             return;
         }
         shared.io().call(loader::load, result -> apply(result, source), failure -> {
-            LOGGER.warn("Could not reload config.yml: {}", failure.toString());
+            LOGGER.warn(
+                    "Could not reload config.yml: {}. Check that the file is readable and run /discord reload again",
+                    failure.toString());
             replies.send(source, "game.reload.failed");
         });
     }
@@ -316,7 +318,9 @@ final class Engine {
                 shared.discord().swap(created);
                 created.start();
             } catch (RuntimeException failure) {
-                LOGGER.error("Could not start the Discord connection: {}", failure.toString());
+                LOGGER.error(
+                        "Could not start the Discord connection: {}. Run /discord reload to try again",
+                        failure.toString());
                 shared.discord().swap(OfflineDiscord.stopped(failure.toString()));
                 return;
             }

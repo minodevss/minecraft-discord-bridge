@@ -81,7 +81,10 @@ public final class Linking {
                 () -> store.unlinkMinecraft(player),
                 removed -> replies.send(source, removed.isPresent() ? "game.unlink.done" : "game.unlink.none"),
                 failure -> {
-                    LOGGER.warn("Could not unlink {}: {}", source.name(), failure.getMessage());
+                    LOGGER.warn(
+                            "Could not unlink {}: {}. Check that the data folder is writable",
+                            source.name(),
+                            failure.getMessage());
                     replies.send(source, "game.save-failed");
                 });
     }
@@ -117,7 +120,10 @@ public final class Linking {
                     }
                 },
                 failure -> {
-                    LOGGER.warn("Could not save the link for {}: {}", code.playerName(), failure.getMessage());
+                    LOGGER.warn(
+                            "Could not save the link for {}: {}. Check that the data folder is writable",
+                            code.playerName(),
+                            failure.getMessage());
                     reply.replyEphemeral(reader.text("discord.save-failed"));
                 });
     }
@@ -131,7 +137,7 @@ public final class Linking {
                         .orElseGet(() -> reader.text("discord.unlink.none"))),
                 failure -> {
                     LOGGER.warn(
-                            "Could not unlink Discord user {}: {}",
+                            "Could not unlink Discord user {}: {}. Check that the data folder is writable",
                             Long.toUnsignedString(request.userId()),
                             failure.getMessage());
                     reply.replyEphemeral(reader.text("discord.save-failed"));
