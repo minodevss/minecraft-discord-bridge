@@ -304,7 +304,11 @@ final class Activator implements BridgeCommand.Callbacks {
         Stores ready = stores;
         int links = ready == null ? 0 : ready.links().all().size();
         DiscordStatus status = services.discord().status();
-        StatusReport.send(replies, source, status, links, droppedEvents);
+        ConfigSnapshot current = snapshot;
+        Optional<String> tokenSource = current == null || !current.secrets().hasDiscordToken()
+                ? Optional.empty()
+                : Optional.of(current.secrets().discordTokenSource());
+        StatusReport.send(replies, source, status, tokenSource, links, droppedEvents);
     }
 
     private Replies replies() {

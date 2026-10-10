@@ -91,8 +91,18 @@ class StatusTest {
 
             assertThat(status)
                     .contains("Discord: connected")
+                    .contains("Bot token: from MCDB_DISCORD_TOKEN")
                     .contains("Gateway ping: 42 ms")
                     .contains("Linked accounts: 0");
+        }
+    }
+
+    @Test
+    void saysWhenNoBotTokenIsSet() throws IOException {
+        try (Harness harness = Harness.create(directory, CHANNELS, Map.of())) {
+            harness.bridge.start();
+
+            assertThat(harness.settledStatus()).contains("Bot token: not set");
         }
     }
 }
