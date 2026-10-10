@@ -501,10 +501,7 @@ final class Engine {
         @Override
         public void onCommand(InteractionRequest request, InteractionReply reply) {
             Session current = session;
-            if (target != generation) {
-                return;
-            }
-            if (current == null) {
+            if (target != generation || current == null) {
                 reply.replyEphemeral(
                         Lang.forDiscordLocale(request.locale(), lang).text("discord.not-ready"));
                 return;
