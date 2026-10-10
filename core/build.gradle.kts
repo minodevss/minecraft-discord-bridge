@@ -23,6 +23,7 @@ dependencies {
     testImplementation(libs.slf4j.api)
     testImplementation(libs.archunit)
     testImplementation(libs.mockwebserver)
+    testImplementation(libs.jazzer.junit)
 }
 
 val relocated = listOf(
