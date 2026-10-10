@@ -17,6 +17,7 @@ import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.discord.InteractionReply;
 import com.minecraftdiscordbridge.core.discord.InteractionRequest;
+import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Replies;
@@ -120,6 +121,7 @@ final class Engine {
             shared.roster().joined(joined.player(), joined.vanished());
             if (current != null) {
                 current.events().joined(joined);
+                current.roleSync().playerJoined(joined.player());
             }
             refreshStatus();
         } else if (event instanceof GameEvent.PlayerLeft left) {
@@ -221,6 +223,10 @@ final class Engine {
             Link link = change.link();
             shared.access().forget(link.minecraftId(), Long.parseUnsignedLong(link.discordId()));
         }
+        Session current = session;
+        if (current != null) {
+            current.roleSync().linkChanged(change);
+        }
     }
 
     private void releaseWaitingJoins() {
@@ -318,7 +324,15 @@ final class Engine {
         }
         announceStart();
         refreshStatus();
+        Session current = session;
+        if (current != null && connected(shared.discord().status())) {
+            current.roleSync().discordReady();
+        }
         return outcome;
+    }
+
+    private static boolean connected(DiscordStatus status) {
+        return status.state() == DiscordStatus.State.READY || status.state() == DiscordStatus.State.DEGRADED;
     }
 
     private void rebound(ChannelBinding binding) {
@@ -432,6 +446,10 @@ final class Engine {
             if (target == generation && status.state() == DiscordStatus.State.READY) {
                 refreshStatus();
             }
+            Session current = session;
+            if (target == generation && current != null && connected(status)) {
+                current.roleSync().discordReady();
+            }
         }
 
         @Override
@@ -439,6 +457,31 @@ final class Engine {
             Session current = session;
             if (target == generation && current != null) {
                 current.discordChat().onMessage(message);
+            }
+        }
+
+        @Override
+        public void onMemberUpdated(MemberLookup.Member member) {
+            if (target != generation) {
+                return;
+            }
+            shared.access().remember(member, shared.clock().instant());
+            Session current = session;
+            if (current != null) {
+                current.roleSync().memberUpdated(member);
+            }
+        }
+
+        @Override
+        public void onMemberLeft(long userId) {
+            if (target != generation) {
+                return;
+            }
+            shared.access()
+                    .remember(new MemberLookup.NotMember(userId), shared.clock().instant());
+            Session current = session;
+            if (current != null) {
+                current.roleSync().memberLeft(userId);
             }
         }
 

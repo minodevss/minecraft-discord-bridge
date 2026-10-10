@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core;
 
 import com.minecraftdiscordbridge.core.access.AccessContext;
 import com.minecraftdiscordbridge.core.access.JoinGate;
+import com.minecraftdiscordbridge.core.access.RoleSync;
 import com.minecraftdiscordbridge.core.actions.Actions;
 import com.minecraftdiscordbridge.core.chat.ChatToggle;
 import com.minecraftdiscordbridge.core.chat.DiscordChat;
@@ -90,7 +91,8 @@ final class Sessions {
                         lang,
                         shared.loop(),
                         () -> secrets(shared, snapshot)),
-                JoinGate.create(config.linking(), shared.platform().info(), access, replies));
+                JoinGate.create(config.linking(), shared.platform().info(), access, replies),
+                RoleSync.create(config.roleSync(), shared.platform().info(), access));
     }
 
     private static Format chatFormat(String template) {
