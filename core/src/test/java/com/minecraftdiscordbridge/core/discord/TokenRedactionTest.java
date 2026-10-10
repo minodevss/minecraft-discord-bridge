@@ -3,12 +3,17 @@ package com.minecraftdiscordbridge.core.discord;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
-class SecretsTest {
+class TokenRedactionTest {
+    private static final String TOKEN = "bot-secret";
+
     @Test
     void settingsNeverPrintTheToken() {
-        assertThat(TestSupport.settings(List.of()).toString()).doesNotContain(FakeDiscord.TOKEN);
+        DiscordSettings settings = new DiscordSettings(TOKEN, 1, Set.of(2L), Author.server(), true, false, List.of());
+
+        assertThat(settings.toString()).doesNotContain(TOKEN);
     }
 
     @Test
