@@ -114,6 +114,12 @@ final class Engine {
                 current.events().left(left);
             }
             refreshStatus();
+        } else if (event instanceof GameEvent.PlayerSwitchedServer switched) {
+            if (switched.from() == null) {
+                joinIfNotOnline(switched);
+            } else if (current != null) {
+                current.events().switched(switched);
+            }
         } else if (current == null) {
             return;
         } else if (event instanceof GameEvent.PlayerChatted chatted) {
@@ -169,6 +175,12 @@ final class Engine {
 
     void clearMarker() throws IOException {
         marker.clear();
+    }
+
+    private void joinIfNotOnline(GameEvent.PlayerSwitchedServer first) {
+        if (shared.roster().find(first.player().id()).isEmpty()) {
+            onGameEvent(new GameEvent.PlayerJoined(first.player(), false));
+        }
     }
 
     private void booted(Boot boot) {

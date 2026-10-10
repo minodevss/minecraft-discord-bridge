@@ -47,6 +47,12 @@ public final class EventPosts {
         }
     }
 
+    public void switched(GameEvent.PlayerSwitchedServer event) {
+        if (config.join() && event.from() != null) {
+            post(lang.text("discord.event.switch", name(event.player().name()), name(event.to())));
+        }
+    }
+
     public void died(GameEvent.PlayerDied event) {
         String message = flatten(event.message());
         if (config.death() && !message.isEmpty()) {
@@ -99,8 +105,8 @@ public final class EventPosts {
         return "discord.event.advancement." + frame.name().toLowerCase(Locale.ROOT);
     }
 
-    private static String name(String playerName) {
-        return DiscordEscaper.escape(SafeText.strip(playerName));
+    private static String name(String text) {
+        return DiscordEscaper.escape(SafeText.strip(text));
     }
 
     private static OptionalLong id(String snowflake) {
