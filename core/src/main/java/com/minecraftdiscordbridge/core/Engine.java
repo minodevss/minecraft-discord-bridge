@@ -91,7 +91,7 @@ final class Engine {
                                 Stores.open(shared.platform().dataDirectory()), loader.load(), marker.markRunning()),
                         this::booted,
                         failure -> LOGGER.error(
-                                "The bridge could not start: {}. Fix the problem and run /discord reload",
+                                "The bridge could not start: {}. Fix the problem and restart the server",
                                 failure.toString()));
     }
 
@@ -114,6 +114,12 @@ final class Engine {
                 current.events().left(left);
             }
             refreshStatus();
+        } else if (event instanceof GameEvent.PlayerSwitchedServer switched) {
+            if (switched.from() == null) {
+                joinIfNotOnline(switched);
+            } else if (current != null) {
+                current.events().switched(switched);
+            }
         } else if (current == null) {
             return;
         } else if (event instanceof GameEvent.PlayerChatted chatted) {
@@ -163,11 +169,18 @@ final class Engine {
         if (current != null) {
             current.close();
         }
+        shared.vanilla().close();
         return shared.discord().swap(OfflineDiscord.stopped(OfflineDiscord.STOPPED));
     }
 
     void clearMarker() throws IOException {
         marker.clear();
+    }
+
+    private void joinIfNotOnline(GameEvent.PlayerSwitchedServer first) {
+        if (shared.roster().find(first.player().id()).isEmpty()) {
+            onGameEvent(new GameEvent.PlayerJoined(first.player(), false));
+        }
     }
 
     private void booted(Boot boot) {
@@ -231,8 +244,9 @@ final class Engine {
         BridgeConfig config = loaded.config();
         lang = Lang.of(config.language());
         Channels channels = Channels.resolve(config.discord(), ready.bindings().current());
-        OptionalLong console =
-                config.console().mirror() ? Ids.parse(config.discord().consoleChannel()) : OptionalLong.empty();
+        OptionalLong console = config.console().mirror() && loaded.secrets().hasDiscordToken()
+                ? Ids.parse(config.discord().consoleChannel())
+                : OptionalLong.empty();
         synchronized (lock) {
             if (closed) {
                 return Outcome.APPLIED;

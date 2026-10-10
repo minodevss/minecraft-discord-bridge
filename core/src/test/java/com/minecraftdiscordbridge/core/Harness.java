@@ -5,6 +5,7 @@ import com.minecraftdiscordbridge.core.discord.InteractionRequest;
 import com.minecraftdiscordbridge.core.linking.Codes;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
+import com.minecraftdiscordbridge.core.vanilla.FakeFetcher;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -47,6 +48,7 @@ final class Harness implements AutoCloseable {
     final FakePlatform platform;
     final MutableClock clock = new MutableClock(Instant.parse("2026-10-10T00:00:00Z"));
     final List<RecordingDiscord> discords = new CopyOnWriteArrayList<>();
+    final FakeFetcher mojang = new FakeFetcher();
     final Bridge bridge;
 
     private Harness(Path directory, Map<String, String> environment, Duration actionTimeout) {
@@ -62,7 +64,8 @@ final class Harness implements AutoCloseable {
                 environment,
                 clock,
                 new Codes(new Random(7)),
-                actionTimeout);
+                actionTimeout,
+                mojang);
     }
 
     static Harness create(Path directory, String config) throws IOException {

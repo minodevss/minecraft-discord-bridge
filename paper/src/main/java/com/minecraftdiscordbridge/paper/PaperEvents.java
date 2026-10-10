@@ -51,6 +51,10 @@ public final class PaperEvents implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onQuit(PlayerQuitEvent event) {
+        // Paper kicks every player before onDisable, so core learns of the stop too late to skip these.
+        if (Bukkit.isStopping()) {
+            return;
+        }
         Player player = event.getPlayer();
         bridge.publish(new GameEvent.PlayerLeft(profiles.of(player), vanished(player)));
     }

@@ -10,6 +10,7 @@ import com.minecraftdiscordbridge.core.config.BridgeConfig;
 import com.minecraftdiscordbridge.core.config.Channels;
 import com.minecraftdiscordbridge.core.config.ConfigSnapshot;
 import com.minecraftdiscordbridge.core.console.ConsoleMirror;
+import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.events.EventPosts;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Replies;
@@ -28,7 +29,6 @@ import org.slf4j.LoggerFactory;
 
 final class Sessions {
     private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
-    private static final String DEFAULT_CHAT_FORMAT = "<gray>[Discord]</gray> <author>: <message>";
 
     private Sessions() {}
 
@@ -44,6 +44,7 @@ final class Sessions {
         Replies replies = new Replies(lang, shared.platform().info().dataVersion());
         OptionalLong chat = Ids.parse(channels.chat());
         OptionalLong events = Ids.parse(channels.events());
+        boolean hasGuild = chat.isPresent() || events.isPresent() || console.isPresent();
         ChannelSetup setup = new ChannelSetup(
                 shared.discord(),
                 stores.bindings(),
@@ -63,7 +64,8 @@ final class Sessions {
                 shared.attempts(),
                 shared.roster(),
                 shared.clock(),
-                replies);
+                replies,
+                () -> hasGuild && connected(shared.discord().status()));
         Actions actions =
                 new Actions(config.actions(), shared.platform(), shared.loop()::control, lang, shared.actionTimeout());
         return new Session(
@@ -76,7 +78,8 @@ final class Sessions {
                         lang,
                         shared.platform(),
                         stores.preferences()::hidingDiscord),
-                new EventPosts(config.events(), events, lang, shared.discord()),
+                new EventPosts(
+                        config.events(), events, lang, shared.vanilla().use(config.language()), shared.discord()),
                 new StatusBoard(config.status(), chat, lang, shared.discord(), shared.roster()),
                 new SlashRouter(setup, linking, actions, shared.roster(), lang),
                 new GameCommands(replies, linking, new ChatToggle(stores.preferences(), shared.io(), replies), setup),
@@ -89,12 +92,16 @@ final class Sessions {
                         () -> secrets(shared, snapshot)));
     }
 
+    private static boolean connected(DiscordStatus status) {
+        return status.state() == DiscordStatus.State.READY || status.state() == DiscordStatus.State.DEGRADED;
+    }
+
     private static Format chatFormat(String template) {
         try {
             return DiscordChat.compileFormat(template);
         } catch (IllegalArgumentException invalid) {
             LOGGER.warn("{} Using the default chat.format until it is fixed", invalid.getMessage());
-            return DiscordChat.compileFormat(DEFAULT_CHAT_FORMAT);
+            return DiscordChat.compileFormat(BridgeConfig.defaults().chat().format());
         }
     }
 
