@@ -3,15 +3,11 @@ package com.minecraftdiscordbridge.core.console;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.Author;
-import com.minecraftdiscordbridge.core.discord.Discord;
-import com.minecraftdiscordbridge.core.discord.DiscordStatus;
-import com.minecraftdiscordbridge.core.discord.OutboundMessage;
+import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Language;
 import java.time.ZoneOffset;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
@@ -22,7 +18,7 @@ class ConsoleMirrorTest {
     private static final long CHANNEL = 444444444444444444L;
     private static final long NOON = 43_200_000L;
 
-    private final SentMessages discord = new SentMessages();
+    private final RecordingDiscord discord = new RecordingDiscord();
     private final ConsoleBuffer buffer = new ConsoleBuffer(10);
     private final ConsoleMirror mirror = new ConsoleMirror(
             buffer, CHANNEL, discord, Lang.of(Language.EN), () -> List.of("secret-token"), ZoneOffset.UTC);
@@ -49,7 +45,7 @@ class ConsoleMirrorTest {
 
         mirror.flush();
 
-        assertThat(discord.sent.get(0).text())
+        assertThat(discord.sentMessages().get(0).text())
                 .doesNotContain("secret-token", "10.0.0.1")
                 .contains("`\u200B`\u200B` [hidden] from [ip]");
     }
@@ -88,7 +84,7 @@ class ConsoleMirrorTest {
 
         mirror.flush();
 
-        String text = discord.sent.get(0).text();
+        String text = discord.sentMessages().get(0).text();
         assertThat(text).endsWith("x…\n```");
         assertThat(text.codePoints().filter(c -> c >= Character.MIN_SURROGATE && c <= Character.MAX_SURROGATE))
                 .isEmpty();
@@ -110,7 +106,7 @@ class ConsoleMirrorTest {
             chatty.flush();
         }
         assertThat(discord.sent).hasSize(64);
-        assertThat(discord.sent.get(5).text()).startsWith("```\n[12:00:00 INFO] 5 x");
+        assertThat(discord.sentMessages().get(5).text()).startsWith("```\n[12:00:00 INFO] 5 x");
     }
 
     @Test
@@ -121,7 +117,8 @@ class ConsoleMirrorTest {
 
         mirror.flush();
 
-        assertThat(discord.sent.get(0).text()).startsWith("```\n(3 console lines skipped)\n[12:00:00 INFO] line 0");
+        assertThat(discord.sentMessages().get(0).text())
+                .startsWith("```\n(3 console lines skipped)\n[12:00:00 INFO] line 0");
     }
 
     @Test
@@ -154,36 +151,5 @@ class ConsoleMirrorTest {
                 .setMessage(new SimpleMessage(text))
                 .setTimeMillis(NOON)
                 .build();
-    }
-
-    private static final class SentMessages implements Discord {
-        final List<OutboundMessage> sent = new CopyOnWriteArrayList<>();
-
-        @Override
-        public void start() {}
-
-        @Override
-        public DiscordStatus status() {
-            return new DiscordStatus(DiscordStatus.State.READY, null, 0, Map.of());
-        }
-
-        @Override
-        public void send(OutboundMessage message) {
-            sent.add(message);
-        }
-
-        @Override
-        public void updatePresence(String text) {}
-
-        @Override
-        public void updateTopic(long channelId, String topic) {}
-
-        @Override
-        public boolean isApplicationOwner(long userId) {
-            return false;
-        }
-
-        @Override
-        public void shutdown(List<OutboundMessage> finalMessages) {}
     }
 }

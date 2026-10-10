@@ -3,13 +3,10 @@ package com.minecraftdiscordbridge.core.console;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.config.ConsoleConfig;
-import com.minecraftdiscordbridge.core.discord.Discord;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
-import com.minecraftdiscordbridge.core.discord.DiscordStatus;
-import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.fakes.FakePlatform;
-import com.minecraftdiscordbridge.core.fakes.Waits;
+import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.platform.ActionOutcome;
@@ -20,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -34,7 +30,7 @@ class ConsoleInputTest {
     @TempDir
     Path directory;
 
-    private final SentMessages discord = new SentMessages();
+    private final RecordingDiscord discord = new RecordingDiscord();
 
     @Test
     void runsCommandsFromListedUsersAndRepliesWithTheOutput() {
@@ -167,45 +163,5 @@ class ConsoleInputTest {
                 false,
                 false,
                 false);
-    }
-
-    private static final class SentMessages implements Discord {
-        final List<OutboundMessage> sent = new CopyOnWriteArrayList<>();
-
-        List<String> texts() {
-            return sent.stream().map(OutboundMessage::text).toList();
-        }
-
-        List<String> awaitTexts(int count) {
-            Waits.until(count + " messages", () -> sent.size() >= count);
-            return texts();
-        }
-
-        @Override
-        public void start() {}
-
-        @Override
-        public DiscordStatus status() {
-            return new DiscordStatus(DiscordStatus.State.READY, null, 0, Map.of());
-        }
-
-        @Override
-        public void send(OutboundMessage message) {
-            sent.add(message);
-        }
-
-        @Override
-        public void updatePresence(String text) {}
-
-        @Override
-        public void updateTopic(long channelId, String topic) {}
-
-        @Override
-        public boolean isApplicationOwner(long userId) {
-            return false;
-        }
-
-        @Override
-        public void shutdown(List<OutboundMessage> finalMessages) {}
     }
 }

@@ -11,6 +11,7 @@ import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.RoleInfo;
 import com.minecraftdiscordbridge.core.fakes.FakeGroups;
 import com.minecraftdiscordbridge.core.fakes.MutableClock;
+import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
 import com.minecraftdiscordbridge.core.linking.PendingLinks;
 import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
@@ -46,7 +47,7 @@ class RoleSyncTest {
     Path directory;
 
     private final MutableClock clock = new MutableClock(Instant.parse("2026-10-10T00:00:00Z"));
-    private final StubDiscord discord = new StubDiscord();
+    private final RecordingDiscord discord = new RecordingDiscord();
     private final FakeGroups groups = new FakeGroups();
     private final List<Runnable> later = new ArrayList<>();
     private LinkStore links;
@@ -89,7 +90,7 @@ class RoleSyncTest {
         sync.playerJoined(STEVE);
 
         assertThat(groups.changes).containsExactly("+vip " + STEVE.id());
-        assertThat(discord.lookups).isEmpty();
+        assertThat(discord.memberLookups).isEmpty();
     }
 
     @Test
@@ -100,7 +101,7 @@ class RoleSyncTest {
         sync.memberUpdated(new MemberLookup.Member(USER, Set.of()));
 
         assertThat(groups.changes).containsExactly("-vip " + STEVE.id());
-        assertThat(discord.lookups).isEmpty();
+        assertThat(discord.memberLookups).isEmpty();
     }
 
     @Test
@@ -153,7 +154,7 @@ class RoleSyncTest {
         assertThat(discord.roleChanges).isEmpty();
         assertThat(later).hasSize(1);
         later.remove(0).run();
-        assertThat(discord.roleChanges).containsExactly("+" + STAFF);
+        assertThat(discord.roleChanges).containsExactly("+" + STAFF + " " + USER);
         sync.close();
     }
 
@@ -174,7 +175,7 @@ class RoleSyncTest {
 
         assertThat(groups.watchers()).isZero();
         later.forEach(Runnable::run);
-        assertThat(discord.lookups).isEmpty();
+        assertThat(discord.memberLookups).isEmpty();
         assertThat(discord.roleChanges).isEmpty();
     }
 
@@ -187,7 +188,7 @@ class RoleSyncTest {
         sync.playerJoined(STEVE);
 
         assertThat(sync.activeRules()).containsExactly(ADMIN_TO_STAFF);
-        assertThat(discord.roleChanges).containsExactly("+" + STAFF);
+        assertThat(discord.roleChanges).containsExactly("+" + STAFF + " " + USER);
     }
 
     @Test

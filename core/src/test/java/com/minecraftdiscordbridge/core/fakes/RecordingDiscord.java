@@ -48,6 +48,36 @@ public final class RecordingDiscord implements Discord {
         this.listener = listener;
     }
 
+    public RecordingDiscord() {
+        this(null, null, null);
+    }
+
+    public void memberWithRoles(long userId, Long... roleIds) {
+        MemberLookup.Member member = new MemberLookup.Member(userId, Set.of(roleIds));
+        members = id -> CompletableFuture.completedFuture(id == userId ? member : new MemberLookup.NotMember(id));
+    }
+
+    public void unreachable() {
+        members = id -> CompletableFuture.completedFuture(new MemberLookup.Unavailable("Discord is down"));
+    }
+
+    public void role(long id, String name, String... dangerous) {
+        roles.put(id, new RoleInfo(id, name, Set.of(dangerous), true));
+    }
+
+    public List<OutboundMessage> sentMessages() {
+        return List.copyOf(sent);
+    }
+
+    public List<String> texts() {
+        return sent.stream().map(OutboundMessage::text).toList();
+    }
+
+    public List<String> awaitTexts(int count) {
+        Waits.until(count + " messages", () -> sent.size() >= count);
+        return texts();
+    }
+
     public void receive(DiscordMessage message) {
         loop.content(() -> listener.onMessage(message));
     }

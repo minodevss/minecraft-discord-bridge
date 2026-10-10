@@ -9,6 +9,7 @@ import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.fakes.FakeGroups;
 import com.minecraftdiscordbridge.core.fakes.MutableClock;
+import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.i18n.Replies;
@@ -48,7 +49,7 @@ class JoinGateTest {
     Path directory;
 
     private final MutableClock clock = new MutableClock(Instant.parse("2026-10-10T00:00:00Z"));
-    private final StubDiscord discord = new StubDiscord();
+    private final RecordingDiscord discord = new RecordingDiscord();
     private final FakeGroups groups = new FakeGroups();
     private final AccessMemory memory = new AccessMemory();
     private final PendingLinks pending = new PendingLinks(new Codes(new Random(7)));
@@ -68,7 +69,7 @@ class JoinGateTest {
                 true, false, Optional.of(new DiscordId(777777777777777777L)), UnreachablePolicy.DENY));
 
         assertThat(decide(gate, STEVE)).isInstanceOf(JoinDecision.Allow.class);
-        assertThat(discord.lookups).isEmpty();
+        assertThat(discord.memberLookups).isEmpty();
     }
 
     @Test
@@ -90,7 +91,7 @@ class JoinGateTest {
         JoinGate gate = gate(required(Optional.empty(), UnreachablePolicy.DENY));
 
         assertThat(decide(gate, STEVE)).isInstanceOf(JoinDecision.Allow.class);
-        assertThat(discord.lookups).isEmpty();
+        assertThat(discord.memberLookups).isEmpty();
     }
 
     @Test
@@ -99,7 +100,7 @@ class JoinGateTest {
         discord.memberWithRoles(STEVE_DISCORD, VIP);
 
         assertThat(decide(roleGate(UnreachablePolicy.DENY), STEVE)).isInstanceOf(JoinDecision.Allow.class);
-        assertThat(discord.lookups).containsExactly(STEVE_DISCORD);
+        assertThat(discord.memberLookups).containsExactly(STEVE_DISCORD);
     }
 
     @Test
@@ -128,11 +129,11 @@ class JoinGateTest {
         decide(gate, STEVE);
         clock.advance(Duration.ofSeconds(59));
         decide(gate, STEVE);
-        assertThat(discord.lookups).hasSize(1);
+        assertThat(discord.memberLookups).hasSize(1);
 
         clock.advance(Duration.ofSeconds(2));
         decide(gate, STEVE);
-        assertThat(discord.lookups).hasSize(2);
+        assertThat(discord.memberLookups).hasSize(2);
     }
 
     @Test
@@ -183,7 +184,7 @@ class JoinGateTest {
 
         assertThat(bypassed.getNow(null)).isInstanceOf(JoinDecision.Allow.class);
         assertThat(decide(gate, STEVE)).isInstanceOf(JoinDecision.Allow.class);
-        assertThat(discord.lookups).isEmpty();
+        assertThat(discord.memberLookups).isEmpty();
     }
 
     @Test
