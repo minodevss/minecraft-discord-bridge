@@ -54,6 +54,32 @@ class SlashCommandsTest {
     }
 
     @Test
+    void carriesSubcommandsWithTheirOwnOptionsAndKoreanDescriptions() {
+        CommandSpec whitelist = new CommandSpec(
+                "whitelist",
+                "Change the whitelist",
+                null,
+                List.of(),
+                List.of(new CommandSpec.Subcommand(
+                        "add",
+                        "Add a player",
+                        new CommandSpec.Localized("add", "플레이어를 추가합니다"),
+                        List.of(new CommandSpec.Option(
+                                CommandSpec.OptionType.STRING, "player", "Player name", null, true, false)))),
+                true,
+                true,
+                false);
+
+        DataObject add =
+                SlashCommands.toData(whitelist).toData().getArray("options").getObject(0);
+
+        assertThat(add.getInt("type")).isEqualTo(1);
+        assertThat(add.getString("name")).isEqualTo("add");
+        assertThat(add.getObject("description_localizations").getString("ko")).isEqualTo("플레이어를 추가합니다");
+        assertThat(add.getArray("options").getObject(0).getString("name")).isEqualTo("player");
+    }
+
+    @Test
     void hashesTheSameCommandsTheSameWay() {
         String first = new SlashCommands(List.of(KICK, LINK), new TestSupport.MemoryCommandHashes()).hash(1);
         String second = new SlashCommands(List.of(KICK, LINK), new TestSupport.MemoryCommandHashes()).hash(1);

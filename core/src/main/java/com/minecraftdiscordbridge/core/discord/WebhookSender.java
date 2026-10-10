@@ -163,9 +163,9 @@ final class WebhookSender implements MessageSender {
         rateLimits.bindWebhook(webhook.id(), channelId);
         try {
             return WebhookClient.createClient(api, Long.toUnsignedString(webhook.id()), webhook.token())
-                    .sendMessage(Messages.create(post.content(), post.pingUserIds()))
-                    .setUsername(WebhookNames.sanitize(post.author().name()))
-                    .setAvatarUrl(post.author().avatarUrl())
+                    .sendMessage(Messages.create(post.content(), post.pingUserIds(), post.pingRoleIds()))
+                    .setUsername(WebhookNames.sanitize(name(api, post.author())))
+                    .setAvatarUrl(avatarUrl(api, post.author()))
                     .submit()
                     .<Void>thenApply(message -> null)
                     .exceptionallyCompose(failure ->
@@ -194,7 +194,7 @@ final class WebhookSender implements MessageSender {
                     new IllegalStateException("the bot cannot see channel " + Long.toUnsignedString(channelId)));
         }
         try {
-            return channel.sendMessage(Messages.create(post.contentAsBot(), post.pingUserIds()))
+            return channel.sendMessage(Messages.create(post.contentAsBot(), post.pingUserIds(), post.pingRoleIds()))
                     .submit()
                     .thenApply(message -> null);
         } catch (RuntimeException failure) {
@@ -225,6 +225,15 @@ final class WebhookSender implements MessageSender {
         botOnlyUntil.remove(channelId);
         rateLimits.bindWebhook(credentials.id(), channelId);
         return credentials;
+    }
+
+    private static String name(JDA api, Author author) {
+        return author.isServer() && author.name().isBlank() ? api.getSelfUser().getEffectiveName() : author.name();
+    }
+
+    private static @Nullable String avatarUrl(JDA api, Author author) {
+        String avatar = author.avatarUrl();
+        return author.isServer() && avatar == null ? api.getSelfUser().getEffectiveAvatarUrl() : avatar;
     }
 
     private static boolean isOurs(JDA api, Webhook webhook) {

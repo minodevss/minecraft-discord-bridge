@@ -68,6 +68,7 @@ public final class JdaDiscord implements Discord {
     private record Phase(State state, @Nullable String reason) {}
 
     private final DiscordSettings settings;
+    private final GuildScope scope;
     private final Endpoints endpoints;
     private final CoreLoop loop;
     private final DiscordListener listener;
@@ -100,6 +101,7 @@ public final class JdaDiscord implements Discord {
             WebhookRepository webhookRepository,
             CommandHashRepository commandHashes) {
         this.settings = settings;
+        this.scope = new GuildScope(settings);
         this.endpoints = endpoints;
         this.loop = loop;
         this.listener = listener;
@@ -108,7 +110,7 @@ public final class JdaDiscord implements Discord {
         this.webhooks = new WebhookSender(this::currentJda, webhookRepository, rateLimits, System::nanoTime);
         this.outbox = new Outbox(settings.serverAuthor(), webhooks, loop::control);
         this.commands = new SlashCommands(settings.commands(), commandHashes);
-        this.events = new JdaEvents(settings, loop, listener, webhooks);
+        this.events = new JdaEvents(settings, scope, loop, listener, webhooks);
         this.appearance = new Appearance(this::currentJda, System::nanoTime, this::schedule);
     }
 
@@ -311,7 +313,8 @@ public final class JdaDiscord implements Discord {
             events.onAutocomplete(autocomplete);
         } else if (event instanceof ReadyEvent) {
             loop.control(() -> onReady(generation, event.getJDA()));
-        } else if (event instanceof GuildJoinEvent joined && joined.getGuild().getIdLong() == settings.guildId()) {
+        } else if (event instanceof GuildJoinEvent joined
+                && scope.mayResolveTo(joined.getGuild().getIdLong())) {
             loop.control(() -> onReady(generation, event.getJDA()));
         } else if (event instanceof ShutdownEvent ended) {
             CloseCode code = ended.getCloseCode();
@@ -324,12 +327,17 @@ public final class JdaDiscord implements Discord {
         if (closing || !generations.isCurrent(generation)) {
             return;
         }
-        Guild guild = jda.getGuildById(settings.guildId());
+        if (scope.waitingForSetup()) {
+            readyForSetup(jda);
+            return;
+        }
+        Guild guild = scope.resolve(jda);
         if (guild == null) {
-            String reason = "The bot is not in Discord server " + Long.toUnsignedString(settings.guildId())
-                    + ". Invite it with https://discord.com/oauth2/authorize?client_id="
-                    + jda.getSelfUser().getApplicationId() + "&scope=bot+applications.commands&permissions="
-                    + Permission.getRaw(INVITE_PERMISSIONS);
+            String reason = settings.guildId() == DiscordSettings.NO_GUILD
+                    ? "The bot cannot see any of the configured channels. Check the channel IDs in the config, or"
+                            + " invite the bot with " + inviteUrl(jda)
+                    : "The bot is not in Discord server " + Long.toUnsignedString(settings.guildId())
+                            + ". Invite it with " + inviteUrl(jda);
             LOGGER.warn(reason);
             enter(State.DEGRADED, reason);
             return;
@@ -354,6 +362,32 @@ public final class JdaDiscord implements Discord {
         } else {
             enter(State.DEGRADED, String.join(" ", warnings));
         }
+    }
+
+    private void readyForSetup(JDA jda) {
+        List<Guild> guilds = jda.getGuilds();
+        if (guilds.isEmpty()) {
+            String reason = "The bot is not in any Discord server. Invite it with " + inviteUrl(jda);
+            LOGGER.warn(reason);
+            enter(State.DEGRADED, reason);
+            return;
+        }
+        long applicationId = jda.getSelfUser().getApplicationIdLong();
+        guilds.forEach(guild -> commands.registerIfChanged(guild, applicationId));
+        appearance.reapplyPresence();
+        outbox.open();
+        LOGGER.info(
+                "Connected to Discord as {}. Run /setup in the Discord channel that should show the chat",
+                jda.getSelfUser().getName());
+        enter(
+                warnings.isEmpty() ? State.READY : State.DEGRADED,
+                warnings.isEmpty() ? null : String.join(" ", warnings));
+    }
+
+    private static String inviteUrl(JDA jda) {
+        return "https://discord.com/oauth2/authorize?client_id="
+                + jda.getSelfUser().getApplicationId() + "&scope=bot+applications.commands&permissions="
+                + Permission.getRaw(INVITE_PERMISSIONS);
     }
 
     private void sessionEnded(int generation, @Nullable CloseCode code, int rawCode) {

@@ -17,6 +17,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
+import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,6 +86,20 @@ final class SlashCommands {
                     .setDescriptionLocalization(DiscordLocale.KOREAN, korean.description());
         }
         return command.addOptions(
+                        spec.options().stream().map(SlashCommands::toData).toList())
+                .addSubcommands(
+                        spec.subcommands().stream().map(SlashCommands::toData).toList());
+    }
+
+    private static SubcommandData toData(CommandSpec.Subcommand spec) {
+        SubcommandData subcommand = new SubcommandData(spec.name(), spec.description());
+        CommandSpec.Localized korean = spec.korean();
+        if (korean != null) {
+            subcommand
+                    .setNameLocalization(DiscordLocale.KOREAN, korean.name())
+                    .setDescriptionLocalization(DiscordLocale.KOREAN, korean.description());
+        }
+        return subcommand.addOptions(
                 spec.options().stream().map(SlashCommands::toData).toList());
     }
 

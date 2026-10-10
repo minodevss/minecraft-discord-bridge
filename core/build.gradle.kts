@@ -22,6 +22,7 @@ dependencies {
     compileOnly(libs.log4j.core)
     testImplementation(libs.gson)
     testImplementation(libs.slf4j.api)
+    testImplementation(libs.log4j.core)
     testImplementation(libs.archunit)
     testImplementation(libs.mockwebserver)
     testImplementation(libs.jazzer.junit)

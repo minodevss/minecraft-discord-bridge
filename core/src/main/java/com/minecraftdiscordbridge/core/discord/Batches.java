@@ -33,11 +33,11 @@ final class Batches {
     private static Batch sameAuthorRun(Deque<OutboundMessage> queue) {
         OutboundMessage first = queue.removeFirst();
         Lines lines = new Lines();
-        lines.addMessage(first.text(), first.pingUserIds());
+        lines.addMessage(first);
         OutboundMessage next = queue.peekFirst();
         while (next != null && next.author().key().equals(first.author().key()) && lines.fits(next.text())) {
             queue.removeFirst();
-            lines.addMessage(next.text(), next.pingUserIds());
+            lines.addMessage(next);
             next = queue.peekFirst();
         }
         return lines.post(first.author());
@@ -46,12 +46,12 @@ final class Batches {
     private static Batch digest(Deque<OutboundMessage> queue, long skipped, Author server) {
         Lines lines = new Lines();
         if (skipped > 0) {
-            lines.add(skipped == 1 ? "(1 message skipped)" : "(" + skipped + " messages skipped)", Set.of());
+            lines.add(skipped == 1 ? "(1 message skipped)" : "(" + skipped + " messages skipped)");
         }
         OutboundMessage next = queue.peekFirst();
         while (next != null && (lines.isEmpty() || lines.fits(digestLine(next)))) {
             queue.removeFirst();
-            lines.addMessage(digestLine(next), next.pingUserIds());
+            lines.addMessage(digestLine(next), next);
             next = queue.peekFirst();
         }
         return lines.post(server);
@@ -68,6 +68,7 @@ final class Batches {
     private static final class Lines {
         private final StringBuilder content = new StringBuilder();
         private final Set<Long> pings = new LinkedHashSet<>();
+        private final Set<Long> rolePings = new LinkedHashSet<>();
         private int messages;
 
         boolean isEmpty() {
@@ -78,25 +79,34 @@ final class Batches {
             return content.length() + 1 + line.length() <= DiscordText.MAX_MESSAGE_LENGTH;
         }
 
-        void addMessage(String line, Set<Long> linePings) {
-            add(line, linePings);
+        void addMessage(OutboundMessage message) {
+            addMessage(message.text(), message);
+        }
+
+        void addMessage(String line, OutboundMessage message) {
+            add(line);
+            collect(message.pingUserIds(), pings);
+            collect(message.pingRoleIds(), rolePings);
             messages++;
         }
 
-        void add(String line, Set<Long> linePings) {
+        void add(String line) {
             if (!isEmpty()) {
                 content.append('\n');
             }
             content.append(DiscordText.fit(line, DiscordText.MAX_MESSAGE_LENGTH - content.length()));
-            for (Long ping : linePings) {
-                if (pings.size() < MAX_PINGS) {
-                    pings.add(ping);
+        }
+
+        private static void collect(Set<Long> from, Set<Long> into) {
+            for (Long ping : from) {
+                if (into.size() < MAX_PINGS) {
+                    into.add(ping);
                 }
             }
         }
 
         Batch post(Author author) {
-            return new Batch(new Post(author, content.toString(), pings), messages);
+            return new Batch(new Post(author, content.toString(), pings, rolePings), messages);
         }
     }
 }

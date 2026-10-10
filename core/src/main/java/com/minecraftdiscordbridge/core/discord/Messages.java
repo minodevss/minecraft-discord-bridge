@@ -20,18 +20,28 @@ final class Messages {
 
     private Messages() {}
 
-    static MessageCreateData create(String content, Set<Long> pingUserIds) {
-        List<String> users = pingUserIds.stream().map(Long::toUnsignedString).toList();
-        return new MessageCreateBuilder()
+    static MessageCreateData create(String content, Set<Long> pingUserIds, Set<Long> pingRoleIds) {
+        MessageCreateBuilder message = new MessageCreateBuilder()
                 .setContent(DiscordText.fit(content, DiscordText.MAX_MESSAGE_LENGTH))
                 .setAllowedMentions(NO_MENTIONS)
-                .mentionUsers(users)
-                .mentionRepliedUser(false)
-                .build();
+                .mentionUsers(ids(pingUserIds))
+                .mentionRepliedUser(false);
+        if (!pingRoleIds.isEmpty()) {
+            message.mentionRoles(ids(pingRoleIds));
+        }
+        return message.build();
+    }
+
+    static MessageCreateData create(String content, Set<Long> pingUserIds) {
+        return create(content, pingUserIds, Set.of());
     }
 
     static MessageCreateData create(String content) {
-        return create(content, Set.of());
+        return create(content, Set.of(), Set.of());
+    }
+
+    private static List<String> ids(Set<Long> ids) {
+        return ids.stream().map(Long::toUnsignedString).toList();
     }
 
     static MessageEditData edit(String content) {

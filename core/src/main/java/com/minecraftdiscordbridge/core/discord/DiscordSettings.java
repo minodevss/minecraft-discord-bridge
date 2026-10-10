@@ -13,6 +13,8 @@ public record DiscordSettings(
         boolean relayBotMessages,
         boolean relayWebhookMessages,
         List<CommandSpec> commands) {
+    public static final long NO_GUILD = 0;
+
     public DiscordSettings {
         channelIds = Set.copyOf(channelIds);
         commands = List.copyOf(commands);
