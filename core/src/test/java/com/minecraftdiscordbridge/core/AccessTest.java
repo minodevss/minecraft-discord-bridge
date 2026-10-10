@@ -82,6 +82,19 @@ class AccessTest {
     }
 
     @Test
+    void answersWithinItsBoundEvenWhenThePermissionCheckNeverDoes() throws Exception {
+        try (Harness harness = Harness.started(directory, GATE)) {
+            long started = System.nanoTime();
+            JoinDecision decision = harness.bridge
+                    .checkJoin(STEVE, permission -> new CompletableFuture<>())
+                    .get(5, TimeUnit.SECONDS);
+
+            assertThat(Duration.ofNanos(System.nanoTime() - started)).isLessThan(Duration.ofMillis(3800));
+            assertThat(denied(decision)).startsWith("Your Discord account cannot be checked right now.");
+        }
+    }
+
+    @Test
     void letsPlayersInWhenTheGateIsOff() throws Exception {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             assertThat(join(harness)).isInstanceOf(JoinDecision.Allow.class);
@@ -158,7 +171,9 @@ class AccessTest {
 
     private static JoinDecision join(Harness harness) {
         try {
-            return harness.bridge.checkJoin(STEVE, false).get(5, TimeUnit.SECONDS);
+            return harness.bridge
+                    .checkJoin(STEVE, permission -> CompletableFuture.completedFuture(false))
+                    .get(5, TimeUnit.SECONDS);
         } catch (Exception failure) {
             throw new AssertionError(failure);
         }

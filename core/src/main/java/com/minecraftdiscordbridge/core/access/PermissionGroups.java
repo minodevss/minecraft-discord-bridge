@@ -1,5 +1,6 @@
 package com.minecraftdiscordbridge.core.access;
 
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -17,7 +18,7 @@ public interface PermissionGroups {
 
     CompletableFuture<Void> removeGroup(UUID player, String group);
 
-    CompletableFuture<Boolean> hasPermission(UUID player, String node);
+    CompletableFuture<Optional<Boolean>> permission(UUID player, String node);
 
     Runnable onGroupsChanged(Consumer<UUID> changed);
 

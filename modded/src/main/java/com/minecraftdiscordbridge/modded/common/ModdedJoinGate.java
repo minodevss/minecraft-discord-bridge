@@ -1,14 +1,12 @@
 package com.minecraftdiscordbridge.modded.common;
 
 import com.minecraftdiscordbridge.core.platform.JoinDecision;
+import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.mojang.authlib.GameProfile;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-//? if >=1.21.11 {
-import net.minecraft.server.players.NameAndId;
-//?}
 
 public final class ModdedJoinGate {
     private static final String REFUSED = "You cannot join this server right now.";
@@ -25,8 +23,10 @@ public final class ModdedJoinGate {
             return CompletableFuture.completedFuture(Optional.empty());
         }
         MinecraftServer server = current.server();
+        PlayerProfile player = current.profiles().of(profile);
+        LoaderHooks loader = events.loader();
         return current.bridge()
-                .checkJoin(current.profiles().of(profile), isOperator(server, profile))
+                .checkJoin(player, permission -> loader.hasOfflinePermission(server, player.id(), permission))
                 .thenApplyAsync(decision -> kickMessage(decision, server), server);
     }
 
@@ -37,14 +37,4 @@ public final class ModdedJoinGate {
         }
         return Optional.empty();
     }
-
-    //? if >=1.21.11 {
-    private static boolean isOperator(MinecraftServer server, GameProfile profile) {
-        return server.getPlayerList().isOp(new NameAndId(profile));
-    }
-    //?} else {
-    /*private static boolean isOperator(MinecraftServer server, GameProfile profile) {
-        return server.getPlayerList().isOp(profile);
-    }
-    *///?}
 }

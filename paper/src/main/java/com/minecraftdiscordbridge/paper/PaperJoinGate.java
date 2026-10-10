@@ -2,8 +2,10 @@ package com.minecraftdiscordbridge.paper;
 
 import com.minecraftdiscordbridge.core.Bridge;
 import com.minecraftdiscordbridge.core.platform.JoinDecision;
+import com.minecraftdiscordbridge.core.platform.Permission;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
@@ -27,12 +29,17 @@ public final class PaperJoinGate implements Listener {
         }
         UUID id = event.getUniqueId();
         PlayerProfile player = profiles.atLogin(id, event.getName());
-        JoinDecision decision =
-                bridge.checkJoin(player, Bukkit.getOfflinePlayer(id).isOp()).join();
+        JoinDecision decision = bridge.checkJoin(player, permission -> offlinePermission(id, permission))
+                .join();
         if (decision instanceof JoinDecision.Deny deny) {
             event.disallow(
                     AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST,
                     GsonComponentSerializer.gson().deserialize(deny.json()));
         }
+    }
+
+    private static CompletableFuture<Boolean> offlinePermission(UUID id, Permission permission) {
+        return CompletableFuture.completedFuture(
+                permission.everyoneByDefault() || Bukkit.getOfflinePlayer(id).isOp());
     }
 }

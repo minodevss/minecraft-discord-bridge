@@ -166,5 +166,9 @@ public final class ModdedEvents {
         return session.get();
     }
 
+    LoaderHooks loader() {
+        return loader;
+    }
+
     record Session(MinecraftServer server, Bridge bridge, ModdedProfiles profiles) {}
 }

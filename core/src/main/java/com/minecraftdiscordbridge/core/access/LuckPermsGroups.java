@@ -4,6 +4,7 @@ import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
 import com.minecraftdiscordbridge.core.log.Failures;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -24,6 +25,7 @@ import net.luckperms.api.node.Node;
 import net.luckperms.api.node.NodeType;
 import net.luckperms.api.node.types.InheritanceNode;
 import net.luckperms.api.query.QueryOptions;
+import net.luckperms.api.util.Tristate;
 
 final class LuckPermsGroups implements PermissionGroups {
     private LuckPermsGroups() {}
@@ -62,13 +64,12 @@ final class LuckPermsGroups implements PermissionGroups {
     }
 
     @Override
-    public CompletableFuture<Boolean> hasPermission(UUID player, String node) {
+    public CompletableFuture<Optional<Boolean>> permission(UUID player, String node) {
         return call(api -> api.getUserManager()
                 .loadUser(player)
-                .thenApply(user -> user.getCachedData()
+                .thenApply(user -> explicit(user.getCachedData()
                         .getPermissionData(user.getQueryOptions())
-                        .checkPermission(node)
-                        .asBoolean()));
+                        .checkPermission(node))));
     }
 
     @Override
@@ -133,6 +134,10 @@ final class LuckPermsGroups implements PermissionGroups {
 
     private static Set<Node> inheritance(Set<Node> nodes) {
         return nodes.stream().filter(NodeType.INHERITANCE::matches).collect(Collectors.toSet());
+    }
+
+    private static Optional<Boolean> explicit(Tristate value) {
+        return value == Tristate.UNDEFINED ? Optional.empty() : Optional.of(value.asBoolean());
     }
 
     private static InheritanceNode membership(String group) {
