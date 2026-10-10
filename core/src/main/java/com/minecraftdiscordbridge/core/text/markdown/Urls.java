@@ -1,4 +1,4 @@
-package com.minecraftdiscordbridge.core.text;
+package com.minecraftdiscordbridge.core.text.markdown;
 
 import java.net.URI;
 import java.net.URISyntaxException;

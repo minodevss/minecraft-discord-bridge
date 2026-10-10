@@ -9,7 +9,7 @@ import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.linking.Linking;
 import com.minecraftdiscordbridge.core.setup.ChannelSetup;
 import com.minecraftdiscordbridge.core.status.Roster;
-import com.minecraftdiscordbridge.core.text.DiscordEscaper;
+import com.minecraftdiscordbridge.core.text.markdown.DiscordEscaper;
 import java.util.List;
 import java.util.Locale;
 

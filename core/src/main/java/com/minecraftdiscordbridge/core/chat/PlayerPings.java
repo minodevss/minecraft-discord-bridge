@@ -1,7 +1,7 @@
 package com.minecraftdiscordbridge.core.chat;
 
 import com.minecraftdiscordbridge.core.storage.Link;
-import com.minecraftdiscordbridge.core.text.DiscordEscaper;
+import com.minecraftdiscordbridge.core.text.markdown.DiscordEscaper;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;

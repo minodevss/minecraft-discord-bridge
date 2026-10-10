@@ -1,4 +1,4 @@
-package com.minecraftdiscordbridge.core.text;
+package com.minecraftdiscordbridge.core.text.markdown;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

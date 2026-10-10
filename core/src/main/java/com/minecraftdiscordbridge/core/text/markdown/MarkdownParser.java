@@ -1,8 +1,8 @@
-package com.minecraftdiscordbridge.core.text;
+package com.minecraftdiscordbridge.core.text.markdown;
 
-import static com.minecraftdiscordbridge.core.text.MarkdownText.NONE;
+import static com.minecraftdiscordbridge.core.text.markdown.MarkdownText.NONE;
 
-import com.minecraftdiscordbridge.core.text.Closers.Delimiter;
+import com.minecraftdiscordbridge.core.text.markdown.Closers.Delimiter;
 import java.util.List;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;

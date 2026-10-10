@@ -1,5 +1,6 @@
-package com.minecraftdiscordbridge.core.text;
+package com.minecraftdiscordbridge.core.text.markdown;
 
+import com.minecraftdiscordbridge.core.text.SafeText;
 import net.kyori.adventure.text.Component;
 
 public final class DiscordMarkdown {

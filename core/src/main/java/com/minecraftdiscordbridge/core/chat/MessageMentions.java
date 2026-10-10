@@ -1,7 +1,7 @@
 package com.minecraftdiscordbridge.core.chat;
 
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
-import com.minecraftdiscordbridge.core.text.MentionResolver;
+import com.minecraftdiscordbridge.core.text.markdown.MentionResolver;
 import org.jspecify.annotations.Nullable;
 
 record MessageMentions(DiscordMessage message) implements MentionResolver {

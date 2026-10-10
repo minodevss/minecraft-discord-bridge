@@ -1,4 +1,4 @@
-package com.minecraftdiscordbridge.core.text;
+package com.minecraftdiscordbridge.core.text.markdown;
 
 public final class DiscordEscaper {
     private static final String MARKDOWN = "\\*_~`|[]()<>";

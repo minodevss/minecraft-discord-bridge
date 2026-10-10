@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.text;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.minecraftdiscordbridge.core.text.markdown.DiscordMarkdown;
 import java.util.Set;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;

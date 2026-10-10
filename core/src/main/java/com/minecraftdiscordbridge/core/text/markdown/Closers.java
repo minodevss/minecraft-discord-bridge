@@ -1,6 +1,6 @@
-package com.minecraftdiscordbridge.core.text;
+package com.minecraftdiscordbridge.core.text.markdown;
 
-import static com.minecraftdiscordbridge.core.text.MarkdownText.NONE;
+import static com.minecraftdiscordbridge.core.text.markdown.MarkdownText.NONE;
 
 import java.util.EnumMap;
 import java.util.HashMap;

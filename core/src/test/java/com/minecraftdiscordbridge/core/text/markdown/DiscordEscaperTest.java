@@ -1,8 +1,9 @@
-package com.minecraftdiscordbridge.core.text;
+package com.minecraftdiscordbridge.core.text.markdown;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
+import com.minecraftdiscordbridge.core.text.Markup;
 import java.util.Random;
 import java.util.stream.Stream;
 import net.kyori.adventure.text.Component;

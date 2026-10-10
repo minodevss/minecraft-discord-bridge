@@ -1,4 +1,4 @@
-package com.minecraftdiscordbridge.core.text;
+package com.minecraftdiscordbridge.core.text.markdown;
 
 import java.util.List;
 import net.kyori.adventure.text.Component;

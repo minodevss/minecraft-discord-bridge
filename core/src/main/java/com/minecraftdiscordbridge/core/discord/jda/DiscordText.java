@@ -1,7 +1,7 @@
 package com.minecraftdiscordbridge.core.discord.jda;
 
-import com.minecraftdiscordbridge.core.text.DiscordEscaper;
 import com.minecraftdiscordbridge.core.text.Graphemes;
+import com.minecraftdiscordbridge.core.text.markdown.DiscordEscaper;
 
 final class DiscordText {
     static final int MAX_MESSAGE_LENGTH = 2000;

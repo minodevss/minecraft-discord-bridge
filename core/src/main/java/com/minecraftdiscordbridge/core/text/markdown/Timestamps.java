@@ -1,4 +1,4 @@
-package com.minecraftdiscordbridge.core.text;
+package com.minecraftdiscordbridge.core.text.markdown;
 
 import java.time.Instant;
 import java.time.LocalDate;
