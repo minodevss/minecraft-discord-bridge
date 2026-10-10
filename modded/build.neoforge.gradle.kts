@@ -46,5 +46,5 @@ tasks.processResources {
     )
     inputs.properties(props)
     filesMatching("META-INF/neoforge.mods.toml") { expand(props) }
-    exclude("fabric.mod.json", "minecraftdiscordbridge.mixins.json", "META-INF/mods.toml")
+    exclude("fabric.mod.json", "minecraftdiscordbridge.mixins.json", "META-INF/mods.toml", "pack.mcmeta")
 }

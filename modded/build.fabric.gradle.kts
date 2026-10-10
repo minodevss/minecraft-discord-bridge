@@ -64,7 +64,7 @@ tasks.named<ProcessResources>("processResources") {
     )
     inputs.properties(props)
     filesMatching(listOf("fabric.mod.json", "minecraftdiscordbridge.mixins.json")) { expand(props) }
-    exclude("META-INF/neoforge.mods.toml", "META-INF/mods.toml")
+    exclude("META-INF/neoforge.mods.toml", "META-INF/mods.toml", "pack.mcmeta")
 }
 
 if (unobfuscated) {
