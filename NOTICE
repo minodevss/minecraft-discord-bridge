@@ -32,3 +32,20 @@ Licensed under the MIT License:
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
+
+The release jars bundle third-party libraries. THIRD-PARTY-NOTICES lists
+them with their copyright notices and licenses. These bundled libraries
+ship NOTICE files under the Apache License, Version 2.0:
+
+Jackson
+Copyright 2007-, Tatu Saloranta (tatu.saloranta@iki.fi)
+Licensed under the Apache License, Version 2.0.
+jackson-core bundles FastDoubleParser, Copyright 2023 Werner Randelshofer,
+Switzerland, and Schubfach, Copyright 2018-2020 Raffaello Giulietti, both
+under the MIT License.
+
+Apache Commons Collections
+Copyright 2001-2026 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (https://www.apache.org/).
