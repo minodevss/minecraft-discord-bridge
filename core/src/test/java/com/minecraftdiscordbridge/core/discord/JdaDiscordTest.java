@@ -108,7 +108,7 @@ class JdaDiscordTest {
         assertThatCode(() -> bridge = start(TestSupport.settings(List.of()))).doesNotThrowAnyException();
 
         awaitState(State.STOPPED);
-        assertThat(bridge.status().reason()).contains("rejected the bot token");
+        assertThat(bridge.status().reason()).contains("rejected the bot token").contains("secrets.yml");
         assertThat(discord.timeline).containsExactly("GET applications/@me");
     }
 
@@ -170,7 +170,7 @@ class JdaDiscordTest {
                 .isNotZero();
         assertThat(discord.identifies.get(1).getInt("intents") & MESSAGE_CONTENT_INTENT)
                 .isZero();
-        assertThat(bridge.status().reason()).contains("refused the Message Content intent");
+        assertThat(bridge.status().reason()).contains("refused the bot's privileged intents");
     }
 
     @Test
@@ -638,7 +638,7 @@ class JdaDiscordTest {
         bridge = start(unbound(Set.of(CHANNEL_ID + 1), List.of(LIST)));
 
         awaitState(State.DEGRADED);
-        assertThat(bridge.status().reason()).contains("cannot see any of the configured channels");
+        assertThat(bridge.status().reason()).contains("cannot see any channel set under discord: in config.yml");
         assertThat(registrations()).isEmpty();
     }
 

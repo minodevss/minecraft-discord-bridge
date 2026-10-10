@@ -187,7 +187,8 @@ public final class Bridge {
             cleared.get(remaining, TimeUnit.NANOSECONDS);
         } catch (ExecutionException failure) {
             LOGGER.warn(
-                    "Could not delete data/running: {}. The next start will report an unclean shutdown",
+                    "Could not delete data/running: {}. The next start will report an unclean shutdown; check that"
+                            + " the data folder is writable",
                     failure.getCause() == null
                             ? failure.toString()
                             : failure.getCause().toString());

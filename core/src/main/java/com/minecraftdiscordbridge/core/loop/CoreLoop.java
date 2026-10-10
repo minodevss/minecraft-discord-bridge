@@ -116,7 +116,7 @@ public final class CoreLoop implements AutoCloseable {
         try {
             task.run();
         } catch (RuntimeException | LinkageError error) {
-            LOGGER.error("A bridge task failed", error);
+            LOGGER.error("A bridge task failed; please report this bug with the error below", error);
         } finally {
             taskStartedNanos.set(IDLE);
         }

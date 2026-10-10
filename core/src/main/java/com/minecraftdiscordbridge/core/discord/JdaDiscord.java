@@ -55,8 +55,10 @@ public final class JdaDiscord implements Discord {
     private static final Duration FIRST_RETRY = Duration.ofSeconds(5);
     private static final Duration MAX_RETRY = Duration.ofMinutes(5);
     private static final int MAX_RECONNECT_DELAY_SECONDS = 300;
-    private static final String INVALID_TOKEN = "Discord rejected the bot token. Copy a new token from"
-            + " https://discord.com/developers/applications (Bot, Reset Token) into the config";
+    private static final String PORTAL = "https://discord.com/developers/applications";
+    private static final String INVALID_TOKEN = "Discord rejected the bot token. Reset it at " + PORTAL
+            + " (Bot > Reset Token), put the new token in secrets.yml and run /discord reload. If you set"
+            + " MCDB_DISCORD_TOKEN or MCDB_DISCORD_TOKEN_FILE instead, update it and restart the server";
     private static final Permission[] INVITE_PERMISSIONS = {
         Permission.VIEW_CHANNEL,
         Permission.MESSAGE_SEND,
@@ -318,8 +320,8 @@ public final class JdaDiscord implements Discord {
             return;
         }
         if (settings.token().isBlank()) {
-            stop("No bot token is set. Create a bot at https://discord.com/developers/applications and put its"
-                    + " token in the config");
+            stop("No bot token is set. Create a bot at " + PORTAL + ", put its token in secrets.yml and run"
+                    + " /discord reload");
             return;
         }
         enter(State.CONNECTING, null);
@@ -334,11 +336,12 @@ public final class JdaDiscord implements Discord {
             boolean messageContent = info.messageContentGranted() && !privilegedIntentsDropped;
             if (!info.messageContentGranted()) {
                 warn("The Message Content intent is off, so Discord messages reach Minecraft empty. Turn on"
-                        + " Message Content Intent at " + info.botSettingsUrl());
+                        + " Message Content Intent at " + info.botSettingsUrl() + " and run /discord reload");
             }
             boolean members = settings.requestMembersIntent() && info.membersGranted() && !privilegedIntentsDropped;
             if (settings.requestMembersIntent() && !members) {
-                warn("The Server Members intent is off. Turn on Server Members Intent at " + info.botSettingsUrl());
+                warn("The Server Members intent is off, so the join gate and role sync cannot see members. Turn on"
+                        + " Server Members Intent at " + info.botSettingsUrl() + " and run /discord reload");
             }
             startSession(messageContent, members);
         }
@@ -450,8 +453,8 @@ public final class JdaDiscord implements Discord {
         Guild guild = scope.resolve(jda);
         if (guild == null) {
             String reason = settings.guildId() == DiscordSettings.NO_GUILD
-                    ? "The bot cannot see any of the configured channels. Check the channel IDs in the config, or"
-                            + " invite the bot with " + inviteUrl(jda)
+                    ? "The bot cannot see any channel set under discord: in config.yml. Fix the channel IDs and run"
+                            + " /discord reload, or invite the bot with " + inviteUrl(jda)
                     : "The bot is not in Discord server " + Long.toUnsignedString(settings.guildId())
                             + ". Invite it with " + inviteUrl(jda);
             LOGGER.warn(reason);
@@ -462,8 +465,8 @@ public final class JdaDiscord implements Discord {
         for (long channelId : settings.channelIds()) {
             if (guild.getGuildChannelById(channelId) == null) {
                 LOGGER.warn(
-                        "The bot cannot see Discord channel {} in {}. Check the channel ID in the config and give the"
-                                + " bot the View Channel permission",
+                        "The bot cannot see Discord channel {} in {}. Give the bot the View Channel permission there,"
+                                + " or fix the channel ID in config.yml or with /setup",
                         Long.toUnsignedString(channelId),
                         guild.getName());
             } else {
@@ -515,10 +518,9 @@ public final class JdaDiscord implements Discord {
         ApplicationInfo info = application;
         if (code == CloseCode.DISALLOWED_INTENTS && !privilegedIntentsDropped) {
             privilegedIntentsDropped = true;
-            warn("Discord refused the Message Content intent, so Discord messages reach Minecraft empty. Turn on"
-                    + " Message Content Intent at "
-                    + (info == null ? "https://discord.com/developers/applications" : info.botSettingsUrl())
-                    + " and restart the server");
+            warn("Discord refused the bot's privileged intents, so Discord messages reach Minecraft empty. Turn on"
+                    + " Message Content Intent, and Server Members Intent if you use the join gate or role sync, at "
+                    + (info == null ? PORTAL : info.botSettingsUrl()) + " and run /discord reload");
             enter(State.CONNECTING, null);
             startSession(false, false);
             return;
@@ -528,7 +530,8 @@ public final class JdaDiscord implements Discord {
             return;
         }
         String meaning = code == null ? "close code " + rawCode : code.getMeaning();
-        stop("Discord ended the connection: " + meaning + " Fix the bot settings and restart the server");
+        stop("Discord ended the connection (" + meaning + "). Check the bot at "
+                + (info == null ? PORTAL : info.botSettingsUrl()) + " and run /discord reload");
     }
 
     private void stopGracefully(List<OutboundMessage> farewell, long deadline) {
@@ -585,7 +588,10 @@ public final class JdaDiscord implements Discord {
         }
         Duration delay = nextRetry;
         nextRetry = nextRetry.multipliedBy(2).compareTo(MAX_RETRY) > 0 ? MAX_RETRY : nextRetry.multipliedBy(2);
-        LOGGER.warn("{}. Trying again in {} seconds", reason, delay.toSeconds());
+        LOGGER.warn(
+                "{}. Trying again in {} seconds; check that the server can reach discord.com",
+                reason,
+                delay.toSeconds());
         enter(State.CONNECTING, reason);
         try {
             var unused = lifecycle.schedule(this::connect, delay.toMillis(), TimeUnit.MILLISECONDS);

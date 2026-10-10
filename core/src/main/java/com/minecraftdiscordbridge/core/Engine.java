@@ -103,7 +103,8 @@ final class Engine {
                         this::booted,
                         failure -> {
                             LOGGER.error(
-                                    "The bridge could not start: {}. Fix the problem and restart the server",
+                                    "The bridge could not start: {}. Check that the plugin data folder is readable and"
+                                            + " writable, then restart the server",
                                     failure.toString());
                             releaseWaitingJoins();
                         });
@@ -255,7 +256,8 @@ final class Engine {
         }
         shared.io().call(loader::load, result -> apply(result, source), failure -> {
             LOGGER.warn(
-                    "Could not reload config.yml: {}. Check that the file is readable and run /discord reload again",
+                    "Could not reload config.yml or secrets.yml: {}. Check that both files are readable and run"
+                            + " /discord reload again",
                     failure.toString());
             replies.send(source, "game.reload.failed");
         });

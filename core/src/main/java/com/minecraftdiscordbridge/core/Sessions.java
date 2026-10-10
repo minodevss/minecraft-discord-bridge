@@ -115,7 +115,9 @@ final class Sessions {
         try {
             return DiscordChat.compileFormat(template);
         } catch (IllegalArgumentException invalid) {
-            LOGGER.warn("{} Using the default chat.format until it is fixed", invalid.getMessage());
+            LOGGER.warn(
+                    "{} Using the default chat.format; fix chat.format in config.yml and run /discord reload",
+                    invalid.getMessage());
             return DiscordChat.compileFormat(BridgeConfig.defaults().chat().format());
         }
     }
