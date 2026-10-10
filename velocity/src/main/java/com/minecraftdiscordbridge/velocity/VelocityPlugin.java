@@ -20,7 +20,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
 
 public final class VelocityPlugin {
-    private static final int CAMEL_CASE_TEXT_DATA_VERSION = 4189;
+    // A proxy has no world data version; 4189 (1.21.4) picks the camelCase text JSON every Velocity's Adventure reads.
+    private static final int TEXT_DATA_VERSION = 4189;
 
     private final ProxyServer proxy;
     private final Path dataDirectory;
@@ -69,7 +70,7 @@ public final class VelocityPlugin {
         return new PlatformInfo(
                 (version.getName() + " " + version.getVersion()).trim(),
                 ProtocolVersion.MAXIMUM_VERSION.getMostRecentSupportedVersion(),
-                CAMEL_CASE_TEXT_DATA_VERSION,
+                TEXT_DATA_VERSION,
                 proxy.getConfiguration().isOnlineMode(),
                 false,
                 false);
