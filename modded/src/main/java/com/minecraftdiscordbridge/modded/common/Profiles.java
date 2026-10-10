@@ -9,6 +9,7 @@ import com.mojang.authlib.properties.Property;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.UUID;
 import net.minecraft.server.level.ServerPlayer;
 import org.jspecify.annotations.Nullable;
 
@@ -24,6 +25,11 @@ final class Profiles {
                 player.getDisplayName().getString(),
                 skinTexture(player.getGameProfile()),
                 false);
+    }
+
+    static PlayerProfile of(GameProfile profile) {
+        String name = name(profile);
+        return new PlayerProfile(id(profile), name, name, skinTexture(profile), false);
     }
 
     private static @Nullable String skinTexture(GameProfile profile) {
@@ -58,9 +64,25 @@ final class Profiles {
     private static Collection<Property> textures(GameProfile profile) {
         return profile.properties().get(TEXTURES);
     }
+
+    private static UUID id(GameProfile profile) {
+        return profile.id();
+    }
+
+    private static String name(GameProfile profile) {
+        return profile.name();
+    }
     //?} else {
     /*private static Collection<Property> textures(GameProfile profile) {
         return profile.getProperties().get(TEXTURES);
+    }
+
+    private static UUID id(GameProfile profile) {
+        return profile.getId();
+    }
+
+    private static String name(GameProfile profile) {
+        return profile.getName();
     }
     *///?}
 
