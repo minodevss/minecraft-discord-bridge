@@ -182,6 +182,23 @@ class LinkingTest {
     }
 
     @Test
+    void keepsLinksUntouchedWhileLinkingIsTurnedOff() throws IOException {
+        LinkStore.open(directory)
+                .link(new Link(STEVE.id(), MEMBER, "Steve", Edition.JAVA, Instant.parse("2026-10-10T00:00:00Z")));
+        try (Harness harness = Harness.started(directory, CHANNELS + "linking:\n  enabled: false\n")) {
+            assertThat(harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.UNLINK)
+                            .nextPlain())
+                    .isEqualTo("Account linking is turned off on this server.");
+            assertThat(harness.discord()
+                            .command(Harness.request("unlink", null, Map.of(), MEMBER, CHAT))
+                            .next()
+                            .text())
+                    .isEqualTo("Account linking is turned off on this server.");
+            assertThat(LinkStore.open(directory).all()).hasSize(1);
+        }
+    }
+
+    @Test
     void givesNoCodeWhileDiscordIsNotConnected() throws IOException {
         try (Harness harness = Harness.create(directory, CHANNELS, Map.of())) {
             harness.bridge.start();

@@ -76,6 +76,10 @@ public final class Linking {
     }
 
     public void unlinkInGame(CommandSource source, UUID player) {
+        if (!config.enabled()) {
+            replies.send(source, "game.link.disabled");
+            return;
+        }
         io.completeOnLoop(
                 () -> store.unlinkMinecraft(player),
                 removed -> replies.send(source, removed.isPresent() ? "game.unlink.done" : "game.unlink.none"),
@@ -130,6 +134,10 @@ public final class Linking {
 
     public void unlink(CommandRequest request, CommandReply reply) {
         Lang userLang = Lang.forDiscordLocale(request.locale(), replies.lang());
+        if (!config.enabled()) {
+            reply.replyEphemeral(userLang.text("discord.link.disabled"));
+            return;
+        }
         io.completeOnLoop(
                 () -> store.unlinkDiscord(request.userId()),
                 removed -> reply.replyEphemeral(removed.map(link ->
