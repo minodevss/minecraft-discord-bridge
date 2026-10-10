@@ -2,15 +2,12 @@ package com.minecraftdiscordbridge.modded.common;
 
 import com.minecraftdiscordbridge.core.Bridge;
 import com.minecraftdiscordbridge.core.platform.Floodgate;
-import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
-import com.mojang.brigadier.Command;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -79,29 +76,6 @@ public final class ModdedEvents {
         advancementEarned(player, () -> Advancements.announcement(advancement, player));
     }
     *///?}
-
-    public boolean canUse(CommandSourceStack source, GameCommand command) {
-        Session current = session.get();
-        return current != null && current.bridge().canUse(new ModdedCommandSource(source, loader), command);
-    }
-
-    public int command(CommandSourceStack source, GameCommand command) {
-        Session current = session.get();
-        if (current == null) {
-            return 0;
-        }
-        current.bridge().command(new ModdedCommandSource(source, loader), command);
-        return Command.SINGLE_SUCCESS;
-    }
-
-    public int help(CommandSourceStack source) {
-        Session current = session.get();
-        if (current == null) {
-            return 0;
-        }
-        current.bridge().help(new ModdedCommandSource(source, loader));
-        return Command.SINGLE_SUCCESS;
-    }
 
     private void advancementEarned(ServerPlayer player, Supplier<Optional<Advancements.Announcement>> announcement) {
         publish(
