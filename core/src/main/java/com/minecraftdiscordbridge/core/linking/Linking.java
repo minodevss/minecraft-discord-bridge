@@ -74,7 +74,7 @@ public final class Linking {
         } else if (!discordConnected.getAsBoolean()) {
             replies.send(source, "game.link.offline");
         } else {
-            String code = pending.issue(player, source.name(), isBedrock(player), source, clock.instant());
+            String code = pending.issueInGame(source, player, edition(player), clock.instant());
             replies.send(source, "game.link.code", Slot.component("code", copyable(code)));
         }
     }
@@ -115,16 +115,17 @@ public final class Linking {
             return;
         }
         PendingLinks.Pending code = found.get();
+        Optional<CommandSource> askedInGame = pending.takeAskedInGame(code.playerId());
         DiscordId discordId = request.userId();
-        Link link = new Link(
-                code.playerId(), discordId, code.playerName(), code.bedrock() ? Edition.BEDROCK : Edition.JAVA, now);
+        Link link = new Link(code.playerId(), discordId, code.playerName(), code.edition(), now);
         io.completeOnLoop(
                 () -> store.link(link),
                 () -> {
                     LOGGER.info("Linked Minecraft account {} to Discord user {}", code.playerName(), discordId);
                     reply.replyEphemeral(userLang.text("discord.link.done", DiscordEscaper.escape(code.playerName())));
                     if (roster.find(code.playerId()).isPresent()) {
-                        replies.send(code.source(), "game.link.done", Slot.text("name", request.userDisplayName()));
+                        askedInGame.ifPresent(source ->
+                                replies.send(source, "game.link.done", Slot.text("name", request.userDisplayName())));
                     }
                 },
                 failure -> {
@@ -152,8 +153,9 @@ public final class Linking {
                 });
     }
 
-    private boolean isBedrock(UUID player) {
-        return roster.find(player).map(PlayerProfile::bedrock).orElse(player.getMostSignificantBits() == 0);
+    private Edition edition(UUID player) {
+        boolean bedrock = roster.find(player).map(PlayerProfile::bedrock).orElse(player.getMostSignificantBits() == 0);
+        return bedrock ? Edition.BEDROCK : Edition.JAVA;
     }
 
     private Component copyable(String code) {

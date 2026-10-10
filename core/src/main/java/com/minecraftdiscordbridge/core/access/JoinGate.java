@@ -9,11 +9,11 @@ import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.RoleInfo;
 import com.minecraftdiscordbridge.core.i18n.Replies;
 import com.minecraftdiscordbridge.core.log.Failures;
-import com.minecraftdiscordbridge.core.platform.CommandSource;
 import com.minecraftdiscordbridge.core.platform.JoinDecision;
 import com.minecraftdiscordbridge.core.platform.Permission;
 import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
+import com.minecraftdiscordbridge.core.storage.Edition;
 import com.minecraftdiscordbridge.core.storage.Link;
 import com.minecraftdiscordbridge.core.text.Format.Slot;
 import com.minecraftdiscordbridge.core.text.TextRenderer;
@@ -21,7 +21,6 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import org.jspecify.annotations.Nullable;
 
 public final class JoinGate {
     public static final Duration BUDGET = Duration.ofSeconds(3);
@@ -92,8 +91,8 @@ public final class JoinGate {
     private void checkLink(PlayerProfile player, CompletableFuture<JoinDecision> result) {
         Optional<Link> link = context.links().byMinecraftId(player.id());
         if (link.isEmpty()) {
-            String code =
-                    context.pending().issue(player.id(), player.name(), player.bedrock(), Silent.SOURCE, context.now());
+            Edition edition = player.bedrock() ? Edition.BEDROCK : Edition.JAVA;
+            String code = context.pending().issue(player.id(), player.name(), edition, context.now());
             LOGGER.info(
                     "Kept {} out because their account is not linked; the kick screen shows a link code",
                     player.name());
@@ -178,27 +177,5 @@ public final class JoinGate {
             return false;
         }
         return true;
-    }
-
-    private static final class Silent implements CommandSource {
-        private static final Silent SOURCE = new Silent();
-
-        @Override
-        public @Nullable UUID playerId() {
-            return null;
-        }
-
-        @Override
-        public String name() {
-            return "join gate";
-        }
-
-        @Override
-        public boolean hasPermission(Permission permission) {
-            return false;
-        }
-
-        @Override
-        public void reply(String json) {}
     }
 }
