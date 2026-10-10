@@ -1,10 +1,10 @@
 package com.minecraftdiscordbridge.core.fakes;
 
-import com.minecraftdiscordbridge.core.discord.InteractionReply;
+import com.minecraftdiscordbridge.core.discord.CommandReply;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public final class RecordingReply implements InteractionReply {
+public final class RecordingReply implements CommandReply {
     public record Answer(String text, boolean ephemeral) {}
 
     public final BlockingQueue<Answer> answers = new LinkedBlockingQueue<>();

@@ -1,12 +1,12 @@
 package com.minecraftdiscordbridge.core.discord.jda;
 
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
+import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordListener;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
-import com.minecraftdiscordbridge.core.discord.InteractionRequest;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
 import java.util.HashMap;
@@ -81,7 +81,7 @@ final class JdaEvents {
             refuse(event, UNKNOWN_COMMAND);
             return;
         }
-        JdaInteractionReply reply = new JdaInteractionReply(event);
+        JdaCommandReply reply = new JdaCommandReply(event);
         if (spec.slow()) {
             reply.defer(spec.ephemeral());
         }
@@ -90,7 +90,7 @@ final class JdaEvents {
             options.put(option.getName(), option.getAsString());
         }
         Member member = event.getMember();
-        InteractionRequest request = new InteractionRequest(
+        CommandRequest request = new CommandRequest(
                 event.getName(),
                 event.getSubcommandName(),
                 options,

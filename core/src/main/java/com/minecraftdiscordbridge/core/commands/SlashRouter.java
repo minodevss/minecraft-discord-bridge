@@ -3,8 +3,8 @@ package com.minecraftdiscordbridge.core.commands;
 import com.minecraftdiscordbridge.core.actions.Actions;
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
-import com.minecraftdiscordbridge.core.discord.InteractionReply;
-import com.minecraftdiscordbridge.core.discord.InteractionRequest;
+import com.minecraftdiscordbridge.core.discord.CommandReply;
+import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.linking.Linking;
 import com.minecraftdiscordbridge.core.setup.ChannelSetup;
@@ -28,7 +28,7 @@ public final class SlashRouter {
         this.lang = lang;
     }
 
-    public void onCommand(InteractionRequest request, InteractionReply reply) {
+    public void onCommand(CommandRequest request, CommandReply reply) {
         switch (request.command()) {
             case SlashCommandCatalog.SETUP -> setup.handle(request, reply);
             case SlashCommandCatalog.LIST -> list(request, reply);
@@ -52,7 +52,7 @@ public final class SlashRouter {
         }
     }
 
-    private void list(InteractionRequest request, InteractionReply reply) {
+    private void list(CommandRequest request, CommandReply reply) {
         Lang reader = reader(request.locale());
         List<String> names = roster.visibleNames();
         if (names.isEmpty()) {

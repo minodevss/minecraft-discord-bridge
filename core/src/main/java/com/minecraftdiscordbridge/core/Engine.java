@@ -10,14 +10,14 @@ import com.minecraftdiscordbridge.core.config.ConfigResult;
 import com.minecraftdiscordbridge.core.config.ConfigSnapshot;
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
+import com.minecraftdiscordbridge.core.discord.CommandReply;
+import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.Discord;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordListener;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
-import com.minecraftdiscordbridge.core.discord.InteractionReply;
-import com.minecraftdiscordbridge.core.discord.InteractionRequest;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.OfflineDiscord;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
@@ -499,7 +499,7 @@ final class Engine {
         }
 
         @Override
-        public void onCommand(InteractionRequest request, InteractionReply reply) {
+        public void onCommand(CommandRequest request, CommandReply reply) {
             Session current = session;
             if (target != generation || current == null) {
                 reply.replyEphemeral(

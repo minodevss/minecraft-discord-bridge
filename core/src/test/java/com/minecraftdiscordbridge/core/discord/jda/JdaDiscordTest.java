@@ -19,12 +19,12 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
+import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus.State;
-import com.minecraftdiscordbridge.core.discord.InteractionRequest;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.discord.RoleInfo;
@@ -408,7 +408,7 @@ class JdaDiscordTest {
 
         discord.dispatch("INTERACTION_CREATE", discord.command(GUILD_ID, "list", 2, options));
 
-        InteractionRequest request = take(listener.commands);
+        CommandRequest request = take(listener.commands);
         assertThat(request.command()).isEqualTo("list");
         assertThat(request.options()).containsEntry("page", "2");
         assertThat(request.userId()).isEqualTo(PLAYER);
@@ -699,7 +699,7 @@ class JdaDiscordTest {
 
         discord.dispatch("INTERACTION_CREATE", discord.command(GUILD_ID, "whitelist", 2, options));
 
-        InteractionRequest request = take(listener.commands);
+        CommandRequest request = take(listener.commands);
         assertThat(request.subcommand()).isEqualTo("add");
         assertThat(request.options()).containsEntry("player", "Steve");
         assertThat(request.canManageServer()).isTrue();

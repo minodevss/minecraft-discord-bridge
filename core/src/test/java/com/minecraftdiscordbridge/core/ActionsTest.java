@@ -8,8 +8,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
+import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
-import com.minecraftdiscordbridge.core.discord.InteractionRequest;
 import com.minecraftdiscordbridge.core.fakes.RecordingReply;
 import com.minecraftdiscordbridge.core.fakes.Waits;
 import com.minecraftdiscordbridge.core.platform.ActionOutcome;
@@ -174,11 +174,11 @@ class ActionsTest {
         }
     }
 
-    private static InteractionRequest whitelist(String change, String name) {
+    private static CommandRequest whitelist(String change, String name) {
         return Harness.request("whitelist", change, Map.of("player", name), MEMBER, CHAT);
     }
 
-    private static InteractionRequest kick(Map<String, String> options) {
+    private static CommandRequest kick(Map<String, String> options) {
         return Harness.request("kick", null, options, MEMBER, CHAT);
     }
 }

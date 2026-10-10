@@ -4,14 +4,14 @@ import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
 import com.minecraftdiscordbridge.core.discord.CommandHashRepository;
+import com.minecraftdiscordbridge.core.discord.CommandReply;
+import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordListener;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
-import com.minecraftdiscordbridge.core.discord.InteractionReply;
-import com.minecraftdiscordbridge.core.discord.InteractionRequest;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.WebhookCredentials;
 import com.minecraftdiscordbridge.core.discord.WebhookRepository;
@@ -42,8 +42,8 @@ final class TestSupport {
     static final class RecordingListener implements DiscordListener {
         final BlockingQueue<DiscordStatus> statuses = new LinkedBlockingQueue<>();
         final BlockingQueue<DiscordMessage> messages = new LinkedBlockingQueue<>();
-        final BlockingQueue<InteractionRequest> commands = new LinkedBlockingQueue<>();
-        final BlockingQueue<InteractionReply> replies = new LinkedBlockingQueue<>();
+        final BlockingQueue<CommandRequest> commands = new LinkedBlockingQueue<>();
+        final BlockingQueue<CommandReply> replies = new LinkedBlockingQueue<>();
         final BlockingQueue<AutocompleteRequest> autocompletes = new LinkedBlockingQueue<>();
         final BlockingQueue<AutocompleteReply> autocompleteReplies = new LinkedBlockingQueue<>();
         final BlockingQueue<MemberLookup.Member> memberUpdates = new LinkedBlockingQueue<>();
@@ -60,7 +60,7 @@ final class TestSupport {
         }
 
         @Override
-        public void onCommand(InteractionRequest request, InteractionReply reply) {
+        public void onCommand(CommandRequest request, CommandReply reply) {
             commands.add(request);
             replies.add(reply);
         }

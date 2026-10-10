@@ -2,13 +2,13 @@ package com.minecraftdiscordbridge.core.fakes;
 
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
+import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.Discord;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordListener;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
-import com.minecraftdiscordbridge.core.discord.InteractionRequest;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.discord.RoleInfo;
@@ -84,7 +84,7 @@ public final class RecordingDiscord implements Discord {
         loop.content(() -> listener.onMessage(message));
     }
 
-    public RecordingReply command(InteractionRequest request) {
+    public RecordingReply command(CommandRequest request) {
         RecordingReply reply = new RecordingReply();
         loop.control(() -> listener.onCommand(request, reply));
         return reply;

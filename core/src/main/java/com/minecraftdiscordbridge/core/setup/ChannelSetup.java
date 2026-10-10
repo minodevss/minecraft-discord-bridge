@@ -5,10 +5,10 @@ import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 import com.minecraftdiscordbridge.core.codes.Attempts;
 import com.minecraftdiscordbridge.core.config.DiscordConfig;
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
+import com.minecraftdiscordbridge.core.discord.CommandReply;
+import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.Discord;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
-import com.minecraftdiscordbridge.core.discord.InteractionReply;
-import com.minecraftdiscordbridge.core.discord.InteractionRequest;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Replies;
 import com.minecraftdiscordbridge.core.log.Failures;
@@ -62,7 +62,7 @@ public final class ChannelSetup {
         this.bound = bound;
     }
 
-    public void handle(InteractionRequest request, InteractionReply reply) {
+    public void handle(CommandRequest request, CommandReply reply) {
         Lang reader = Lang.forDiscordLocale(request.locale(), replies.lang());
         Optional<ChannelRole> role = role(request.options().get(ROLE_OPTION));
         if (role.isEmpty()) {
@@ -88,7 +88,7 @@ public final class ChannelSetup {
         replies.send(source, "game.setup.code", Slot.text("code", code));
     }
 
-    private boolean authorized(InteractionRequest request, InteractionReply reply, Lang reader) {
+    private boolean authorized(CommandRequest request, CommandReply reply, Lang reader) {
         if (discord.isApplicationOwner(request.userId())) {
             return true;
         }
@@ -114,7 +114,7 @@ public final class ChannelSetup {
         return true;
     }
 
-    private void save(InteractionRequest request, InteractionReply reply, Lang reader, ChannelRole role) {
+    private void save(CommandRequest request, CommandReply reply, Lang reader, ChannelRole role) {
         ChannelBinding next = bind(bindings.current(), request.guildId(), role, request.channelId());
         io.completeOnLoop(
                 () -> bindings.save(next),

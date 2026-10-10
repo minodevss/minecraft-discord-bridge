@@ -3,8 +3,8 @@ package com.minecraftdiscordbridge.core.actions;
 import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
 import com.minecraftdiscordbridge.core.config.ActionsConfig;
-import com.minecraftdiscordbridge.core.discord.InteractionReply;
-import com.minecraftdiscordbridge.core.discord.InteractionRequest;
+import com.minecraftdiscordbridge.core.discord.CommandReply;
+import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.platform.ActionOutcome;
 import com.minecraftdiscordbridge.core.platform.GameAction;
@@ -48,7 +48,7 @@ public final class Actions {
         return PLAYER_NAME.matcher(name).matches();
     }
 
-    public void whitelist(InteractionRequest request, InteractionReply reply) {
+    public void whitelist(CommandRequest request, CommandReply reply) {
         Lang reader = Lang.forDiscordLocale(request.locale(), lang);
         String change = request.subcommand();
         if (!config.whitelist()) {
@@ -62,7 +62,7 @@ public final class Actions {
         }
     }
 
-    public void kick(InteractionRequest request, InteractionReply reply) {
+    public void kick(CommandRequest request, CommandReply reply) {
         Lang reader = Lang.forDiscordLocale(request.locale(), lang);
         if (!config.kick()) {
             reply.replyEphemeral(reader.text("discord.action.disabled"));
@@ -76,7 +76,7 @@ public final class Actions {
         perform(request, reply, reader, new GameAction.Kick(player(request), Graphemes.fit(reason, MAX_REASON_LENGTH)));
     }
 
-    private void perform(InteractionRequest request, InteractionReply reply, Lang reader, GameAction action) {
+    private void perform(CommandRequest request, CommandReply reply, Lang reader, GameAction action) {
         String name = name(action);
         if (!isPlayerName(name)) {
             reply.replyEphemeral(reader.text("discord.action.invalid-name", DiscordEscaper.escape(name)));
@@ -95,7 +95,7 @@ public final class Actions {
         }));
     }
 
-    private static void audit(InteractionRequest request, GameAction action, ActionOutcome outcome) {
+    private static void audit(CommandRequest request, GameAction action, ActionOutcome outcome) {
         LOGGER.info(
                 "Discord user {} ({}) ran {} {}: {}",
                 request.userId(),
@@ -152,7 +152,7 @@ public final class Actions {
         return ((GameAction.Kick) action).playerName();
     }
 
-    private static String player(InteractionRequest request) {
+    private static String player(CommandRequest request) {
         return request.options().getOrDefault(PLAYER_OPTION, "").strip();
     }
 }

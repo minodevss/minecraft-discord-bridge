@@ -1,9 +1,9 @@
 package com.minecraftdiscordbridge.core;
 
 import com.minecraftdiscordbridge.core.codes.Codes;
+import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
-import com.minecraftdiscordbridge.core.discord.InteractionRequest;
 import com.minecraftdiscordbridge.core.discord.OfflineDiscord;
 import com.minecraftdiscordbridge.core.fakes.FakeGroups;
 import com.minecraftdiscordbridge.core.fakes.FakePlatform;
@@ -134,18 +134,18 @@ final class Harness implements AutoCloseable {
         Files.writeString(directory.resolve("config.yml"), config, StandardCharsets.UTF_8);
     }
 
-    static InteractionRequest request(
+    static CommandRequest request(
             String command,
             @Nullable String subcommand,
             Map<String, String> options,
             DiscordId user,
             DiscordId channel) {
-        return new InteractionRequest(command, subcommand, options, GUILD, channel, user, "Alex", false, "en-US");
+        return new CommandRequest(command, subcommand, options, GUILD, channel, user, "Alex", false, "en-US");
     }
 
-    static InteractionRequest managerRequest(
+    static CommandRequest managerRequest(
             String command, Map<String, String> options, DiscordId user, DiscordId channel) {
-        return new InteractionRequest(command, null, options, GUILD, channel, user, "Alex", true, "en-US");
+        return new CommandRequest(command, null, options, GUILD, channel, user, "Alex", true, "en-US");
     }
 
     static DiscordMessage message(DiscordId channel, String content) {

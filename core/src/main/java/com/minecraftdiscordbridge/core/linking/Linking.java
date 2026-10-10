@@ -4,9 +4,9 @@ import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
 import com.minecraftdiscordbridge.core.codes.Attempts;
 import com.minecraftdiscordbridge.core.config.LinkingConfig;
+import com.minecraftdiscordbridge.core.discord.CommandReply;
+import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
-import com.minecraftdiscordbridge.core.discord.InteractionReply;
-import com.minecraftdiscordbridge.core.discord.InteractionRequest;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Replies;
 import com.minecraftdiscordbridge.core.log.Failures;
@@ -97,7 +97,7 @@ public final class Linking {
                 });
     }
 
-    public void link(InteractionRequest request, InteractionReply reply) {
+    public void link(CommandRequest request, CommandReply reply) {
         Lang reader = Lang.forDiscordLocale(request.locale(), replies.lang());
         Instant now = clock.instant();
         if (!config.enabled()) {
@@ -136,7 +136,7 @@ public final class Linking {
                 });
     }
 
-    public void unlink(InteractionRequest request, InteractionReply reply) {
+    public void unlink(CommandRequest request, CommandReply reply) {
         Lang reader = Lang.forDiscordLocale(request.locale(), replies.lang());
         io.completeOnLoop(
                 () -> store.unlinkDiscord(request.userId()),

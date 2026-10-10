@@ -5,7 +5,7 @@ public interface DiscordListener {
 
     void onMessage(DiscordMessage message);
 
-    void onCommand(InteractionRequest request, InteractionReply reply);
+    void onCommand(CommandRequest request, CommandReply reply);
 
     void onAutocomplete(AutocompleteRequest request, AutocompleteReply reply);
 

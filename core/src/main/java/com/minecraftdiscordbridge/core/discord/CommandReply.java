@@ -1,6 +1,6 @@
 package com.minecraftdiscordbridge.core.discord;
 
-public interface InteractionReply {
+public interface CommandReply {
     void reply(String text);
 
     void replyEphemeral(String text);
