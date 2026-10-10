@@ -8,11 +8,6 @@ plugins {
 
 val minecraft = sc.current.version
 val unobfuscated = sc.current.parsed >= "26.1"
-val javaVersion = when {
-    sc.current.parsed >= "26.1" -> 25
-    sc.current.parsed >= "1.20.5" -> 21
-    else -> 17
-}
 
 apply(plugin = if (unobfuscated) "net.fabricmc.fabric-loom" else "net.fabricmc.fabric-loom-remap")
 val loom = the<LoomGradleExtensionAPI>()
@@ -30,22 +25,13 @@ dependencies {
     "compileOnly"(libs.jspecify)
 }
 
-extensions.configure<JavaPluginExtension> {
-    toolchain { languageVersion = JavaLanguageVersion.of(javaVersion) }
-}
-
 loom.serverOnlyMinecraftJar()
-
-tasks.withType<JavaCompile>().configureEach {
-    options.encoding = "UTF-8"
-    options.release = javaVersion
-}
 
 tasks.named<ProcessResources>("processResources") {
     val props = mapOf(
         "version" to project.version.toString(),
         "minecraft" to sc.properties.get<String>("mod.mc_compat"),
-        "java" to javaVersion.toString(),
+        "java" to sc.properties.get<Int>("mod.java").toString(),
     )
     inputs.properties(props)
     filesMatching(listOf("fabric.mod.json", "minecraftdiscordbridge.mixins.json")) { expand(props) }
