@@ -9,6 +9,7 @@ import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.fakes.FakePlatform;
+import com.minecraftdiscordbridge.core.fakes.Waits;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.platform.ActionOutcome;
@@ -176,10 +177,7 @@ class ConsoleInputTest {
         }
 
         List<String> awaitTexts(int count) {
-            long deadline = System.nanoTime() + Duration.ofSeconds(5).toNanos();
-            while (sent.size() < count && System.nanoTime() < deadline) {
-                Thread.onSpinWait();
-            }
+            Waits.until(count + " messages", () -> sent.size() >= count);
             return texts();
         }
 
