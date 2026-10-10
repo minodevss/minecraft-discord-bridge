@@ -3,6 +3,8 @@ plugins {
     id("bridge.bundle")
 }
 
+base.archivesName = "minecraft-discord-bridge-velocity"
+
 repositories {
     maven("https://repo.papermc.io/repository/maven-public/") { name = "PaperMC" }
 }
