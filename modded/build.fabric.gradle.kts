@@ -31,6 +31,7 @@ dependencies {
     if (!unobfuscated) "mappings"(loom.officialMojangMappings())
     modConfiguration("net.fabricmc:fabric-loader:${sc.properties.get<String>("deps.fabric_loader")}")
     modConfiguration("net.fabricmc.fabric-api:fabric-api:${sc.properties.get<String>("deps.fabric_api")}")
+    "compileOnly"(libs.jspecify)
     "implementation"(project(":core", "shadowRuntimeElements"))
     "bundle"(project(":core", "shadowRuntimeElements"))
 }

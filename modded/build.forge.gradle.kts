@@ -22,6 +22,7 @@ legacyForge {
 dependencies {
     implementation(project(":core", "shadowRuntimeElements"))
     "bundle"(project(":core", "shadowRuntimeElements"))
+    compileOnly(libs.jspecify)
 }
 
 sourceSets.main {
