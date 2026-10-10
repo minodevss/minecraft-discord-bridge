@@ -2,13 +2,12 @@ package com.minecraftdiscordbridge.core.discord.jda;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import net.dv8tion.jda.api.utils.data.DataArray;
 import net.dv8tion.jda.api.utils.data.DataObject;
-import org.jspecify.annotations.Nullable;
 
-record ApplicationInfo(
-        long id, long flags, long ownerId, @Nullable Team team) {
+record ApplicationInfo(long id, long flags, long ownerId, Optional<Team> team) {
     static final long GATEWAY_GUILD_MEMBERS = 1L << 14;
     static final long GATEWAY_GUILD_MEMBERS_LIMITED = 1L << 15;
     static final long GATEWAY_MESSAGE_CONTENT = 1L << 18;
@@ -28,7 +27,7 @@ record ApplicationInfo(
         long owner = json.optObject("owner")
                 .map(user -> user.getUnsignedLong("id", 0L))
                 .orElse(0L);
-        Team team = json.isNull("team") ? null : parseTeam(json.getObject("team"));
+        Optional<Team> team = json.isNull("team") ? Optional.empty() : Optional.of(parseTeam(json.getObject("team")));
         return new ApplicationInfo(json.getUnsignedLong("id"), json.getLong("flags", 0L), owner, team);
     }
 
@@ -58,10 +57,10 @@ record ApplicationInfo(
     }
 
     boolean isOwner(long userId) {
-        Team owners = team;
-        if (owners == null) {
+        if (team.isEmpty()) {
             return userId != 0 && userId == ownerId;
         }
+        Team owners = team.get();
         return userId == owners.ownerUserId()
                 || owners.members().stream()
                         .anyMatch(member -> member.userId() == userId

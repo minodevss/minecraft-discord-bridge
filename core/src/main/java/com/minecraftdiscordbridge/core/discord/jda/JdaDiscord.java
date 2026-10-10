@@ -84,8 +84,8 @@ public final class JdaDiscord implements Discord {
     private static final String ROLE_SYNC_REASON = "Minecraft Discord Bridge role sync";
     private static final Map<Permission, String> DANGEROUS_PERMISSIONS = dangerousPermissions();
 
-    record Endpoints(String restBaseUrl, @Nullable String gatewayUrl) {
-        static final Endpoints DISCORD = new Endpoints(RestConfig.DEFAULT_BASE_URL, null);
+    record Endpoints(String restBaseUrl, Optional<String> gatewayUrl) {
+        static final Endpoints DISCORD = new Endpoints(RestConfig.DEFAULT_BASE_URL, Optional.empty());
     }
 
     private record Session(JDA jda, JdaPools pools) {}
@@ -415,15 +415,14 @@ public final class JdaDiscord implements Discord {
                 .setRequestTimeoutRetry(false)
                 .setMaxReconnectDelay(MAX_RECONNECT_DELAY_SECONDS)
                 .addEventListeners(new GatewayListener(generation, generations, this::onEvent));
-        String gateway = endpoints.gatewayUrl();
-        if (gateway != null) {
-            builder.setSessionController(new ConcurrentSessionController() {
-                @Override
-                public String getGateway() {
-                    return gateway;
-                }
-            });
-        }
+        endpoints
+                .gatewayUrl()
+                .ifPresent(gateway -> builder.setSessionController(new ConcurrentSessionController() {
+                    @Override
+                    public String getGateway() {
+                        return gateway;
+                    }
+                }));
         return pools.applyTo(builder);
     }
 

@@ -10,6 +10,7 @@ import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Language;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.impl.Log4jLogEvent;
@@ -27,8 +28,8 @@ class ConsoleMirrorTest {
 
     @Test
     void postsBufferedLinesInOneCodeBlockAsTheServer() {
-        buffer.offer(new ConsoleLine(NOON, "INFO", "Done (3.2s)!", null));
-        buffer.offer(new ConsoleLine(NOON + 1000, "WARN", "Can't keep up!", "java.io.IOException: disk"));
+        buffer.offer(new ConsoleLine(NOON, "INFO", "Done (3.2s)!", Optional.empty()));
+        buffer.offer(new ConsoleLine(NOON + 1000, "WARN", "Can't keep up!", Optional.of("java.io.IOException: disk")));
 
         mirror.flush();
 
@@ -43,7 +44,7 @@ class ConsoleMirrorTest {
 
     @Test
     void keepsLinesFromClosingTheCodeBlockAndRedactsThem() {
-        buffer.offer(new ConsoleLine(NOON, "INFO", "``` secret-token from 10.0.0.1", null));
+        buffer.offer(new ConsoleLine(NOON, "INFO", "``` secret-token from 10.0.0.1", Optional.empty()));
 
         mirror.flush();
 
@@ -65,7 +66,7 @@ class ConsoleMirrorTest {
         ConsoleMirror chatty =
                 new ConsoleMirror(large, CHANNEL, discord, Lang.of(Language.EN), List::of, ZoneOffset.UTC);
         for (int i = 0; i < 30; i++) {
-            large.offer(new ConsoleLine(NOON, "INFO", "x".repeat(300), null));
+            large.offer(new ConsoleLine(NOON, "INFO", "x".repeat(300), Optional.empty()));
         }
 
         chatty.flush();
@@ -82,7 +83,8 @@ class ConsoleMirrorTest {
     void shortensLongLinesWithoutSplittingAnEmoji() {
         String prefix = "[12:00:00 INFO] ";
         int highSurrogateAt = OutboundMessage.MAX_LENGTH - 10;
-        buffer.offer(new ConsoleLine(NOON, "INFO", "x".repeat(highSurrogateAt - prefix.length()) + "😀 tail", null));
+        buffer.offer(new ConsoleLine(
+                NOON, "INFO", "x".repeat(highSurrogateAt - prefix.length()) + "😀 tail", Optional.empty()));
 
         mirror.flush();
 
@@ -98,7 +100,7 @@ class ConsoleMirrorTest {
         ConsoleMirror chatty =
                 new ConsoleMirror(large, CHANNEL, discord, Lang.of(Language.EN), List::of, ZoneOffset.UTC);
         for (int i = 0; i < 64; i++) {
-            large.offer(new ConsoleLine(NOON, "INFO", i + " " + "x".repeat(1900), null));
+            large.offer(new ConsoleLine(NOON, "INFO", i + " " + "x".repeat(1900), Optional.empty()));
         }
 
         chatty.flush();
@@ -114,7 +116,7 @@ class ConsoleMirrorTest {
     @Test
     void countsLinesDroppedWhileTheBufferWasFull() {
         for (int i = 0; i < 13; i++) {
-            buffer.offer(new ConsoleLine(NOON, "INFO", "line " + i, null));
+            buffer.offer(new ConsoleLine(NOON, "INFO", "line " + i, Optional.empty()));
         }
 
         mirror.flush();

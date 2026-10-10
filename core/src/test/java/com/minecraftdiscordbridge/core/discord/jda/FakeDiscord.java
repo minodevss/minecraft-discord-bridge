@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.discord.jda;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -72,7 +73,7 @@ final class FakeDiscord implements AutoCloseable {
 
     JdaDiscord.Endpoints endpoints() {
         return new JdaDiscord.Endpoints(
-                restBaseUrl(), "ws://" + server.getHostName() + ":" + server.getPort() + "/gateway");
+                restBaseUrl(), Optional.of("ws://" + server.getHostName() + ":" + server.getPort() + "/gateway"));
     }
 
     String restBaseUrl() {

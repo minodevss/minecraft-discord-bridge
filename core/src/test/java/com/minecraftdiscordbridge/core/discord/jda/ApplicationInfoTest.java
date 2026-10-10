@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.discord.jda;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.Optional;
 import net.dv8tion.jda.api.utils.data.DataObject;
 import org.junit.jupiter.api.Test;
 
@@ -18,9 +19,9 @@ class ApplicationInfoTest {
 
         assertThat(info.id()).isEqualTo(123);
         assertThat(info.ownerId()).isEqualTo(456);
-        assertThat(info.team()).isNotNull();
-        assertThat(info.team().ownerUserId()).isEqualTo(789);
-        assertThat(info.team().members())
+        assertThat(info.team()).isPresent();
+        assertThat(info.team().orElseThrow().ownerUserId()).isEqualTo(789);
+        assertThat(info.team().orElseThrow().members())
                 .containsExactly(
                         new ApplicationInfo.Member(11, "admin", 2), new ApplicationInfo.Member(12, "developer", 1));
     }
@@ -30,7 +31,7 @@ class ApplicationInfoTest {
         ApplicationInfo info = ApplicationInfo.parse(DataObject.fromJson(
                 "{\"id\":\"123\",\"flags\":0,\"bot_public\":false,\"owner\":{\"id\":\"456\"},\"team\":null}"));
 
-        assertThat(info.team()).isNull();
+        assertThat(info.team()).isEmpty();
         assertThat(info.isOwner(456)).isTrue();
         assertThat(info.isOwner(457)).isFalse();
     }
@@ -55,13 +56,13 @@ class ApplicationInfoTest {
                 1,
                 0,
                 99,
-                new ApplicationInfo.Team(
+                Optional.of(new ApplicationInfo.Team(
                         10,
                         List.of(
                                 new ApplicationInfo.Member(11, "admin", 2),
                                 new ApplicationInfo.Member(12, "developer", 2),
                                 new ApplicationInfo.Member(13, "read_only", 2),
-                                new ApplicationInfo.Member(14, "admin", 1))));
+                                new ApplicationInfo.Member(14, "admin", 1)))));
 
         assertThat(info.isOwner(10)).isTrue();
         assertThat(info.isOwner(11)).isTrue();
@@ -72,6 +73,6 @@ class ApplicationInfoTest {
     }
 
     private static ApplicationInfo withFlags(long flags) {
-        return new ApplicationInfo(1, flags, 2, null);
+        return new ApplicationInfo(1, flags, 2, Optional.empty());
     }
 }

@@ -1,9 +1,9 @@
 package com.minecraftdiscordbridge.core.config;
 
-import org.jspecify.annotations.Nullable;
+import java.util.Optional;
 
 public record ConfigProblem(
-        Severity severity, String source, @Nullable Location location, String path, String message) {
+        Severity severity, String source, Optional<Location> location, String path, String message) {
     public enum Severity {
         ERROR,
         WARNING
@@ -12,9 +12,7 @@ public record ConfigProblem(
     @Override
     public String toString() {
         StringBuilder text = new StringBuilder(source);
-        if (location != null) {
-            text.append(':').append(location);
-        }
+        location.ifPresent(at -> text.append(':').append(at));
         if (!path.isEmpty()) {
             text.append(' ').append(path);
         }

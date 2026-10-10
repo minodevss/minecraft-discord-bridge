@@ -114,10 +114,7 @@ public final class ConsoleMirror implements AutoCloseable {
                 .append(line.level())
                 .append("] ")
                 .append(line.message());
-        String thrown = line.thrown();
-        if (thrown != null) {
-            text.append('\n').append(thrown);
-        }
+        line.thrown().ifPresent(thrown -> text.append('\n').append(thrown));
         String redacted = DiscordEscaper.escapeCodeBlock(ConsoleRedactor.redact(text.toString(), hidden));
         return Graphemes.fit(redacted, BODY_LENGTH, Graphemes.ELLIPSIS);
     }

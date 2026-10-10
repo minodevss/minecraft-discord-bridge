@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.console;
 
 import com.minecraftdiscordbridge.core.log.Log;
 import java.util.List;
+import java.util.Optional;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.Property;
@@ -31,7 +32,7 @@ final class ConsoleAppender extends AbstractAppender {
                 event.getTimeMillis(),
                 event.getLevel().name(),
                 message == null ? "" : message.getFormattedMessage(),
-                thrown == null ? null : thrown.toString()));
+                Optional.ofNullable(thrown).map(Throwable::toString)));
     }
 
     static boolean ignored(@Nullable String logger) {
