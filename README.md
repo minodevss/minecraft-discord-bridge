@@ -41,21 +41,19 @@ gh attestation verify minecraft-discord-bridge-paper-<version>.jar --repo minode
 Setup takes about two minutes.
 
 1. Open the [Discord Developer Portal](https://discord.com/developers/applications) and click **New Application**. Open **Bot**, click **Reset Token** and copy the token.
-2. Start the server once. The bridge creates its folder and an empty `secrets.yml` in it. Paste the token into `secrets.yml`:
+2. Start the server once. The bridge creates its folder with `config.yml` and `secrets.yml` in it: `plugins/MinecraftDiscordBridge` on Paper, `plugins/minecraftdiscordbridge` on Velocity, and `config/minecraftdiscordbridge` on Fabric, NeoForge and Forge. Paste the token into `secrets.yml`:
 
    ```yaml
    discord-token: "your token"
    ```
 
    Or set the `MCDB_DISCORD_TOKEN` environment variable to the token, or `MCDB_DISCORD_TOKEN_FILE` to the path of a file that holds it. An environment variable takes priority over `secrets.yml`.
-3. Run `/discord reload` in the server console. The bridge connects and logs an invite link with the permissions it needs. Open the link and add the bot to your Discord server.
+3. Run `/discord reload` in the server console. The bridge connects and, while the bot is in no Discord server, logs an invite link with the permissions it needs. Open the link and add the bot to your Discord server.
 4. In the Discord channel for the chat, run `/setup`.
 
-By default, Discord shows `/setup` only to members with the **Manage Server** permission. The bot's owner, the account that owns the application in the Developer Portal, can run it directly. Anyone else also needs a one-time code: run `/discord setup` in the server console, then run `/setup code:<code>` in Discord within 10 minutes. To post events in a different channel, run `/setup as:events` there.
+By default, Discord shows `/setup` only to members with the **Manage Server** permission. The bot's owner can run it directly: the account that owns the application in the Developer Portal, or an admin or developer of the team that owns it. Anyone else also needs a one-time code: run `/discord setup` in the server console, then run `/setup code:<code>` in Discord within 10 minutes. To post events in a different channel, run `/setup as:events` there.
 
-The bridge folder is `plugins/MinecraftDiscordBridge` on Paper, `plugins/minecraftdiscordbridge` on Velocity, and `config/minecraftdiscordbridge` on Fabric, NeoForge and Forge.
-
-The bridge turns on the bot's **Message Content Intent** by itself, because it needs it to read Discord messages. If that fails, the log says so; turn it on under **Bot** in the Developer Portal.
+The bridge turns on the bot's **Message Content Intent** by itself, because it needs it to read Discord messages. If that fails, the log says so; turn it on under **Bot** in the Developer Portal. `linking.required-role` and `role-sync` also need the **Server Members Intent**, which you turn on there yourself.
 
 ## Commands
 
@@ -71,6 +69,8 @@ In Minecraft or the server console:
 /discord setup           Get a one-time code for /setup in Discord (console only)
 ```
 
+`link`, `unlink` and `toggle` are for players. `link` and `unlink` exist while linking is on.
+
 | Permission | Default |
 | --- | --- |
 | `minecraftdiscordbridge.command.link` | everyone |
@@ -80,12 +80,12 @@ In Minecraft or the server console:
 | `minecraftdiscordbridge.command.setup` | operators |
 | `minecraftdiscordbridge.gate.bypass` | operators |
 
-On Fabric, NeoForge and Forge, a permissions mod such as LuckPerms can grant these nodes.
+`command.link` covers both `link` and `unlink`. `gate.bypass` lets a player join without the linked account or role that `linking` asks for. Velocity has no operators, so only its console has the operator nodes until a permissions plugin grants them. A permissions plugin or mod such as LuckPerms can grant any node.
 
 In Discord:
 
 ```
-/setup [as] [code]                 Use this channel for chat or events
+/setup [as:chat|events] [code]     Use this channel for chat or events
 /list                              Show who is online
 /link <code>                       Link your Discord account
 /unlink                            Unlink your Discord account
@@ -93,19 +93,19 @@ In Discord:
 /kick <player> [reason]            Kick a player (discord-commands.kick)
 ```
 
-`/link` and `/unlink` exist while linking is on. `/whitelist` and `/kick` exist only when you turn them on in `config.yml`, and by default only Discord administrators can use them. To let other roles use them, change the command permissions under **Server Settings > Integrations** in Discord.
+Until the bridge has a channel, Discord shows only `/setup`. `/link` and `/unlink` exist while linking is on. `/whitelist` and `/kick` exist only when you turn them on in `config.yml`, and by default only Discord administrators can use them. To let other roles use them, change the command permissions under **Server Settings > Integrations** in Discord.
 
 ## Configuration
 
 The bridge folder holds three things:
 
-- `config.yml`: every setting, each with a comment. Run `/discord reload` after you edit it. If the file has an error, the bridge keeps the old settings and the log says what to fix.
-- `secrets.yml`: the bot token. The bridge creates it readable by the server's user only.
-- `data/`: what the bridge saves by itself, such as the channels from `/setup` and the linked accounts.
+- `config.yml`: every setting, with comments. Run `/discord reload` after you edit it. If the file has an error, the bridge keeps the old settings and the log says what to fix.
+- `secrets.yml`: the bot token. On Linux and macOS, the bridge creates it readable by the server's user only.
+- `data/`: what the bridge saves by itself: the channels from `/setup`, linked accounts, player preferences and webhooks. `webhooks.json` holds webhook URLs, so keep it as private as `secrets.yml`. `backups/` keeps the three previous versions of the channels and links. `cache/` holds files the bridge can rebuild, such as Minecraft's Korean language file for `language: ko`.
 
 | Section | What it controls |
 | --- | --- |
-| `language` | `en` or `ko` for the bridge's messages, and for deaths and advancements on Discord |
+| `language` | `en` or `ko` for in-game messages and Discord posts, including deaths and advancements. Replies to Discord slash commands follow each user's Discord language. |
 | `chat` | The chat channel, both directions, the in-game format in MiniMessage, avatars, `@name` pings for linked players, blocked words |
 | `events` | The events channel, which events to post, and a role to ping when the server starts |
 | `player-count` | The player count as the bot's status and in the chat channel's topic |
@@ -131,7 +131,7 @@ The bridge connects one server or network to one Discord server, and each owner 
 ./gradlew build -Pnodes=all    # every Fabric, NeoForge and Forge jar
 ```
 
-The build needs JDK 25 and downloads JDK 17 and 21 for the older Minecraft versions. The jars are in `paper/build/libs`, `velocity/build/libs` and `modded/versions/<version>-<loader>/build/libs`.
+The build needs JDK 25. The jars are in `paper/build/libs`, `velocity/build/libs` and `modded/versions/<version>-<loader>/build/libs`; use the ones without `-slim` or `-dev-shadow` in the name.
 
 ## License
 

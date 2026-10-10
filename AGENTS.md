@@ -4,23 +4,25 @@ Connects one Minecraft server (or one Velocity network) to one Discord server: c
 Runs inside the server as a Paper or Velocity plugin, or a Fabric, NeoForge or Forge mod. Every owner runs their own bot.
 
 ## Commands
-- `./gradlew build` builds core, paper, velocity and the active modded node.
+- `./gradlew build` builds core, paper, velocity and the first node in `modded/stonecutter.properties.toml`. `-Pnodes=forge,1.21.1` adds the nodes that match a loader, Minecraft version or node name.
 - `./gradlew build -Pnodes=all` builds every modded node. Run it before finishing any change under `modded/` or `core/`.
 - `./gradlew :core:test` while working on core.
+- `build` runs Spotless, Error Prone with NullAway, and javac with `-Werror` on every module, modded nodes included. The `bridge.*` convention plugins in `buildSrc` set this up.
 - `./gradlew spotlessApply` before committing. It leaves Stonecutter `//?` regions as written, so wrap those by hand.
 - All must pass before a commit. Never assume a failure is pre-existing.
 
 ## Architecture
 The Gradle project graph is the architecture. Do not add edges.
-- `core`: everything that does not need the game: Discord, config, storage, text, features. No `net.minecraft`, Bukkit, Paper, Velocity, Fabric or Forge imports. Ships with its libraries relocated as `core-all`.
-- `paper`, `velocity`, `modded`: thin adapters. They implement core's platform interfaces and publish game events. No feature logic.
+- `core`: everything that does not need the game: Discord, config, storage, text, features. No `net.minecraft`, Bukkit, Paper, Velocity, Fabric, NeoForge or Forge imports. Ships with its libraries relocated as `core-all`.
+- In `core`, `platform` holds the interfaces and events adapters use. Only `discord.jda` touches JDA and OkHttp, only `config` reads YAML, only `storage` uses Jackson, only `console` uses Log4j, and only `access.LuckPermsGroups` uses LuckPerms. Packages have no cycles. `ArchitectureTest` enforces this.
+- `paper`, `velocity`, `modded`: thin adapters. They implement core's platform interfaces and publish game events. No feature logic. Classes are named platform first, then role: `PaperPlatform`, `VelocityJoinGate`, `ModdedEvents` in modded's `common`. Entry points are `PaperPlugin`, `VelocityPlugin`, `FabricMod`, `NeoForgeMod` and `ForgeMod`.
 - `modded` is one Stonecutter tree. Loader code lives in the `fabric`, `neoforge` and `forge` packages under `modded/src`; the `bridge.modded` plugin compiles `common` plus the node's loader. Version differences use Stonecutter comments, never copies.
 - Each table in `modded/stonecutter.properties.toml` is one modded node. The build and publishing read the node list from there.
 
 Threads:
 - Game threads only hand events to core. Never block them and never do I/O on them.
 - Core logic runs on the single core loop. Never block it: no `join`, `get`, `complete`, `sleep` or file/network calls.
-- Blocking Discord work (login, shutdown) runs on the lifecycle thread. File I/O runs on the I/O executor.
+- Blocking Discord work (login, shutdown) runs on the lifecycle thread. File I/O and downloads run on an `IoExecutor`.
 - Game state is touched only through the platform scheduler.
 
 Discord must never hurt the server: startup never waits for Discord, and shutdown finishes within 3 seconds.
@@ -29,7 +31,7 @@ Discord must never hurt the server: startup never waits for Discord, and shutdow
 - `core` targets Java 17: records, sealed interfaces, switch expressions. Adapters use their Minecraft version's Java.
 - Every package has `@NullMarked`; use `@Nullable` where null is allowed. NullAway enforces it.
 - Small classes and methods; names say what they do. Prefer a better name or type over a comment.
-- Parse input once into value types (`DiscordId`, `PlayerName`) and pass those inward.
+- Parse input once into value types (`DiscordId`, `ChannelRole`) and pass those inward.
 - Text from players or Discord is data. Never parse it as MiniMessage or legacy codes; insert it with `Placeholder.unparsed` or `Placeholder.component`.
 - Every Discord message sets allowed mentions explicitly.
 - Logs are English, one line, and say how to fix the problem.
