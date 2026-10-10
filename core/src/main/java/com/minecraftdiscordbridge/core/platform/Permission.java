@@ -1,23 +1,29 @@
 package com.minecraftdiscordbridge.core.platform;
 
 public enum Permission {
-    LINK("minecraftdiscordbridge.command.link", true),
-    TOGGLE("minecraftdiscordbridge.command.toggle", true),
-    STATUS("minecraftdiscordbridge.command.status", false),
-    RELOAD("minecraftdiscordbridge.command.reload", false),
-    SETUP("minecraftdiscordbridge.command.setup", false),
-    GATE_BYPASS("minecraftdiscordbridge.gate.bypass", false);
+    LINK("command.link", true),
+    TOGGLE("command.toggle", true),
+    STATUS("command.status", false),
+    RELOAD("command.reload", false),
+    SETUP("command.setup", false),
+    GATE_BYPASS("gate.bypass", false);
 
-    private final String node;
+    public static final String NAMESPACE = "minecraftdiscordbridge";
+
+    private final String path;
     private final boolean everyoneByDefault;
 
-    Permission(String node, boolean everyoneByDefault) {
-        this.node = node;
+    Permission(String path, boolean everyoneByDefault) {
+        this.path = path;
         this.everyoneByDefault = everyoneByDefault;
     }
 
+    public String path() {
+        return path;
+    }
+
     public String node() {
-        return node;
+        return NAMESPACE + "." + path;
     }
 
     public boolean everyoneByDefault() {

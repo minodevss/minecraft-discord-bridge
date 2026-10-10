@@ -60,10 +60,9 @@ final class NeoForgeLoaderHooks implements LoaderHooks {
     }
 
     private static PermissionNode<Boolean> node(Permission permission) {
-        String name = permission.node().substring(LoaderHooks.MOD_ID.length() + 1);
         return new PermissionNode<>(
-                LoaderHooks.MOD_ID,
-                name,
+                Permission.NAMESPACE,
+                permission.path(),
                 PermissionTypes.BOOLEAN,
                 (player, playerId, context) -> DefaultPermissions.allows(player, permission));
     }
