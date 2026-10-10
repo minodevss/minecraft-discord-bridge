@@ -61,18 +61,10 @@ jobs:
           mkdir dist
           cp "paper/build/libs/minecraft-discord-bridge-paper-$version.jar" \
             "velocity/build/libs/minecraft-discord-bridge-velocity-$version.jar" dist/
-          for jar in modded/versions/*/build/libs/minecraft-discord-bridge-*-"$version"+*.jar; do
-            case "$jar" in
-              *-slim.jar | *-dev-shadow.jar | *-sources.jar) ;;
-              *) cp "$jar" dist/ ;;
-            esac
+          for node in modded/versions/*/; do
+            name=$(basename "$node")
+            cp "${node}build/libs/minecraft-discord-bridge-${name##*-}-$version+${name%-*}.jar" dist/
           done
-          count=$(find dist -name '*.jar' | wc -l)
-          if [[ "$count" -ne 9 ]]; then
-            echo "::error::Expected 9 jars, found $count."
-            ls dist
-            exit 1
-          fi
           (cd dist && sha256sum -- *.jar > SHA256SUMS)
           cat dist/SHA256SUMS
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
