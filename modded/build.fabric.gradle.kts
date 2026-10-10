@@ -63,7 +63,7 @@ tasks.named<ProcessResources>("processResources") {
         "java" to javaVersion.toString(),
     )
     inputs.properties(props)
-    filesMatching("fabric.mod.json") { expand(props) }
+    filesMatching(listOf("fabric.mod.json", "minecraftdiscordbridge.mixins.json")) { expand(props) }
     exclude("META-INF/neoforge.mods.toml", "META-INF/mods.toml")
 }
 

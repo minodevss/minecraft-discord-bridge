@@ -12,6 +12,7 @@
   "entrypoints": {
     "server": ["com.minecraftdiscordbridge.modded.fabric.FabricEntrypoint"]
   },
+  "mixins": ["minecraftdiscordbridge.mixins.json"],
   "depends": {
     "fabricloader": ">=0.15",
     "fabric-api": "*",
