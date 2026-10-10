@@ -15,6 +15,7 @@ The Gradle project graph is the architecture. Do not add edges.
 - `core`: everything that does not need the game: Discord, config, storage, text, features. No `net.minecraft`, Bukkit, Paper, Velocity, Fabric or Forge imports. Ships with its libraries relocated as `core-all`.
 - `paper`, `velocity`, `modded`: thin adapters. They implement core's platform interfaces and publish game events. No feature logic.
 - `modded` is one Stonecutter tree. Loader code lives in `modded/fabric`, `modded/neoforge`, `modded/forge`; version differences use Stonecutter comments, never copies.
+- Each table in `modded/stonecutter.properties.toml` is one modded node. The build and publishing read the node list from there.
 
 Threads:
 - Game threads only hand events to core. Never block them and never do I/O on them.
