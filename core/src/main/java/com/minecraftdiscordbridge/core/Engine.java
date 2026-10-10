@@ -2,7 +2,6 @@ package com.minecraftdiscordbridge.core;
 
 import com.minecraftdiscordbridge.core.commands.GameCommands;
 import com.minecraftdiscordbridge.core.config.BridgeConfig;
-import com.minecraftdiscordbridge.core.config.Channels;
 import com.minecraftdiscordbridge.core.config.ConfigLoader;
 import com.minecraftdiscordbridge.core.config.ConfigProblem;
 import com.minecraftdiscordbridge.core.config.ConfigResult;
@@ -26,6 +25,7 @@ import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.JoinDecision;
 import com.minecraftdiscordbridge.core.platform.Permission;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
+import com.minecraftdiscordbridge.core.setup.Channels;
 import com.minecraftdiscordbridge.core.storage.Link;
 import com.minecraftdiscordbridge.core.storage.LinkChange;
 import com.minecraftdiscordbridge.core.text.Format.Slot;

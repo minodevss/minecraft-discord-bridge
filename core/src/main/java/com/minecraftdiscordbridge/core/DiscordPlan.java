@@ -2,13 +2,13 @@ package com.minecraftdiscordbridge.core;
 
 import com.minecraftdiscordbridge.core.commands.SlashCommandCatalog;
 import com.minecraftdiscordbridge.core.config.BridgeConfig;
-import com.minecraftdiscordbridge.core.config.Channels;
 import com.minecraftdiscordbridge.core.config.ConfigSnapshot;
 import com.minecraftdiscordbridge.core.config.DiscordConfig;
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
+import com.minecraftdiscordbridge.core.setup.Channels;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;

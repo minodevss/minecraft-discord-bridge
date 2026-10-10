@@ -1,7 +1,8 @@
-package com.minecraftdiscordbridge.core.config;
+package com.minecraftdiscordbridge.core.setup;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.minecraftdiscordbridge.core.config.DiscordConfig;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.storage.ChannelBinding;
 import com.minecraftdiscordbridge.core.storage.ChannelRole;
