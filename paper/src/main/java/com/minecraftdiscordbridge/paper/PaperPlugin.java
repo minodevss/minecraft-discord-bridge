@@ -1,6 +1,7 @@
 package com.minecraftdiscordbridge.paper;
 
 import com.minecraftdiscordbridge.core.Bridge;
+import com.minecraftdiscordbridge.core.platform.Floodgate;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.Permission;
 import com.minecraftdiscordbridge.core.platform.PlatformInfo;

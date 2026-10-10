@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.velocity;
 
 import com.google.inject.Inject;
 import com.minecraftdiscordbridge.core.Bridge;
+import com.minecraftdiscordbridge.core.platform.Floodgate;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import com.velocitypowered.api.command.BrigadierCommand;

@@ -1,10 +1,10 @@
-package com.minecraftdiscordbridge.paper;
+package com.minecraftdiscordbridge.core.platform;
 
 import java.lang.reflect.Method;
 import java.util.UUID;
 import java.util.function.Predicate;
 
-final class Floodgate {
+public final class Floodgate {
     private static final String API = "org.geysermc.floodgate.api.FloodgateApi";
 
     private final Method instance;
@@ -15,10 +15,14 @@ final class Floodgate {
         this.isFloodgatePlayer = isFloodgatePlayer;
     }
 
-    static Predicate<UUID> bedrockCheck() {
+    public static Predicate<UUID> bedrockCheck() {
+        return bedrockCheck(API);
+    }
+
+    static Predicate<UUID> bedrockCheck(String api) {
         try {
-            Class<?> api = Class.forName(API);
-            return new Floodgate(api.getMethod("getInstance"), api.getMethod("isFloodgatePlayer", UUID.class))
+            Class<?> type = Class.forName(api);
+            return new Floodgate(type.getMethod("getInstance"), type.getMethod("isFloodgatePlayer", UUID.class))
                     ::isBedrock;
         } catch (ReflectiveOperationException | LinkageError absent) {
             return id -> false;
