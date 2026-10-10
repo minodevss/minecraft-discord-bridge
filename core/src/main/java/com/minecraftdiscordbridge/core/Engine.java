@@ -457,6 +457,7 @@ final class Engine {
             Session current = session;
             if (target == generation && current != null) {
                 current.discordChat().onMessage(message);
+                current.consoleInput().onMessage(message);
             }
         }
 

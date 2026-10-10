@@ -2,19 +2,24 @@ package com.minecraftdiscordbridge.core;
 
 import static com.minecraftdiscordbridge.core.Harness.CHANNELS;
 import static com.minecraftdiscordbridge.core.Harness.CHAT;
+import static com.minecraftdiscordbridge.core.Harness.CONSOLE;
 import static com.minecraftdiscordbridge.core.Harness.MEMBER;
+import static com.minecraftdiscordbridge.core.Harness.OWNER;
 import static com.minecraftdiscordbridge.core.Harness.ROLE;
 import static com.minecraftdiscordbridge.core.Harness.STEVE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.access.GroupCheck;
+import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.RoleInfo;
+import com.minecraftdiscordbridge.core.platform.GameAction;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.JoinDecision;
 import com.minecraftdiscordbridge.core.text.TextRenderer;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -107,6 +112,25 @@ class AccessTest {
         }
     }
 
+    @Test
+    void runsConsoleCommandsFromListedUsersInTheConsoleChannel() throws Exception {
+        try (Harness harness = Harness.started(directory, CHANNELS + """
+                  console-channel: "444444444444444444"
+                console:
+                  input-users: ["555555555555555555"]
+                """)) {
+            RecordingDiscord discord = harness.discord();
+            assertThat(discord.settings.channelIds()).contains(CONSOLE);
+
+            discord.receive(fromOwner("say hello"));
+
+            Waits.until(
+                    "the command to run",
+                    () -> harness.platform.actions.contains(new GameAction.RunConsoleCommand("say hello")));
+            assertThat(discord.nextSent().text()).isEqualTo("<@555555555555555555> ran a console command: say hello");
+        }
+    }
+
     private static JoinDecision join(Harness harness) {
         try {
             return harness.bridge.checkJoin(STEVE, false).get(5, TimeUnit.SECONDS);
@@ -129,5 +153,22 @@ class AccessTest {
     private static String denied(JoinDecision decision) {
         assertThat(decision).isInstanceOf(JoinDecision.Deny.class);
         return TextRenderer.plain(TextRenderer.fromJson(((JoinDecision.Deny) decision).json()));
+    }
+
+    private static DiscordMessage fromOwner(String content) {
+        return new DiscordMessage(
+                CONSOLE,
+                1,
+                new DiscordMessage.Sender(OWNER, "Owner", null, false, false),
+                content,
+                Map.of(),
+                Map.of(),
+                Map.of(),
+                List.of(),
+                null,
+                List.of(),
+                false,
+                false,
+                false);
     }
 }
