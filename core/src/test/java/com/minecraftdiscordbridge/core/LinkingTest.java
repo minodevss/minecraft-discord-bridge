@@ -26,6 +26,22 @@ class LinkingTest {
     Path directory;
 
     @Test
+    void givesLinkCodesWhenOnlyTheConsoleChannelIsSet() throws IOException {
+        try (Harness harness = Harness.started(directory, """
+                config-version: 1
+                discord:
+                  console-channel: "444444444444444444"
+                console:
+                  input-users: ["555555555555555555"]
+                """)) {
+            String reply = harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
+                    .nextPlain();
+
+            assertThat(reply).startsWith("Run /link ");
+        }
+    }
+
+    @Test
     void savesLinksWhileAMinecraftLanguageDownloadIsSlow() throws IOException {
         CountDownLatch download = new CountDownLatch(1);
         try (Harness harness = Harness.create(directory, CHANNELS + "language: ko\n")) {

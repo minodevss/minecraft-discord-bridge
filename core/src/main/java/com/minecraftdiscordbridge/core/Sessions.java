@@ -12,6 +12,7 @@ import com.minecraftdiscordbridge.core.commands.SlashRouter;
 import com.minecraftdiscordbridge.core.config.BridgeConfig;
 import com.minecraftdiscordbridge.core.config.Channels;
 import com.minecraftdiscordbridge.core.config.ConfigSnapshot;
+import com.minecraftdiscordbridge.core.console.ConsoleInput;
 import com.minecraftdiscordbridge.core.console.ConsoleMirror;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
@@ -87,7 +88,16 @@ final class Sessions {
                         shared.loop(),
                         () -> secrets(shared, snapshot)),
                 JoinGate.create(config.linking(), shared.platform().info(), access, replies),
-                RoleSync.create(config.roleSync(), shared.platform().info(), access));
+                RoleSync.create(config.roleSync(), shared.platform().info(), access),
+                new ConsoleInput(
+                        config.console(),
+                        config.discord().consoleChannel(),
+                        shared.platform(),
+                        shared.discord(),
+                        shared.loop()::control,
+                        lang,
+                        shared.actionTimeout(),
+                        () -> secrets(shared, snapshot)));
     }
 
     private static boolean connected(DiscordStatus status) {

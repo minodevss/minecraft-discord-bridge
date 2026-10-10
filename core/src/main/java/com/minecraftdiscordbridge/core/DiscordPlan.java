@@ -40,7 +40,7 @@ final class DiscordPlan {
         Set<Long> ids = new LinkedHashSet<>();
         channels.chat().ifPresent(id -> ids.add(id.value()));
         channels.events().ifPresent(id -> ids.add(id.value()));
-        if (config.console().mirror()) {
+        if (config.console().mirror() || !config.console().inputUsers().isEmpty()) {
             config.discord().consoleChannel().ifPresent(id -> ids.add(id.value()));
         }
         return ids;

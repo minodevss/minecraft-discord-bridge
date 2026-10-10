@@ -45,6 +45,9 @@ final class GameActions {
         if (action instanceof GameAction.Kick kick) {
             return kick(kick.playerName(), kick.reason());
         }
+        if (action instanceof GameAction.RunConsoleCommand run) {
+            return runConsoleCommand(run.command());
+        }
         return CompletableFuture.completedFuture(new ActionOutcome.Failed("Unsupported action"));
     }
 
@@ -84,6 +87,14 @@ final class GameActions {
             }
             player.connection.disconnect(Component.literal(reason));
             return new ActionOutcome.Done();
+        });
+    }
+
+    private CompletableFuture<ActionOutcome> runConsoleCommand(String command) {
+        return ServerThread.supply(server, () -> {
+            CommandFeedback feedback = new CommandFeedback();
+            server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSource(feedback), command);
+            return new ActionOutcome.Output(feedback.text());
         });
     }
 
