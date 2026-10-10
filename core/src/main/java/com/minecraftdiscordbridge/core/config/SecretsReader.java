@@ -55,7 +55,7 @@ final class SecretsReader {
         }
         try {
             AtomicFile.writeOwnerOnly(file, TEMPLATE.getBytes(StandardCharsets.UTF_8));
-            LOGGER.info("Created {}. Put the Discord bot token in it, then restart the server.", file);
+            LOGGER.info("Created {} for the Discord bot token", file);
         } catch (IOException failure) {
             problems.forSource(FILE)
                     .warning(

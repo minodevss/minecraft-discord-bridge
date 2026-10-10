@@ -23,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.event.Level;
 
 class BridgeLifecycleTest {
     @TempDir
@@ -80,7 +81,7 @@ class BridgeLifecycleTest {
     void staysIdleWithABrokenConfigAndStartsAfterAFixAndReload() throws IOException {
         try (Harness harness = Harness.create(directory, CHANNELS + "events:\n  join: maybe\n")) {
             harness.bridge.start();
-            assertThat(harness.settledStatus()).contains("config.yml has errors");
+            assertThat(harness.settledStatus()).contains("The settings have errors");
             assertThat(harness.discords).isEmpty();
 
             harness.writeConfig(CHANNELS);
@@ -116,6 +117,39 @@ class BridgeLifecycleTest {
             harness.publish(new GameEvent.PlayerJoined(STEVE, false));
             Waits.nothingIn(harness.discord().sent);
             assertThat(harness.discords).hasSize(1);
+        }
+    }
+
+    @Test
+    void connectsAfterATokenIsPutInSecretsYmlAndTheConfigIsReloaded() throws IOException {
+        try (Harness harness = Harness.create(directory, CHANNELS, Map.of())) {
+            harness.bridge.start();
+            assertThat(harness.settledStatus()).contains("No bot token is set");
+            Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"" + TOKEN + "\"\n");
+
+            RecordingSource console = harness.run(RecordingSource.console(), "reload");
+
+            assertThat(console.nextPlain()).isEqualTo("Reloaded config.yml. Reconnecting to Discord.");
+            assertThat(harness.discord().settings.token()).isEqualTo(TOKEN);
+            assertThat(harness.discord().started).isTrue();
+        }
+    }
+
+    @Test
+    void explainsTheMissingTokenInAShortBannerThatAgreesWithItself() throws IOException {
+        try (RecordingLogs.Capture logs = RecordingLogs.capture();
+                Harness harness = Harness.create(directory, CHANNELS, Map.of())) {
+            harness.bridge.start();
+            harness.settledStatus();
+
+            assertThat(logs.lines(Level.WARN))
+                    .hasSizeLessThanOrEqualTo(3)
+                    .anySatisfy(line -> assertThat(line).contains(SetupGuide.QUICK_START))
+                    .anySatisfy(line -> assertThat(line)
+                            .contains("https://discord.com/developers/applications")
+                            .contains(directory.resolve("secrets.yml").toString())
+                            .contains("/discord reload"));
+            assertThat(logs.lines()).noneSatisfy(line -> assertThat(line).contains("restart"));
         }
     }
 

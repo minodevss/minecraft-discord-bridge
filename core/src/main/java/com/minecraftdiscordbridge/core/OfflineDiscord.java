@@ -13,7 +13,8 @@ final class OfflineDiscord implements Discord {
     static final String STARTING = "The bridge is starting";
     static final String CONNECTING = "Connecting to Discord";
     static final String NO_TOKEN = "No bot token is set. See the server log for the setup steps";
-    static final String CONFIG_ERRORS = "config.yml has errors. Fix them and run /discord reload";
+    static final String CONFIG_ERRORS =
+            "The settings have errors. See the server log, fix them and run /discord reload";
     static final String STOPPED = "The bridge has stopped";
 
     private final DiscordStatus status;
