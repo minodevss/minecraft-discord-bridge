@@ -61,12 +61,11 @@ class ConfigWriterTest {
     }
 
     @Test
-    void everyOptionHasACommentAKnownSectionAndAVersion() {
+    void everyOptionHasACommentAndAKnownSection() {
         Set<String> sections = new HashSet<>(Set.of(""));
         ConfigSchema.SECTIONS.forEach(section -> sections.add(section.name()));
         for (Option<?> option : ConfigSchema.OPTIONS) {
             assertThat(option.section()).isIn(sections);
-            assertThat(option.since()).isBetween(1, ConfigSchema.VERSION);
             assertThat(option.comment()).isNotEmpty();
         }
     }

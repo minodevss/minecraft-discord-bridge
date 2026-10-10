@@ -50,10 +50,6 @@ public final class Lang {
         return language;
     }
 
-    public Set<String> keys() {
-        return new TreeSet<>(strings.keySet());
-    }
-
     public String raw(String key) {
         String value = strings.get(key);
         if (value != null) {

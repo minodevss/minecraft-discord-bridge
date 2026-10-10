@@ -154,7 +154,7 @@ class TextRendererTest {
                 .arguments(Component.text("Steve"))
                 .build();
 
-        assertThat(TextRenderer.plain(component, Translations.NONE)).isEqualTo("Steve joined");
+        assertThat(TextRenderer.plain(component, key -> null)).isEqualTo("Steve joined");
     }
 
     @Test
@@ -185,7 +185,7 @@ class TextRendererTest {
 
         assertThat(TextRenderer.plain(
                         new RichText("{\"translate\":\"death.attack.fall\",\"with\":[\"Steve\"]}", "Steve fell"),
-                        Translations.NONE))
+                        key -> null))
                 .isEqualTo("Steve fell");
         assertThat(TextRenderer.plain(new RichText("{broken", "Steve fell"), korean))
                 .isEqualTo("Steve fell");

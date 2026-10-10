@@ -58,10 +58,6 @@ public final class Format {
         return name;
     }
 
-    public String template() {
-        return template;
-    }
-
     public Component render(Slot... slots) {
         return render(List.of(slots));
     }

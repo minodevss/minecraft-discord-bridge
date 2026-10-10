@@ -61,8 +61,7 @@ final class ConfigSchema {
             List.of(),
             List.of(
                     "Messages that match one of these regular expressions are not relayed.",
-                    "Example: blocked-words: [\"(?i)badword\"]"),
-            1);
+                    "Example: blocked-words: [\"(?i)badword\"]"));
 
     static final Option<Boolean> JOIN = flag("events.join", true, "Post when a player joins.");
     static final Option<Boolean> LEAVE = flag("events.leave", true, "Post when a player leaves.");
@@ -99,8 +98,7 @@ final class ConfigSchema {
                     "  rules:",
                     "    - discord-role: \"123456789012345678\"",
                     "      group: \"vip\"",
-                    "      direction: \"discord-to-minecraft\""),
-            1);
+                    "      direction: \"discord-to-minecraft\""));
 
     static final Option<Boolean> WHITELIST =
             flag("actions.whitelist", false, "Allow Discord commands that add and remove players from the whitelist.");
@@ -114,8 +112,7 @@ final class ConfigSchema {
             List.of(),
             List.of(
                     "Discord user IDs that can run console commands from the console channel.",
-                    "Empty means nobody. Example: input-users: [\"123456789012345678\"]"),
-            1);
+                    "Empty means nobody. Example: input-users: [\"123456789012345678\"]"));
 
     static final List<Option<?>> OPTIONS = List.of(
             LANGUAGE,
@@ -207,18 +204,18 @@ final class ConfigSchema {
     }
 
     private static Option<Boolean> flag(String path, boolean value, String... comment) {
-        return new Option<>(path, ValueTypes.BOOLEAN, value, List.of(comment), 1);
+        return new Option<>(path, ValueTypes.BOOLEAN, value, List.of(comment));
     }
 
     private static Option<String> text(String path, String value, String... comment) {
-        return new Option<>(path, ValueTypes.TEXT, value, List.of(comment), 1);
+        return new Option<>(path, ValueTypes.TEXT, value, List.of(comment));
     }
 
     private static Option<String> discordId(String path, String... comment) {
-        return new Option<>(path, ValueTypes.DISCORD_ID_OR_EMPTY, "", List.of(comment), 1);
+        return new Option<>(path, ValueTypes.DISCORD_ID_OR_EMPTY, "", List.of(comment));
     }
 
     private static <E extends Enum<E>> Option<E> choice(String path, E value, String... comment) {
-        return new Option<>(path, ValueTypes.choice(value.getDeclaringClass()), value, List.of(comment), 1);
+        return new Option<>(path, ValueTypes.choice(value.getDeclaringClass()), value, List.of(comment));
     }
 }

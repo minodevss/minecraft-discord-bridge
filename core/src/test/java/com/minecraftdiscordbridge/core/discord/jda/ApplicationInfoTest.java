@@ -17,7 +17,6 @@ class ApplicationInfoTest {
                 """));
 
         assertThat(info.id()).isEqualTo(123);
-        assertThat(info.botPublic()).isTrue();
         assertThat(info.ownerId()).isEqualTo(456);
         assertThat(info.team()).isNotNull();
         assertThat(info.team().ownerUserId()).isEqualTo(789);
@@ -55,7 +54,6 @@ class ApplicationInfoTest {
         ApplicationInfo info = new ApplicationInfo(
                 1,
                 0,
-                false,
                 99,
                 new ApplicationInfo.Team(
                         10,
@@ -74,6 +72,6 @@ class ApplicationInfoTest {
     }
 
     private static ApplicationInfo withFlags(long flags) {
-        return new ApplicationInfo(1, flags, false, 2, null);
+        return new ApplicationInfo(1, flags, 2, null);
     }
 }

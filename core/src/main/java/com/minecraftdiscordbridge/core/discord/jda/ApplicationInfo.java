@@ -8,11 +8,7 @@ import net.dv8tion.jda.api.utils.data.DataObject;
 import org.jspecify.annotations.Nullable;
 
 record ApplicationInfo(
-        long id,
-        long flags,
-        boolean botPublic,
-        long ownerId,
-        @Nullable Team team) {
+        long id, long flags, long ownerId, @Nullable Team team) {
     static final long GATEWAY_GUILD_MEMBERS = 1L << 14;
     static final long GATEWAY_GUILD_MEMBERS_LIMITED = 1L << 15;
     static final long GATEWAY_MESSAGE_CONTENT = 1L << 18;
@@ -33,8 +29,7 @@ record ApplicationInfo(
                 .map(user -> user.getUnsignedLong("id", 0L))
                 .orElse(0L);
         Team team = json.isNull("team") ? null : parseTeam(json.getObject("team"));
-        return new ApplicationInfo(
-                json.getUnsignedLong("id"), json.getLong("flags", 0L), json.getBoolean("bot_public"), owner, team);
+        return new ApplicationInfo(json.getUnsignedLong("id"), json.getLong("flags", 0L), owner, team);
     }
 
     private static Team parseTeam(DataObject json) {
@@ -59,7 +54,7 @@ record ApplicationInfo(
     }
 
     ApplicationInfo withFlags(long newFlags) {
-        return new ApplicationInfo(id, newFlags, botPublic, ownerId, team);
+        return new ApplicationInfo(id, newFlags, ownerId, team);
     }
 
     boolean isOwner(long userId) {

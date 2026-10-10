@@ -1,6 +1,7 @@
 package com.minecraftdiscordbridge.core.text;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.minecraftdiscordbridge.core.text.markdown.DiscordMarkdown;
@@ -87,7 +88,7 @@ class FormatTest {
                 "plain"
             })
     void acceptsStandardTemplates(String template) {
-        assertThat(Format.compile("ok", template, Set.of()).template()).isEqualTo(template);
+        assertThatCode(() -> Format.compile("ok", template, Set.of())).doesNotThrowAnyException();
     }
 
     @ParameterizedTest
