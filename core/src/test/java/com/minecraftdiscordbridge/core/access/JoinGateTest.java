@@ -15,6 +15,7 @@ import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.i18n.Replies;
 import com.minecraftdiscordbridge.core.linking.PendingLinks;
 import com.minecraftdiscordbridge.core.platform.JoinDecision;
+import com.minecraftdiscordbridge.core.platform.OfflinePermissions;
 import com.minecraftdiscordbridge.core.platform.Permission;
 import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
@@ -26,6 +27,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -44,6 +48,9 @@ class JoinGateTest {
     private static final DiscordId STEVE_DISCORD = new DiscordId(666666666666666666L);
     private static final DiscordId VIP = new DiscordId(777777777777777777L);
     private static final Pattern CODE = Pattern.compile("/link ([" + Codes.ALPHABET + "]{" + Codes.LENGTH + "})");
+    private static final String BYPASS = Permission.GATE_BYPASS.node();
+    private static final OfflinePermissions NOTHING = permission -> CompletableFuture.completedFuture(false);
+    private static final OfflinePermissions EVERYTHING = permission -> CompletableFuture.completedFuture(true);
 
     @TempDir
     Path directory;
@@ -183,15 +190,69 @@ class JoinGateTest {
     }
 
     @Test
-    void letsPlayersWithTheBypassPermissionIn() {
-        JoinGate gate = roleGate(UnreachablePolicy.DENY);
-        CompletableFuture<JoinDecision> bypassed = new CompletableFuture<>();
-        gate.decide(STEVE, true, bypassed);
-        groups.permissions.put(STEVE.id(), Set.of(Permission.GATE_BYPASS.node()));
-
-        assertThat(bypassed.getNow(null)).isInstanceOf(JoinDecision.Allow.class);
-        assertThat(decide(gate, STEVE)).isInstanceOf(JoinDecision.Allow.class);
+    void letsPlayersWhomThePlatformGrantsTheBypassInWithoutAskingDiscord() {
+        assertThat(decide(roleGate(UnreachablePolicy.DENY), joining(EVERYTHING)))
+                .isInstanceOf(JoinDecision.Allow.class);
         assertThat(discord.memberLookups).isEmpty();
+    }
+
+    @Test
+    void letsLuckPermsDecideTheBypassWhenItSetsTheNode() {
+        JoinGate gate = gate(required(Optional.empty(), UnreachablePolicy.DENY));
+
+        groups.permissions.put(STEVE.id(), Map.of(BYPASS, false));
+        assertThat(denied(decide(gate, joining(EVERYTHING)))).contains("/link ");
+
+        groups.permissions.put(STEVE.id(), Map.of(BYPASS, true));
+        assertThat(decide(gate, joining(NOTHING))).isInstanceOf(JoinDecision.Allow.class);
+    }
+
+    @Test
+    void asksThePlatformAboutTheBypassOnlyWhenLuckPermsLeavesItUnset() {
+        List<Permission> asked = new ArrayList<>();
+        OfflinePermissions recording = permission -> {
+            asked.add(permission);
+            return CompletableFuture.completedFuture(false);
+        };
+
+        decide(gate(required(Optional.empty(), UnreachablePolicy.DENY)), joining(recording));
+
+        assertThat(asked).containsExactly(Permission.GATE_BYPASS);
+    }
+
+    @Test
+    void leavesThePermissionsAloneWhileTheGateIsOff() {
+        List<Permission> asked = new ArrayList<>();
+        OfflinePermissions recording = permission -> {
+            asked.add(permission);
+            return CompletableFuture.completedFuture(true);
+        };
+
+        decide(gate(new LinkingConfig(true, false, Optional.empty(), UnreachablePolicy.DENY)), joining(recording));
+
+        assertThat(asked).isEmpty();
+    }
+
+    @Test
+    void treatsAPermissionCheckThatFailsAsNoBypass() {
+        JoinGate gate = gate(required(Optional.empty(), UnreachablePolicy.DENY));
+        OfflinePermissions failing = permission -> CompletableFuture.failedFuture(new IllegalStateException("down"));
+        OfflinePermissions throwing = permission -> {
+            throw new IllegalStateException("down");
+        };
+
+        assertThat(denied(decide(gate, joining(failing)))).contains("/link ");
+        assertThat(denied(decide(gate, joining(throwing)))).contains("/link ");
+    }
+
+    @Test
+    void fallsBackToLettingInPlayersAlreadyKnownToBypass() {
+        JoinGate gate = roleGate(UnreachablePolicy.DENY);
+        JoiningPlayer bypassing = joining(EVERYTHING);
+        decide(gate, bypassing);
+
+        assertThat(gate.fallback(bypassing)).isInstanceOf(JoinDecision.Allow.class);
+        assertThat(gate.fallback(joining(NOTHING))).isInstanceOf(JoinDecision.Deny.class);
     }
 
     @Test
@@ -222,12 +283,12 @@ class JoinGateTest {
 
     @Test
     void fallsBackToTheUnreachablePolicyWhenTheCheckTakesTooLong() throws IOException {
-        assertThat(roleGate(UnreachablePolicy.ALLOW).fallback(STEVE, false)).isInstanceOf(JoinDecision.Deny.class);
+        assertThat(roleGate(UnreachablePolicy.ALLOW).fallback(joining(NOTHING))).isInstanceOf(JoinDecision.Deny.class);
 
         link();
-        assertThat(roleGate(UnreachablePolicy.ALLOW).fallback(STEVE, false)).isInstanceOf(JoinDecision.Allow.class);
-        assertThat(roleGate(UnreachablePolicy.DENY).fallback(STEVE, false)).isInstanceOf(JoinDecision.Deny.class);
-        assertThat(gate(required(Optional.empty(), UnreachablePolicy.DENY)).fallback(STEVE, false))
+        assertThat(roleGate(UnreachablePolicy.ALLOW).fallback(joining(NOTHING))).isInstanceOf(JoinDecision.Allow.class);
+        assertThat(roleGate(UnreachablePolicy.DENY).fallback(joining(NOTHING))).isInstanceOf(JoinDecision.Deny.class);
+        assertThat(gate(required(Optional.empty(), UnreachablePolicy.DENY)).fallback(joining(NOTHING)))
                 .isInstanceOf(JoinDecision.Allow.class);
     }
 
@@ -238,7 +299,7 @@ class JoinGateTest {
         discord.members = id -> answer;
         CompletableFuture<JoinDecision> decision = new CompletableFuture<>();
 
-        roleGate(UnreachablePolicy.DENY).decide(STEVE, false, decision);
+        roleGate(UnreachablePolicy.DENY).decide(joining(NOTHING), decision);
         assertThat(decision).isNotDone();
 
         answer.complete(new MemberLookup.Member(STEVE_DISCORD, Set.of(VIP)));
@@ -265,11 +326,19 @@ class JoinGateTest {
         links.link(new Link(STEVE.id(), STEVE_DISCORD, "Steve", Edition.JAVA, clock.instant()));
     }
 
-    private static JoinDecision decide(JoinGate gate, PlayerProfile player) {
+    private JoinDecision decide(JoinGate gate, PlayerProfile player) {
+        return decide(gate, new JoiningPlayer(player, NOTHING, groups));
+    }
+
+    private static JoinDecision decide(JoinGate gate, JoiningPlayer player) {
         CompletableFuture<JoinDecision> decision = new CompletableFuture<>();
-        gate.decide(player, false, decision);
+        gate.decide(player, decision);
         assertThat(decision).isDone();
         return decision.join();
+    }
+
+    private JoiningPlayer joining(OfflinePermissions permissions) {
+        return new JoiningPlayer(STEVE, permissions, groups);
     }
 
     private static String denied(JoinDecision decision) {

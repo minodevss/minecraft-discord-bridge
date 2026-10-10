@@ -30,7 +30,7 @@ public final class PaperEvents implements Listener {
         this.profiles = profiles;
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onServerLoad(ServerLoadEvent event) {
         if (event.getType() == ServerLoadEvent.LoadType.STARTUP) {
             bridge.publish(new GameEvent.ServerStarted(
@@ -43,13 +43,13 @@ public final class PaperEvents implements Listener {
         bridge.publish(new GameEvent.PlayerChatted(profiles.of(event.getPlayer()), plain(event.message())));
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         bridge.publish(new GameEvent.PlayerJoined(profiles.of(player), vanished(player)));
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent event) {
         // Paper kicks every player before onDisable, so core learns of the stop too late to skip these.
         if (Bukkit.isStopping()) {
@@ -67,7 +67,7 @@ public final class PaperEvents implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onAdvancement(PlayerAdvancementDoneEvent event) {
         AdvancementDisplay display = event.getAdvancement().getDisplay();
         if (event.message() != null && display != null) {

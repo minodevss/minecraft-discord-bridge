@@ -7,14 +7,14 @@ Runs inside the server as a Paper or Velocity plugin, or a Fabric, NeoForge or F
 - `./gradlew build` builds core, paper, velocity and the active modded node.
 - `./gradlew build -Pnodes=all` builds every modded node. Run it before finishing any change under `modded/` or `core/`.
 - `./gradlew :core:test` while working on core.
-- `./gradlew spotlessApply` before committing.
+- `./gradlew spotlessApply` before committing. It leaves Stonecutter `//?` regions as written, so wrap those by hand.
 - All must pass before a commit. Never assume a failure is pre-existing.
 
 ## Architecture
 The Gradle project graph is the architecture. Do not add edges.
 - `core`: everything that does not need the game: Discord, config, storage, text, features. No `net.minecraft`, Bukkit, Paper, Velocity, Fabric or Forge imports. Ships with its libraries relocated as `core-all`.
 - `paper`, `velocity`, `modded`: thin adapters. They implement core's platform interfaces and publish game events. No feature logic.
-- `modded` is one Stonecutter tree. Loader code lives in `modded/fabric`, `modded/neoforge`, `modded/forge`; version differences use Stonecutter comments, never copies.
+- `modded` is one Stonecutter tree. Loader code lives in the `fabric`, `neoforge` and `forge` packages under `modded/src`; the `bridge.modded` plugin compiles `common` plus the node's loader. Version differences use Stonecutter comments, never copies.
 - Each table in `modded/stonecutter.properties.toml` is one modded node. The build and publishing read the node list from there.
 
 Threads:

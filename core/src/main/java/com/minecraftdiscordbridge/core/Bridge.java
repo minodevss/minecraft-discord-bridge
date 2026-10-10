@@ -4,6 +4,7 @@ import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
 import com.minecraftdiscordbridge.core.access.AccessMemory;
 import com.minecraftdiscordbridge.core.access.JoinGate;
+import com.minecraftdiscordbridge.core.access.JoiningPlayer;
 import com.minecraftdiscordbridge.core.access.PermissionGroups;
 import com.minecraftdiscordbridge.core.actions.GameActions;
 import com.minecraftdiscordbridge.core.codes.Attempts;
@@ -24,6 +25,7 @@ import com.minecraftdiscordbridge.core.platform.CommandSource;
 import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.JoinDecision;
+import com.minecraftdiscordbridge.core.platform.OfflinePermissions;
 import com.minecraftdiscordbridge.core.platform.Platform;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.minecraftdiscordbridge.core.setup.SetupCodes;
@@ -59,6 +61,7 @@ public final class Bridge {
     private final ExecutorService lifecycle;
     private final Activator activator;
     private final ShutdownMarker marker;
+    private final PermissionGroups groups;
     private final AtomicBoolean started = new AtomicBoolean();
     private final AtomicBoolean stopped = new AtomicBoolean();
     private volatile boolean stopping;
@@ -96,6 +99,7 @@ public final class Bridge {
                 groups,
                 new AccessMemory());
         this.marker = new ShutdownMarker(platform.dataDirectory());
+        this.groups = groups;
         this.activator = new Activator(
                 services,
                 lifecycle,
@@ -153,15 +157,27 @@ public final class Bridge {
         loop.control(() -> activator.help(source, permitted));
     }
 
-    public CompletableFuture<JoinDecision> checkJoin(PlayerProfile player, boolean bypass) {
+    public CompletableFuture<JoinDecision> checkJoin(PlayerProfile player, OfflinePermissions permissions) {
+        JoiningPlayer joining = new JoiningPlayer(player, permissions, groups);
         if (stopped.get()) {
-            return CompletableFuture.completedFuture(activator.joins().fallback(player, bypass));
+            return CompletableFuture.completedFuture(fallback(joining));
         }
         CompletableFuture<JoinDecision> decision = new CompletableFuture<>();
-        loop.control(() -> activator.joins().check(player, bypass, decision));
+        loop.control(() -> activator.joins().check(joining, decision));
         return decision.orTimeout(JoinGate.BUDGET.toMillis(), TimeUnit.MILLISECONDS)
-                .handle((done, failure) ->
-                        done != null ? done : activator.joins().fallback(player, bypass));
+                .handle((done, failure) -> done != null ? done : fallback(joining));
+    }
+
+    private JoinDecision fallback(JoiningPlayer player) {
+        try {
+            return activator.joins().fallback(player);
+        } catch (RuntimeException failure) {
+            LOGGER.warn(
+                    "Let {} join because the join check failed: {}. Report this bug",
+                    player.profile().name(),
+                    Failures.describe(failure));
+            return new JoinDecision.Allow();
+        }
     }
 
     public void stop() {

@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.moddev.legacyforge) apply false
     alias(libs.plugins.mod.publish)
     alias(libs.plugins.hangar.publish)
+    id("bridge.modded-format")
 }
 
 class ModJar(val minecraft: String, val loader: String, val gameVersions: List<String>) {

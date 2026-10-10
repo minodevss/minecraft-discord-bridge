@@ -9,7 +9,7 @@ import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
-final class FeedbackSource implements CommandSource {
+final class VelocityConsoleFeedback implements CommandSource {
     private final List<String> lines = new CopyOnWriteArrayList<>();
 
     boolean hasFeedback() {

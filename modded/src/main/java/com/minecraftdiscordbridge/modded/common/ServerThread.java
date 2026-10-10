@@ -5,6 +5,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import net.minecraft.server.MinecraftServer;
 
+// MinecraftServer.execute runs a task inline on the calling thread once the server has stopped.
 final class ServerThread {
     private ServerThread() {}
 
@@ -20,7 +21,7 @@ final class ServerThread {
         CompletableFuture<ActionOutcome> outcome = new CompletableFuture<>();
         server.execute(() -> {
             if (!server.isSameThread()) {
-                outcome.complete(new ActionOutcome.Failed("The server is stopping"));
+                outcome.complete(new ActionOutcome.ServerStopping());
                 return;
             }
             try {

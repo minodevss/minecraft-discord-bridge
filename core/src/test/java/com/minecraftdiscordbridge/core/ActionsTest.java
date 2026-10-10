@@ -180,6 +180,19 @@ class ActionsTest {
     }
 
     @Test
+    void explainsActionsThePlatformCannotDo() throws IOException {
+        try (Harness harness = Harness.started(directory, ACTIONS_ON)) {
+            harness.platform.outcomes = action -> CompletableFuture.completedFuture(new ActionOutcome.Unsupported());
+
+            assertThat(harness.discord()
+                            .command(whitelist("add", "Steve"))
+                            .next()
+                            .text())
+                    .isEqualTo("That did not work for **Steve**: this server cannot do that");
+        }
+    }
+
+    @Test
     void answersEvenWhenThePlatformNeverDoes() throws IOException {
         try (Harness harness = Harness.started(directory, ACTIONS_ON)) {
             harness.platform.outcomes = action -> new CompletableFuture<>();

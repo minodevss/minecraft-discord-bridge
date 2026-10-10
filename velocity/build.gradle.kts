@@ -11,7 +11,6 @@ repositories {
 
 dependencies {
     compileOnly(libs.velocity.api)
-    testImplementation(libs.gson)
 }
 
 tasks.withType<JavaCompile>().configureEach {

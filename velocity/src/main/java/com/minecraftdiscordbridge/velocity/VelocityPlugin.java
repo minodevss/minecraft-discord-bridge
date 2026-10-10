@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.velocity;
 
 import com.google.inject.Inject;
 import com.minecraftdiscordbridge.core.Bridge;
+import com.minecraftdiscordbridge.core.platform.Floodgate;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import com.velocitypowered.api.command.BrigadierCommand;
@@ -20,7 +21,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
 
 public final class VelocityPlugin {
-    private static final int CAMEL_CASE_TEXT_DATA_VERSION = 4189;
+    // A proxy has no world data version; 4189 (1.21.4) picks the camelCase text JSON every Velocity's Adventure reads.
+    private static final int TEXT_DATA_VERSION = 4189;
 
     private final ProxyServer proxy;
     private final Path dataDirectory;
@@ -34,11 +36,12 @@ public final class VelocityPlugin {
 
     @Subscribe
     public void onInitialize(ProxyInitializeEvent event) {
-        Bridge started = Bridge.create(new VelocityPlatform(proxy, info(), dataDirectory));
+        Bridge started = Bridge.create(new VelocityPlatform(proxy, info(), dataDirectory, new VelocityActions(proxy)));
         bridge.set(started);
         started.start();
-        proxy.getEventManager()
-                .register(this, new VelocityEvents(started, new VelocityProfiles(Floodgate.bedrockCheck())));
+        VelocityProfiles profiles = new VelocityProfiles(Floodgate.bedrockCheck());
+        proxy.getEventManager().register(this, new VelocityEvents(started, profiles));
+        proxy.getEventManager().register(this, new VelocityJoinGate(started, profiles));
         BrigadierCommand command = VelocityCommand.create(started);
         CommandManager commands = proxy.getCommandManager();
         commands.register(commands.metaBuilder(command).plugin(this).build(), command);
@@ -68,7 +71,7 @@ public final class VelocityPlugin {
         return new PlatformInfo(
                 (version.getName() + " " + version.getVersion()).trim(),
                 ProtocolVersion.MAXIMUM_VERSION.getMostRecentSupportedVersion(),
-                CAMEL_CASE_TEXT_DATA_VERSION,
+                TEXT_DATA_VERSION,
                 proxy.getConfiguration().isOnlineMode(),
                 false,
                 false);

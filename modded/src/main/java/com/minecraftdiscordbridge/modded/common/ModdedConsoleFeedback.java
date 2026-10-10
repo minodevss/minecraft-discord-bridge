@@ -5,7 +5,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.network.chat.Component;
 
-final class CommandFeedback implements CommandSource {
+final class ModdedConsoleFeedback implements CommandSource {
     private final List<String> lines = new CopyOnWriteArrayList<>();
 
     String text() {

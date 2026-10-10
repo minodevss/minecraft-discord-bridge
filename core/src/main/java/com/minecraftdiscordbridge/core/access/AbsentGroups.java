@@ -1,5 +1,6 @@
 package com.minecraftdiscordbridge.core.access;
 
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -36,8 +37,8 @@ final class AbsentGroups implements PermissionGroups {
     }
 
     @Override
-    public CompletableFuture<Boolean> hasPermission(UUID player, String node) {
-        return CompletableFuture.completedFuture(false);
+    public CompletableFuture<Optional<Boolean>> permission(UUID player, String node) {
+        return CompletableFuture.completedFuture(Optional.empty());
     }
 
     @Override

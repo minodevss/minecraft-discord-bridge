@@ -8,6 +8,8 @@ modId = "minecraftdiscordbridge"
 version = "${version}"
 displayName = "Minecraft Discord Bridge"
 description = "Minecraft ↔ Discord bridge"
+authors = "minodevss"
+displayURL = "https://github.com/minodevss/minecraft-discord-bridge"
 
 [[dependencies.minecraftdiscordbridge]]
 modId = "minecraft"

@@ -76,7 +76,7 @@ final class PaperActions {
     }
 
     private void kick(CompletableFuture<ActionOutcome> outcome, String name, String reason) {
-        Player player = onlinePlayer(name);
+        Player player = Bukkit.getPlayerExact(name);
         Runnable gone = () -> outcome.complete(new ActionOutcome.NoSuchPlayer(name));
         if (player == null
                 || player.getScheduler().run(plugin, task -> kickNow(outcome, player, reason), gone) == null) {
@@ -102,18 +102,9 @@ final class PaperActions {
                 message -> feedback.add(PlainTextComponentSerializer.plainText().serialize(message)));
         boolean known = Bukkit.dispatchCommand(sender, command);
         if (!known && feedback.isEmpty()) {
-            return new ActionOutcome.Failed("Unknown command");
+            return new ActionOutcome.UnknownCommand();
         }
         return new ActionOutcome.Output(String.join("\n", feedback));
-    }
-
-    private static @Nullable Player onlinePlayer(String name) {
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.getName().equalsIgnoreCase(name)) {
-                return player;
-            }
-        }
-        return null;
     }
 
     private static void attempt(CompletableFuture<ActionOutcome> outcome, Runnable work) {

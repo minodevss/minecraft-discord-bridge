@@ -1,40 +1,47 @@
 deps.fabric_loader = "0.19.5"
 
 [fabric."26.1.2"]
+mod.java = 25
 mod.mc_compat = ">=26.1.2 <26.4"
 mod.game_versions = ["26.1.2", "26.2", "26.3"]
 deps.fabric_api = "0.155.3+26.1.2"
 deps.fabric_permissions = "0.7.0"
 
 [fabric."1.21.11"]
+mod.java = 21
 mod.mc_compat = "1.21.11"
 mod.game_versions = ["1.21.11"]
 deps.fabric_api = "0.141.6+1.21.11"
 deps.fabric_permissions = "0.6.1"
 
 [fabric."1.21.1"]
+mod.java = 21
 mod.mc_compat = ">=1.21 <=1.21.1"
 mod.game_versions = ["1.21", "1.21.1"]
 deps.fabric_api = "0.116.17+1.21.1"
 deps.fabric_permissions = "0.3.1"
 
 [fabric."1.20.1"]
+mod.java = 17
 mod.mc_compat = "1.20.1"
 mod.game_versions = ["1.20.1"]
 deps.fabric_api = "0.92.12+1.20.1"
 deps.fabric_permissions = "0.3.1"
 
 [neoforge."26.2"]
+mod.java = 25
 mod.mc_compat = "[26.2,26.4)"
 mod.game_versions = ["26.2", "26.3"]
 deps.neoforge = "26.2.0.89"
 
 [neoforge."1.21.1"]
+mod.java = 21
 mod.mc_compat = "[1.21,1.21.1]"
 mod.game_versions = ["1.21", "1.21.1"]
 deps.neoforge = "21.1.257"
 
 [forge."1.20.1"]
+mod.java = 17
 mod.mc_compat = "[1.20.1]"
 mod.game_versions = ["1.20.1"]
 deps.forge = "1.20.1-47.4.26"

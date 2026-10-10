@@ -4,13 +4,16 @@
   "version": "${version}",
   "name": "Minecraft Discord Bridge",
   "description": "Minecraft ↔ Discord bridge",
+  "authors": ["minodevss"],
   "license": "Apache-2.0",
   "contact": {
-    "sources": "https://github.com/minodevss/minecraft-discord-bridge"
+    "homepage": "https://github.com/minodevss/minecraft-discord-bridge",
+    "sources": "https://github.com/minodevss/minecraft-discord-bridge",
+    "issues": "https://github.com/minodevss/minecraft-discord-bridge/issues"
   },
   "environment": "server",
   "entrypoints": {
-    "server": ["com.minecraftdiscordbridge.modded.fabric.FabricEntrypoint"]
+    "server": ["com.minecraftdiscordbridge.modded.fabric.FabricMod"]
   },
   "mixins": ["minecraftdiscordbridge.mixins.json"],
   "depends": {

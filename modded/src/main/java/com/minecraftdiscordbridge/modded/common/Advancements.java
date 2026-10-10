@@ -14,8 +14,10 @@ import java.util.Arrays;
 //? if >=1.21 {
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementType;
-//?} else
-/*import net.minecraft.advancements.Advancement;*/
+//?} else {
+/*import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.FrameType;
+*///?}
 
 final class Advancements {
     //? if >=26.1 {
@@ -47,9 +49,23 @@ final class Advancements {
     }
     *///?}
 
-    private static AdvancementFrame frame(Enum<?> type) {
-        return AdvancementFrame.valueOf(type.name());
+    //? if >=1.21 {
+    private static AdvancementFrame frame(AdvancementType type) {
+        return switch (type) {
+            case TASK -> AdvancementFrame.TASK;
+            case GOAL -> AdvancementFrame.GOAL;
+            case CHALLENGE -> AdvancementFrame.CHALLENGE;
+        };
     }
+    //?} else {
+    /*private static AdvancementFrame frame(FrameType type) {
+        return switch (type) {
+            case TASK -> AdvancementFrame.TASK;
+            case GOAL -> AdvancementFrame.GOAL;
+            case CHALLENGE -> AdvancementFrame.CHALLENGE;
+        };
+    }
+    *///?}
 
     //? if >=26.1 {
     private static boolean announcesToChat(DisplayInfo display) {
@@ -74,13 +90,21 @@ final class Advancements {
 
     private static MethodHandle accessor(Class<?> type, String... names) {
         for (String name : names) {
-            try {
-                return MethodHandles.lookup().findVirtual(DisplayInfo.class, name, MethodType.methodType(type));
-            } catch (NoSuchMethodException | IllegalAccessException missing) {
-                continue;
+            Optional<MethodHandle> found = find(type, name);
+            if (found.isPresent()) {
+                return found.get();
             }
         }
         throw new IllegalStateException("DisplayInfo has none of " + Arrays.toString(names));
+    }
+
+    private static Optional<MethodHandle> find(Class<?> type, String name) {
+        try {
+            return Optional.of(
+                    MethodHandles.lookup().findVirtual(DisplayInfo.class, name, MethodType.methodType(type)));
+        } catch (NoSuchMethodException | IllegalAccessException missing) {
+            return Optional.empty();
+        }
     }
     //?} else if >=1.21 {
     /*private static boolean announcesToChat(DisplayInfo display) {

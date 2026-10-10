@@ -3,16 +3,21 @@ package com.minecraftdiscordbridge.modded.forge;
 import com.minecraftdiscordbridge.core.platform.Permission;
 import com.minecraftdiscordbridge.modded.common.DefaultPermissions;
 import com.minecraftdiscordbridge.modded.common.LoaderHooks;
-import com.minecraftdiscordbridge.modded.common.ModdedBridge;
 import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import net.minecraft.Util;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.FMLPaths;
+import net.minecraftforge.server.ServerLifecycleHooks;
 import net.minecraftforge.server.permission.PermissionAPI;
 import net.minecraftforge.server.permission.events.PermissionGatherEvent;
 import net.minecraftforge.server.permission.nodes.PermissionNode;
@@ -23,7 +28,7 @@ final class ForgeLoaderHooks implements LoaderHooks {
 
     ForgeLoaderHooks() {
         for (Permission permission : Permission.values()) {
-            nodes.put(permission, node(permission));
+            nodes.put(permission, defaultNode(permission));
         }
     }
 
@@ -42,7 +47,7 @@ final class ForgeLoaderHooks implements LoaderHooks {
 
     @Override
     public Path dataDirectory() {
-        return FMLPaths.CONFIGDIR.get().resolve(ModdedBridge.MOD_ID);
+        return FMLPaths.CONFIGDIR.get().resolve(LoaderHooks.MOD_ID);
     }
 
     @Override
@@ -56,15 +61,27 @@ final class ForgeLoaderHooks implements LoaderHooks {
         if (player == null) {
             return DefaultPermissions.allows(source, permission);
         }
-        return PermissionAPI.getPermission(player, nodes.get(permission));
+        return PermissionAPI.getPermission(player, node(permission));
     }
 
-    private static PermissionNode<Boolean> node(Permission permission) {
-        String name = permission.node().substring(ModdedBridge.MOD_ID.length() + 1);
+    @Override
+    public CompletableFuture<Boolean> hasOfflinePermission(MinecraftServer server, UUID player, Permission permission) {
+        PermissionNode<Boolean> node = node(permission);
+        return CompletableFuture.supplyAsync(() -> PermissionAPI.getOfflinePermission(player, node), Util.ioPool());
+    }
+
+    private PermissionNode<Boolean> node(Permission permission) {
+        return Objects.requireNonNull(nodes.get(permission));
+    }
+
+    private static PermissionNode<Boolean> defaultNode(Permission permission) {
         return new PermissionNode<>(
-                ModdedBridge.MOD_ID,
-                name,
+                Permission.NAMESPACE,
+                permission.path(),
                 PermissionTypes.BOOLEAN,
-                (player, playerId, context) -> DefaultPermissions.allows(player, permission));
+                (player, playerId, context) -> player != null
+                        ? DefaultPermissions.allows(player, permission)
+                        : DefaultPermissions.allowsOffline(
+                                ServerLifecycleHooks.getCurrentServer(), playerId, permission));
     }
 }

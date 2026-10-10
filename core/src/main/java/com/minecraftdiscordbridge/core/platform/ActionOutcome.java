@@ -10,4 +10,10 @@ public sealed interface ActionOutcome {
     record Failed(String reason) implements ActionOutcome {}
 
     record Output(String text) implements ActionOutcome {}
+
+    record Unsupported() implements ActionOutcome {}
+
+    record UnknownCommand() implements ActionOutcome {}
+
+    record ServerStopping() implements ActionOutcome {}
 }

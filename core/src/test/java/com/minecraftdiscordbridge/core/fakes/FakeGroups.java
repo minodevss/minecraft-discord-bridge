@@ -6,6 +6,7 @@ import com.minecraftdiscordbridge.core.access.PlayerGroups;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -17,7 +18,7 @@ public final class FakeGroups implements PermissionGroups {
     public volatile boolean present = true;
     public final Map<String, GroupCheck> groups = new ConcurrentHashMap<>();
     public final Map<UUID, Set<String>> members = new ConcurrentHashMap<>();
-    public final Map<UUID, Set<String>> permissions = new ConcurrentHashMap<>();
+    public final Map<UUID, Map<String, Boolean>> permissions = new ConcurrentHashMap<>();
     public final List<String> changes = new CopyOnWriteArrayList<>();
     private final List<Consumer<UUID>> watchers = new CopyOnWriteArrayList<>();
 
@@ -60,9 +61,9 @@ public final class FakeGroups implements PermissionGroups {
     }
 
     @Override
-    public CompletableFuture<Boolean> hasPermission(UUID player, String node) {
+    public CompletableFuture<Optional<Boolean>> permission(UUID player, String node) {
         return CompletableFuture.completedFuture(
-                permissions.getOrDefault(player, Set.of()).contains(node));
+                Optional.ofNullable(permissions.getOrDefault(player, Map.of()).get(node)));
     }
 
     @Override

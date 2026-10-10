@@ -54,29 +54,26 @@ public final class JoinGate {
         return active;
     }
 
-    public void decide(PlayerProfile player, boolean bypass, CompletableFuture<JoinDecision> result) {
+    public void decide(JoiningPlayer player, CompletableFuture<JoinDecision> result) {
         if (!active) {
             result.complete(ALLOW);
-        } else if (bypass) {
-            bypassed(player, result);
-        } else {
-            var unused = context.groups()
-                    .hasPermission(player.id(), Permission.GATE_BYPASS.node())
-                    .exceptionally(failure -> false)
-                    .thenAccept(granted -> context.loop().execute(() -> {
-                        if (Boolean.TRUE.equals(granted)) {
-                            bypassed(player, result);
-                        } else {
-                            checkLink(player, result);
-                        }
-                    }));
+            return;
         }
+        var unused = player.bypass()
+                .thenAccept(bypass -> context.loop().execute(() -> {
+                    if (bypass) {
+                        bypassed(player.profile(), result);
+                    } else {
+                        checkLink(player.profile(), result);
+                    }
+                }));
     }
 
-    public JoinDecision fallback(PlayerProfile player, boolean bypass) {
-        if (!active || bypass) {
+    public JoinDecision fallback(JoiningPlayer joining) {
+        if (!active || joining.bypassed()) {
             return ALLOW;
         }
+        PlayerProfile player = joining.profile();
         LOGGER.warn(
                 "Could not finish checking {} within {} seconds, so linking.when-discord-unreachable decides",
                 player.name(),
