@@ -102,7 +102,7 @@ final class PaperActions {
                 message -> feedback.add(PlainTextComponentSerializer.plainText().serialize(message)));
         boolean known = Bukkit.dispatchCommand(sender, command);
         if (!known && feedback.isEmpty()) {
-            return new ActionOutcome.Failed("Unknown command");
+            return new ActionOutcome.UnknownCommand();
         }
         return new ActionOutcome.Output(String.join("\n", feedback));
     }

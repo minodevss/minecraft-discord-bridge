@@ -17,6 +17,7 @@ import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
 import com.minecraftdiscordbridge.core.fakes.RecordingReply;
 import com.minecraftdiscordbridge.core.fakes.RecordingSource;
 import com.minecraftdiscordbridge.core.fakes.Waits;
+import com.minecraftdiscordbridge.core.platform.ActionOutcome;
 import com.minecraftdiscordbridge.core.platform.GameAction;
 import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
@@ -43,6 +44,11 @@ class AccessTest {
             linking:
               require-for-join: true
               required-role: "777777777777777777"
+            """;
+    private static final String CONSOLE_INPUT = CHANNELS + """
+            console:
+              channel: "444444444444444444"
+              input-users: ["555555555555555555"]
             """;
 
     @TempDir
@@ -124,11 +130,7 @@ class AccessTest {
 
     @Test
     void runsConsoleCommandsFromListedUsersInTheConsoleChannel() throws Exception {
-        try (Harness harness = Harness.started(directory, CHANNELS + """
-                console:
-                  channel: "444444444444444444"
-                  input-users: ["555555555555555555"]
-                """)) {
+        try (Harness harness = Harness.started(directory, CONSOLE_INPUT)) {
             RecordingDiscord discord = harness.discord();
             assertThat(discord.settings.channelIds()).contains(CONSOLE);
 
@@ -138,6 +140,19 @@ class AccessTest {
                     "the command to run",
                     () -> harness.platform.actions.contains(new GameAction.RunConsoleCommand("say hello")));
             assertThat(discord.nextSent().text()).isEqualTo("<@555555555555555555> ran a console command: say hello");
+        }
+    }
+
+    @Test
+    void saysWhenTheServerHasNoSuchConsoleCommand() throws Exception {
+        try (Harness harness = Harness.started(directory, CONSOLE_INPUT)) {
+            harness.platform.outcomes = action -> CompletableFuture.completedFuture(new ActionOutcome.UnknownCommand());
+            RecordingDiscord discord = harness.discord();
+
+            discord.receive(fromOwner("sya hello"));
+
+            assertThat(discord.nextSent().text()).isEqualTo("<@555555555555555555> ran a console command: sya hello");
+            assertThat(discord.nextSent().text()).isEqualTo("The command did not run: the server has no such command");
         }
     }
 

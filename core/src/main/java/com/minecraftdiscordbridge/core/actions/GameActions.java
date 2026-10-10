@@ -33,8 +33,26 @@ public final class GameActions {
         } catch (RuntimeException failure) {
             outcome = CompletableFuture.failedFuture(failure);
         }
-        var unused = outcome.whenComplete((result, failure) -> loop.execute(
-                () -> done.accept(result != null ? result : new ActionOutcome.Failed(describe(failure, userLang)))));
+        var unused = outcome.whenComplete((result, failure) -> loop.execute(() -> done.accept(
+                result != null ? phrased(result, userLang) : new ActionOutcome.Failed(describe(failure, userLang)))));
+    }
+
+    private static ActionOutcome phrased(ActionOutcome outcome, Lang userLang) {
+        String reason = reasonKey(outcome);
+        return reason == null ? outcome : new ActionOutcome.Failed(userLang.text(reason));
+    }
+
+    private static @Nullable String reasonKey(ActionOutcome outcome) {
+        if (outcome instanceof ActionOutcome.Unsupported) {
+            return "discord.action.unsupported";
+        }
+        if (outcome instanceof ActionOutcome.UnknownCommand) {
+            return "discord.action.unknown-command";
+        }
+        if (outcome instanceof ActionOutcome.ServerStopping) {
+            return "discord.action.stopping";
+        }
+        return null;
     }
 
     private static String describe(@Nullable Throwable failure, Lang userLang) {

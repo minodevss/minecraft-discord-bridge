@@ -20,7 +20,7 @@ final class ServerThread {
         CompletableFuture<ActionOutcome> outcome = new CompletableFuture<>();
         server.execute(() -> {
             if (!server.isSameThread()) {
-                outcome.complete(new ActionOutcome.Failed("The server is stopping"));
+                outcome.complete(new ActionOutcome.ServerStopping());
                 return;
             }
             try {
