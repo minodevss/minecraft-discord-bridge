@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.access;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 final class AbsentGroups implements PermissionGroups {
     static final AbsentGroups INSTANCE = new AbsentGroups();
@@ -37,5 +38,10 @@ final class AbsentGroups implements PermissionGroups {
     @Override
     public CompletableFuture<Boolean> hasPermission(UUID player, String node) {
         return CompletableFuture.completedFuture(false);
+    }
+
+    @Override
+    public Runnable onGroupsChanged(Consumer<UUID> changed) {
+        return () -> {};
     }
 }

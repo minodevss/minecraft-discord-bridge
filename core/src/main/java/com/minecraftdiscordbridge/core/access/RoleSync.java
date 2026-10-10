@@ -10,16 +10,21 @@ import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.minecraftdiscordbridge.core.storage.Link;
 import com.minecraftdiscordbridge.core.storage.LinkChange;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class RoleSync {
+public final class RoleSync implements AutoCloseable {
+    static final Duration GROUP_CHANGE_DELAY = Duration.ofSeconds(2);
     private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private enum Check {
@@ -53,6 +58,9 @@ public final class RoleSync {
 
     private final List<RuleState> rules;
     private final AccessContext context;
+    private final Set<UUID> changedGroups = new HashSet<>();
+    private Runnable unwatch = () -> {};
+    private volatile boolean closed;
 
     private RoleSync(List<RuleState> rules, AccessContext context) {
         this.rules = rules;
@@ -73,6 +81,10 @@ public final class RoleSync {
         }
         RoleSync sync = new RoleSync(states(config.rules()), context);
         sync.rules.forEach(sync::inspectGroup);
+        if (sync.rules.stream().anyMatch(state -> !state.grantsGroup())) {
+            sync.unwatch = context.groups()
+                    .onGroupsChanged(player -> context.loop().execute(() -> sync.groupsChanged(player)));
+        }
         return sync;
     }
 
@@ -112,6 +124,28 @@ public final class RoleSync {
         context.links()
                 .byDiscordId(new DiscordId(userId))
                 .ifPresent(link -> sync(link, new MemberLookup.NotMember(userId)));
+    }
+
+    @Override
+    public void close() {
+        closed = true;
+        unwatch.run();
+    }
+
+    private void groupsChanged(UUID player) {
+        if (closed || !changedGroups.add(player)) {
+            return;
+        }
+        context.later().schedule(GROUP_CHANGE_DELAY, () -> {
+            changedGroups.remove(player);
+            if (!closed && pushesGroups()) {
+                context.links().byMinecraftId(player).ifPresent(link -> sync(link, null));
+            }
+        });
+    }
+
+    private boolean pushesGroups() {
+        return activeRules().stream().anyMatch(rule -> rule.direction() == SyncDirection.MINECRAFT_TO_DISCORD);
     }
 
     private void sync(Link link, @Nullable MemberLookup known) {

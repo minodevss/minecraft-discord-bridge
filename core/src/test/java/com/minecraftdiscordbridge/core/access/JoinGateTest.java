@@ -58,7 +58,8 @@ class JoinGateTest {
     @BeforeEach
     void openStore() {
         links = LinkStore.open(directory);
-        context = new AccessContext(links, pending, discord, groups, memory, clock, Runnable::run);
+        context = new AccessContext(
+                links, pending, discord, groups, memory, clock, Runnable::run, (delay, task) -> task.run());
     }
 
     @Test

@@ -21,6 +21,7 @@ import com.minecraftdiscordbridge.core.storage.LinkStore;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -47,6 +48,7 @@ class RoleSyncTest {
     private final MutableClock clock = new MutableClock(Instant.parse("2026-10-10T00:00:00Z"));
     private final StubDiscord discord = new StubDiscord();
     private final FakeGroups groups = new FakeGroups();
+    private final List<Runnable> later = new ArrayList<>();
     private LinkStore links;
     private AccessContext context;
 
@@ -60,7 +62,8 @@ class RoleSyncTest {
                 groups,
                 new AccessMemory(),
                 clock,
-                Runnable::run);
+                Runnable::run,
+                (delay, task) -> later.add(task));
         links.link(new Link(STEVE.id(), new DiscordId(USER), "Steve", Edition.JAVA, clock.instant()));
         groups.groups.put("vip", new GroupCheck.Safe());
         groups.groups.put("admin", new GroupCheck.Dangerous("*"));
@@ -135,6 +138,43 @@ class RoleSyncTest {
         sync.playerJoined(STEVE);
 
         assertThat(sync.activeRules()).isEmpty();
+        assertThat(discord.roleChanges).isEmpty();
+    }
+
+    @Test
+    void pushesAChangedGroupToDiscordOnceAfterAShortDelay() {
+        discord.memberWithRoles(USER);
+        RoleSync sync = ready(ADMIN_TO_STAFF);
+        groups.members.put(STEVE.id(), Set.of("admin"));
+
+        groups.groupsChanged(STEVE.id());
+        groups.groupsChanged(STEVE.id());
+
+        assertThat(discord.roleChanges).isEmpty();
+        assertThat(later).hasSize(1);
+        later.remove(0).run();
+        assertThat(discord.roleChanges).containsExactly("+" + STAFF);
+        sync.close();
+    }
+
+    @Test
+    void ignoresGroupChangesWhenNoRulePushesGroupsToDiscord() {
+        RoleSync sync = ready(VIP_TO_GROUP);
+
+        assertThat(groups.watchers()).isZero();
+        sync.close();
+    }
+
+    @Test
+    void stopsWatchingGroupsWhenClosed() {
+        RoleSync sync = ready(ADMIN_TO_STAFF);
+        groups.groupsChanged(STEVE.id());
+
+        sync.close();
+
+        assertThat(groups.watchers()).isZero();
+        later.forEach(Runnable::run);
+        assertThat(discord.lookups).isEmpty();
         assertThat(discord.roleChanges).isEmpty();
     }
 

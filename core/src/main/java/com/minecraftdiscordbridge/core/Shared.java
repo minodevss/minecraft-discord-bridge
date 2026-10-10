@@ -30,6 +30,9 @@ record Shared(
         PermissionGroups groups,
         AccessMemory access) {
     AccessContext accessContext(Stores stores) {
-        return new AccessContext(stores.links(), pendingLinks, discord, groups, access, clock, loop::control);
+        return new AccessContext(
+                stores.links(), pendingLinks, discord, groups, access, clock, loop::control, (delay, task) -> {
+                    var unused = loop.schedule(delay, task);
+                });
     }
 }
