@@ -2,7 +2,7 @@ package com.minecraftdiscordbridge.core;
 
 import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
-import com.minecraftdiscordbridge.core.commands.GameCommands;
+import com.minecraftdiscordbridge.core.commands.BridgeCommand;
 import com.minecraftdiscordbridge.core.config.BridgeConfig;
 import com.minecraftdiscordbridge.core.config.ConfigLoader;
 import com.minecraftdiscordbridge.core.config.ConfigProblem;
@@ -46,7 +46,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -54,7 +53,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.function.BooleanSupplier;
 import org.jspecify.annotations.Nullable;
 
-final class Engine {
+final class Engine implements BridgeCommand.Callbacks {
     static final Duration REBIND_DELAY = Duration.ofSeconds(2);
 
     private enum Outcome {
@@ -74,6 +73,7 @@ final class Engine {
     private final ShutdownMarker marker;
     private final BooleanSupplier stopping;
     private final Object lock = new Object();
+
     private final List<WaitingJoin> waitingJoins = new ArrayList<>();
     private volatile @Nullable Features features;
     private volatile boolean closed;
@@ -156,24 +156,9 @@ final class Engine {
     }
 
     void command(CommandSource source, Set<Permission> granted, List<String> arguments) {
-        String subcommand = arguments.isEmpty() ? "" : arguments.get(0).toLowerCase(Locale.ROOT);
         Features current = features;
-        Replies replies = current == null ? replies() : current.replies();
-        if (subcommand.equals(GameCommands.STATUS)) {
-            if (GameCommands.allowed(replies, source, granted, Permission.STATUS)) {
-                status(replies, source);
-            }
-        } else if (subcommand.equals(GameCommands.RELOAD)) {
-            if (GameCommands.allowed(replies, source, granted, Permission.RELOAD)) {
-                reload(source, replies);
-            }
-        } else if (current != null) {
-            current.commands().handle(source, granted, subcommand);
-        } else if (subcommand.isEmpty() || subcommand.equals("help")) {
-            GameCommands.help(replies, source, granted);
-        } else {
-            replies.send(source, "game.not-ready");
-        }
+        BridgeCommand command = current == null ? BridgeCommand.idle(replies(), this) : current.command();
+        command.run(source, granted, arguments);
     }
 
     void checkJoin(PlayerProfile player, boolean bypass, CompletableFuture<JoinDecision> result) {
@@ -257,7 +242,8 @@ final class Engine {
         waiting.forEach(join -> checkJoin(join.player(), join.bypass(), join.result()));
     }
 
-    private void reload(CommandSource source, Replies replies) {
+    @Override
+    public void reload(CommandSource source, Replies replies) {
         if (stores == null) {
             replies.send(source, "game.not-ready");
             return;
@@ -324,7 +310,7 @@ final class Engine {
             if (previous != null) {
                 previous.close();
             }
-            features = Features.build(services, ready, loaded, channels, this::rebound);
+            features = Features.build(services, ready, loaded, channels, this::rebound, this);
         }
         Outcome outcome;
         if (!loaded.secrets().hasDiscordToken()) {
@@ -426,7 +412,8 @@ final class Engine {
         }
     }
 
-    private void status(Replies replies, CommandSource source) {
+    @Override
+    public void status(CommandSource source, Replies replies) {
         droppedEvents += services.loop().takeDropped();
         Stores ready = stores;
         int links = ready == null ? 0 : ready.links().all().size();
