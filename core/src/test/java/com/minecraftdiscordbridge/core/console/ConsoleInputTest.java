@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.console;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.minecraftdiscordbridge.core.actions.GameActions;
 import com.minecraftdiscordbridge.core.config.ConsoleConfig;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
@@ -136,11 +137,9 @@ class ConsoleInputTest {
         return new ConsoleInput(
                 config,
                 Optional.of(CONSOLE),
-                platform,
+                new GameActions(platform, Runnable::run, Duration.ofMillis(100)),
                 discord,
-                Runnable::run,
                 Lang.of(Language.EN),
-                Duration.ofMillis(100),
                 List::of);
     }
 

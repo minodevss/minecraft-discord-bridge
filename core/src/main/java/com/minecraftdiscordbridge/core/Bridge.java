@@ -5,7 +5,7 @@ import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 import com.minecraftdiscordbridge.core.access.AccessMemory;
 import com.minecraftdiscordbridge.core.access.JoinGate;
 import com.minecraftdiscordbridge.core.access.PermissionGroups;
-import com.minecraftdiscordbridge.core.actions.Actions;
+import com.minecraftdiscordbridge.core.actions.GameActions;
 import com.minecraftdiscordbridge.core.codes.Attempts;
 import com.minecraftdiscordbridge.core.codes.Codes;
 import com.minecraftdiscordbridge.core.config.ConfigLoader;
@@ -109,7 +109,7 @@ public final class Bridge {
                 System.getenv(),
                 InstantSource.system(),
                 Codes.secure(),
-                Actions.TIMEOUT,
+                GameActions.TIMEOUT,
                 new HttpFetcher(),
                 PermissionGroups.detect());
     }

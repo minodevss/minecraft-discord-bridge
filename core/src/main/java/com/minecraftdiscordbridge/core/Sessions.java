@@ -6,6 +6,7 @@ import com.minecraftdiscordbridge.core.access.AccessContext;
 import com.minecraftdiscordbridge.core.access.JoinGate;
 import com.minecraftdiscordbridge.core.access.RoleSync;
 import com.minecraftdiscordbridge.core.actions.Actions;
+import com.minecraftdiscordbridge.core.actions.GameActions;
 import com.minecraftdiscordbridge.core.chat.ChatToggle;
 import com.minecraftdiscordbridge.core.chat.DiscordChat;
 import com.minecraftdiscordbridge.core.chat.MinecraftChat;
@@ -60,8 +61,8 @@ final class Sessions {
                 shared.clock(),
                 replies,
                 () -> hasGuild && shared.discord().status().isConnected());
-        Actions actions =
-                new Actions(config.actions(), shared.platform(), shared.loop()::control, lang, shared.actionTimeout());
+        GameActions gameActions = new GameActions(shared.platform(), shared.loop()::control, shared.actionTimeout());
+        Actions actions = new Actions(config.actions(), gameActions, lang);
         AccessContext access = shared.accessContext(stores);
         return new Session(
                 replies,
@@ -90,11 +91,9 @@ final class Sessions {
                 new ConsoleInput(
                         config.console(),
                         config.discord().consoleChannel(),
-                        shared.platform(),
+                        gameActions,
                         shared.discord(),
-                        shared.loop()::control,
                         lang,
-                        shared.actionTimeout(),
                         () -> secrets(shared, snapshot)));
     }
 
