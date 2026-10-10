@@ -15,7 +15,6 @@ final class ConfigSchema {
             "Minecraft Discord Bridge settings.",
             "The bot token goes in secrets.yml, not here.",
             "Changes take effect after a reload or a restart.");
-    static final List<Migration> MIGRATIONS = List.of();
 
     static final Option<Language> LANGUAGE =
             choice("language", Language.EN, "Language of the bridge's own messages: en (English) or ko (Korean).");

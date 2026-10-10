@@ -2,7 +2,6 @@ package com.minecraftdiscordbridge.core.config;
 
 import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
-import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.storage.AtomicFile;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -11,8 +10,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
@@ -21,18 +18,10 @@ public final class ConfigLoader {
 
     private final Path directory;
     private final Map<String, String> environment;
-    private final List<Migration> migrations;
 
     public ConfigLoader(Path directory, Map<String, String> environment) {
-        this(directory, environment, ConfigSchema.MIGRATIONS);
-    }
-
-    ConfigLoader(Path directory, Map<String, String> environment, List<Migration> migrations) {
         this.directory = directory;
         this.environment = Map.copyOf(environment);
-        this.migrations = migrations.stream()
-                .sorted(Comparator.comparingInt(Migration::from))
-                .toList();
     }
 
     public ConfigResult load() {
@@ -77,17 +66,7 @@ public final class ConfigLoader {
                     "this file is from a newer version of the bridge (" + version + "). This version reads version "
                             + ConfigSchema.VERSION + " and ignores settings it does not know.");
         }
-        boolean upgrade = version < ConfigSchema.VERSION;
-        if (upgrade) {
-            migrations.stream()
-                    .filter(migration -> migration.from() >= version && migration.from() < ConfigSchema.VERSION)
-                    .forEach(migration -> migration.apply(raw));
-        }
-        ConfigValues values = ConfigReader.read(raw, problems);
-        if (upgrade && !problems.hasErrors()) {
-            saveUpgrade(file, original, values, version);
-        }
-        return values;
+        return ConfigReader.read(raw, problems);
     }
 
     private static @Nullable String decode(byte[] bytes, Problems problems) {
@@ -113,59 +92,6 @@ public final class ConfigLoader {
                     "could not create " + file + " (" + failure.getMessage()
                             + "). Using default settings; check that the folder is writable.");
         }
-    }
-
-    private void saveUpgrade(Path file, byte[] original, ConfigValues values, int fromVersion) {
-        String upgraded = ConfigWriter.render(values);
-        Path backup = directory.resolve(FILE + ".v" + fromVersion + ".bak");
-        try {
-            if (!readsBackAs(upgraded, values)) {
-                throw new IOException("the upgraded file does not read back with the same values");
-            }
-            AtomicFile.write(backup, original);
-            AtomicFile.write(file, utf8(upgraded));
-            LOGGER.info(
-                    "Upgraded {} from version {} to {}. The old file is saved as {}.",
-                    file,
-                    fromVersion,
-                    ConfigSchema.VERSION,
-                    backup);
-        } catch (IOException failure) {
-            keepUpgradedCopy(file, upgraded, failure);
-        }
-    }
-
-    private void keepUpgradedCopy(Path file, String upgraded, IOException failure) {
-        Path copy = directory.resolve(FILE + ".migrated");
-        try {
-            AtomicFile.write(copy, utf8(upgraded));
-            LOGGER.warn(
-                    "Could not upgrade {} ({}). It is unchanged and the bridge uses the upgraded settings for now."
-                            + " Review {} and replace {} with it.",
-                    file,
-                    Failures.describe(failure),
-                    copy,
-                    file);
-        } catch (IOException copyFailure) {
-            LOGGER.warn(
-                    "Could not upgrade {} ({}) or write {} ({}). It is unchanged and the bridge uses the upgraded"
-                            + " settings for now. Check that the folder is writable.",
-                    file,
-                    Failures.describe(failure),
-                    copy,
-                    Failures.describe(copyFailure));
-        }
-    }
-
-    static boolean readsBackAs(String text, ConfigValues expected) {
-        Problems check = new Problems(FILE);
-        RawConfig raw = ConfigReader.parse(text, check).orElse(null);
-        if (raw == null) {
-            return false;
-        }
-        int version = ConfigReader.version(raw, check);
-        ConfigValues actual = ConfigReader.read(raw, check);
-        return !check.hasErrors() && version == ConfigSchema.VERSION && actual.equals(expected);
     }
 
     private static byte[] utf8(String text) {

@@ -17,7 +17,7 @@ class ConfigWriterTest {
 
     @Test
     void defaultFileReadsBackAsDefaults() {
-        assertThat(ConfigLoader.readsBackAs(ConfigWriter.render(ConfigValues.defaults()), ConfigValues.defaults()))
+        assertThat(readsBackAs(ConfigWriter.render(ConfigValues.defaults()), ConfigValues.defaults()))
                 .isTrue();
     }
 
@@ -35,8 +35,7 @@ class ConfigWriterTest {
                 .set(ConfigSchema.CHAT_CHANNEL, "123456789012345678")
                 .build();
 
-        assertThat(ConfigLoader.readsBackAs(ConfigWriter.render(values), values))
-                .isTrue();
+        assertThat(readsBackAs(ConfigWriter.render(values), values)).isTrue();
     }
 
     @Test
@@ -68,5 +67,16 @@ class ConfigWriterTest {
             assertThat(option.section()).isIn(sections);
             assertThat(option.comment()).isNotEmpty();
         }
+    }
+
+    private static boolean readsBackAs(String text, ConfigValues expected) {
+        Problems check = new Problems(ConfigLoader.FILE);
+        RawConfig raw = ConfigReader.parse(text, check).orElse(null);
+        if (raw == null) {
+            return false;
+        }
+        int version = ConfigReader.version(raw, check);
+        ConfigValues actual = ConfigReader.read(raw, check);
+        return !check.hasErrors() && version == ConfigSchema.VERSION && actual.equals(expected);
     }
 }

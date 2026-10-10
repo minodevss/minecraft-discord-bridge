@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.UnaryOperator;
 
 final class RawConfig {
     private final Map<String, Entry> entries = new LinkedHashMap<>();
@@ -44,29 +43,6 @@ final class RawConfig {
 
     List<String> paths() {
         return List.copyOf(entries.keySet());
-    }
-
-    void move(String from, String to) {
-        for (String path : paths()) {
-            if (within(path, from)) {
-                Entry entry = entries.remove(path);
-                if (entry != null) {
-                    entries.putIfAbsent(to + path.substring(from.length()), entry);
-                }
-            }
-        }
-    }
-
-    void delete(String path) {
-        entries.keySet().removeIf(existing -> within(existing, path));
-    }
-
-    void mapValue(String path, UnaryOperator<YamlValue> change) {
-        entries.computeIfPresent(path, (unused, entry) -> new Entry(entry.keyAt(), change.apply(entry.value())));
-    }
-
-    private static boolean within(String path, String root) {
-        return path.equals(root) || path.startsWith(root + ".");
     }
 
     record Entry(Location keyAt, YamlValue value) {}
