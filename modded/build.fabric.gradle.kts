@@ -25,12 +25,16 @@ repositories {
 }
 
 val modConfiguration = if (unobfuscated) "implementation" else "modImplementation"
+val permissionsApi = "me.lucko:fabric-permissions-api:${sc.properties.get<String>("deps.fabric_permissions")}"
 
 dependencies {
     "minecraft"("com.mojang:minecraft:$minecraft")
     if (!unobfuscated) "mappings"(loom.officialMojangMappings())
     modConfiguration("net.fabricmc:fabric-loader:${sc.properties.get<String>("deps.fabric_loader")}")
     modConfiguration("net.fabricmc.fabric-api:fabric-api:${sc.properties.get<String>("deps.fabric_api")}")
+    modConfiguration(permissionsApi)
+    "include"(permissionsApi)
+    "compileOnly"(libs.jspecify)
     "implementation"(project(":core", "shadowRuntimeElements"))
     "bundle"(project(":core", "shadowRuntimeElements"))
 }
@@ -59,11 +63,13 @@ tasks.named<ProcessResources>("processResources") {
         "java" to javaVersion.toString(),
     )
     inputs.properties(props)
-    filesMatching("fabric.mod.json") { expand(props) }
-    exclude("META-INF/neoforge.mods.toml", "META-INF/mods.toml")
+    filesMatching(listOf("fabric.mod.json", "minecraftdiscordbridge.mixins.json")) { expand(props) }
+    exclude("META-INF/neoforge.mods.toml", "META-INF/mods.toml", "pack.mcmeta")
 }
 
-if (!unobfuscated) {
+if (unobfuscated) {
+    loom.nestJars(tasks.named<ShadowJar>("shadowJar"), configurations.named("include"))
+} else {
     val shadowJar = tasks.named<ShadowJar>("shadowJar") {
         archiveClassifier = "dev-shadow"
     }
