@@ -123,6 +123,8 @@ final class Engine {
             }
         } else if (current == null) {
             return;
+        } else if (event instanceof GameEvent.PlayerChatted chatted) {
+            current.minecraftChat().onChat(chatted);
         } else if (event instanceof GameEvent.PlayerDied died) {
             current.events().died(died);
         } else if (event instanceof GameEvent.AdvancementEarned earned) {
@@ -376,7 +378,12 @@ final class Engine {
         }
 
         @Override
-        public void onMessage(DiscordMessage message) {}
+        public void onMessage(DiscordMessage message) {
+            Session current = session;
+            if (target == generation && current != null) {
+                current.discordChat().onMessage(message);
+            }
+        }
 
         @Override
         public void onCommand(InteractionRequest request, InteractionReply reply) {
