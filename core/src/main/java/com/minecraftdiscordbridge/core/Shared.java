@@ -10,6 +10,7 @@ import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.platform.Platform;
 import com.minecraftdiscordbridge.core.setup.SetupCodes;
 import com.minecraftdiscordbridge.core.status.Roster;
+import com.minecraftdiscordbridge.core.storage.Stores;
 import com.minecraftdiscordbridge.core.vanilla.VanillaTranslations;
 import java.time.Duration;
 import java.time.InstantSource;

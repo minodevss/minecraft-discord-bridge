@@ -22,6 +22,7 @@ import com.minecraftdiscordbridge.core.linking.Linking;
 import com.minecraftdiscordbridge.core.setup.ChannelSetup;
 import com.minecraftdiscordbridge.core.setup.Channels;
 import com.minecraftdiscordbridge.core.status.StatusBoard;
+import com.minecraftdiscordbridge.core.storage.Stores;
 import com.minecraftdiscordbridge.core.text.Format;
 import java.util.ArrayList;
 import java.util.Collection;

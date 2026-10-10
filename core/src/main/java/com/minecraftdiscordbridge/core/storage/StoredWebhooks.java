@@ -1,19 +1,17 @@
-package com.minecraftdiscordbridge.core;
+package com.minecraftdiscordbridge.core.storage;
 
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.WebhookCredentials;
 import com.minecraftdiscordbridge.core.discord.WebhookRepository;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
-import com.minecraftdiscordbridge.core.storage.Webhook;
-import com.minecraftdiscordbridge.core.storage.WebhookStore;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
-final class StoredWebhooks implements WebhookRepository {
+public final class StoredWebhooks implements WebhookRepository {
     private final WebhookStore store;
     private final IoExecutor io;
 
-    StoredWebhooks(WebhookStore store, IoExecutor io) {
+    public StoredWebhooks(WebhookStore store, IoExecutor io) {
         this.store = store;
         this.io = io;
     }

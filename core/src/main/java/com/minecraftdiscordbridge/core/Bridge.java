@@ -22,6 +22,7 @@ import com.minecraftdiscordbridge.core.platform.Platform;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.minecraftdiscordbridge.core.setup.SetupCodes;
 import com.minecraftdiscordbridge.core.status.Roster;
+import com.minecraftdiscordbridge.core.storage.ShutdownMarker;
 import com.minecraftdiscordbridge.core.vanilla.Fetcher;
 import com.minecraftdiscordbridge.core.vanilla.HttpFetcher;
 import com.minecraftdiscordbridge.core.vanilla.LanguageFiles;

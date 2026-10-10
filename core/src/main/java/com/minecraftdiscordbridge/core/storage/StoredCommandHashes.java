@@ -1,16 +1,15 @@
-package com.minecraftdiscordbridge.core;
+package com.minecraftdiscordbridge.core.storage;
 
 import com.minecraftdiscordbridge.core.discord.CommandHashRepository;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
-import com.minecraftdiscordbridge.core.storage.CommandHashStore;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
-final class StoredCommandHashes implements CommandHashRepository {
+public final class StoredCommandHashes implements CommandHashRepository {
     private final CommandHashStore store;
     private final IoExecutor io;
 
-    StoredCommandHashes(CommandHashStore store, IoExecutor io) {
+    public StoredCommandHashes(CommandHashStore store, IoExecutor io) {
         this.store = store;
         this.io = io;
     }

@@ -1,11 +1,9 @@
-package com.minecraftdiscordbridge.core;
+package com.minecraftdiscordbridge.core.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.WebhookCredentials;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
-import com.minecraftdiscordbridge.core.storage.CommandHashStore;
-import com.minecraftdiscordbridge.core.storage.WebhookStore;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;

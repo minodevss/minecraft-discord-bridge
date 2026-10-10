@@ -1,6 +1,5 @@
-package com.minecraftdiscordbridge.core;
+package com.minecraftdiscordbridge.core.storage;
 
-import com.minecraftdiscordbridge.core.storage.AtomicFile;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -8,16 +7,16 @@ import java.nio.file.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-final class ShutdownMarker {
+public final class ShutdownMarker {
     private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private final Path file;
 
-    ShutdownMarker(Path dataDirectory) {
+    public ShutdownMarker(Path dataDirectory) {
         this.file = dataDirectory.resolve("data").resolve("running");
     }
 
-    boolean markRunning() {
+    public boolean markRunning() {
         boolean leftOver = Files.exists(file);
         try {
             AtomicFile.write(
@@ -34,7 +33,7 @@ final class ShutdownMarker {
         return leftOver;
     }
 
-    void clear() throws IOException {
+    public void clear() throws IOException {
         Files.deleteIfExists(file);
     }
 }
