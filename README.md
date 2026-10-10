@@ -131,7 +131,7 @@ The bridge connects one server or network to one Discord server, and each owner 
 ./gradlew build -Pnodes=all    # every Fabric, NeoForge and Forge jar
 ```
 
-The build needs JDK 25 and downloads JDK 17 and 21 for the older Minecraft versions. The jars are in `paper/build/libs`, `velocity/build/libs` and `modded/versions/<version>-<loader>/build/libs`.
+The build needs JDK 25. The jars are in `paper/build/libs`, `velocity/build/libs` and `modded/versions/<version>-<loader>/build/libs`; use the ones without `-slim` or `-dev-shadow` in the name.
 
 ## License
 
