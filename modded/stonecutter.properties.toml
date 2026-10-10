@@ -1,4 +1,3 @@
-mod.id = "minecraftdiscordbridge"
 deps.fabric_loader = "0.19.5"
 
 [fabric."26.1.2"]
