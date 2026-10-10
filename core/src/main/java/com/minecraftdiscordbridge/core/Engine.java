@@ -58,7 +58,7 @@ final class Engine {
     private final BooleanSupplier stopping;
     private final Object lock = new Object();
     private volatile @Nullable Session session;
-    private boolean closed;
+    private volatile boolean closed;
     private @Nullable Stores stores;
     private @Nullable ConfigSnapshot snapshot;
     private @Nullable DiscordSettings settings;
@@ -155,10 +155,11 @@ final class Engine {
     }
 
     Discord close() {
+        Session current;
         synchronized (lock) {
             closed = true;
+            current = session;
         }
-        Session current = session;
         if (current != null) {
             current.close();
         }
@@ -187,6 +188,9 @@ final class Engine {
     }
 
     private void apply(ConfigResult result, @Nullable CommandSource source) {
+        if (closed) {
+            return;
+        }
         result.warnings().forEach(warning -> LOGGER.warn("{}", warning));
         if (result instanceof ConfigResult.Failed failed) {
             rejected(failed.errors(), source);
@@ -227,11 +231,16 @@ final class Engine {
         Channels channels = Channels.resolve(config.discord(), ready.bindings().current());
         OptionalLong console =
                 config.console().mirror() ? Ids.parse(config.discord().consoleChannel()) : OptionalLong.empty();
-        Session previous = session;
-        if (previous != null) {
-            previous.close();
+        synchronized (lock) {
+            if (closed) {
+                return Outcome.APPLIED;
+            }
+            Session previous = session;
+            if (previous != null) {
+                previous.close();
+            }
+            session = Sessions.build(shared, ready, loaded, channels, console, this::rebound);
         }
-        session = Sessions.build(shared, ready, loaded, channels, console, this::rebound);
         Outcome outcome;
         if (!loaded.secrets().hasDiscordToken()) {
             SetupGuide.log(shared.platform().dataDirectory());
@@ -256,7 +265,7 @@ final class Engine {
     private void rebound(ChannelBinding binding) {
         var unused = shared.loop().schedule(REBIND_DELAY, () -> {
             ConfigSnapshot current = snapshot;
-            if (current != null) {
+            if (current != null && !closed) {
                 activate(current);
             }
         });
