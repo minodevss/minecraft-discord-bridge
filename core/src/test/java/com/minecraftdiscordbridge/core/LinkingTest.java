@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -37,6 +38,22 @@ class LinkingTest {
                     .nextPlain();
 
             assertThat(reply).startsWith("Run /link ");
+        }
+    }
+
+    @Test
+    void savesLinksWhileAMinecraftLanguageDownloadIsSlow() throws IOException {
+        CountDownLatch download = new CountDownLatch(1);
+        try (Harness harness = Harness.create(directory, CHANNELS + "language: ko\n")) {
+            harness.mojang.hold = download;
+            harness.bridge.start();
+            harness.discord();
+            String code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
+                    .nextPlain());
+
+            assertThat(link(harness, MEMBER, code).next().text()).contains("Steve");
+        } finally {
+            download.countDown();
         }
     }
 

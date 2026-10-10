@@ -49,6 +49,7 @@ public final class Bridge {
 
     private final CoreLoop loop;
     private final IoExecutor io;
+    private final IoExecutor downloads;
     private final ExecutorService lifecycle;
     private final Engine engine;
     private final AtomicBoolean started = new AtomicBoolean();
@@ -66,7 +67,8 @@ public final class Bridge {
             Fetcher fetcher,
             PermissionGroups groups) {
         this.loop = new CoreLoop();
-        this.io = IoExecutor.forLoop(loop);
+        this.io = IoExecutor.forLoop(loop, "I/O");
+        this.downloads = IoExecutor.forLoop(loop, "Downloads");
         this.lifecycle = Executors.newSingleThreadExecutor(Threads.named("Reconnect"));
         Shared shared = new Shared(
                 platform,
@@ -82,7 +84,7 @@ public final class Bridge {
                 actionTimeout,
                 new VanillaTranslations(
                         new LanguageFiles(platform.dataDirectory(), fetcher),
-                        io,
+                        downloads,
                         platform.info().minecraftVersion()),
                 groups,
                 new AccessMemory());
@@ -157,6 +159,7 @@ public final class Bridge {
         loop.close();
         awaitMarker(markerCleared, deadline);
         io.close();
+        downloads.close();
         lifecycle.shutdownNow();
     }
 

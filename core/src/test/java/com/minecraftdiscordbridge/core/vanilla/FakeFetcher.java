@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public final class FakeFetcher implements Fetcher {
     public final List<URI> requests = new CopyOnWriteArrayList<>();
@@ -43,9 +45,20 @@ public final class FakeFetcher implements Fetcher {
         return LanguageFiles.sha1(bytes(text));
     }
 
+    public final CountDownLatch released = new CountDownLatch(0);
+    public volatile CountDownLatch hold = released;
+
     @Override
     public byte[] fetch(URI uri) throws IOException {
         requests.add(uri);
+        try {
+            if (!hold.await(30, TimeUnit.SECONDS)) {
+                throw new IOException("Held too long: " + uri);
+            }
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Interrupted: " + uri, interrupted);
+        }
         byte[] body = responses.get(uri);
         if (body == null) {
             throw new IOException("No network in tests: " + uri);
