@@ -102,7 +102,8 @@ abstract class JdaTestBase {
     }
 
     JdaDiscord start(DiscordSettings settings) {
-        JdaDiscord started = new JdaDiscord(settings, discord.endpoints(), loop, listener, webhooks, commandHashes);
+        JdaDiscord started = new JdaDiscord(
+                settings, discord.endpoints(), loop, listener, webhooks, commandHashes, TestSupport.ENGLISH);
         started.start();
         return started;
     }

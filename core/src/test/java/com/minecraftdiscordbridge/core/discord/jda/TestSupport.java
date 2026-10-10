@@ -15,6 +15,8 @@ import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.WebhookCredentials;
 import com.minecraftdiscordbridge.core.discord.WebhookRepository;
+import com.minecraftdiscordbridge.core.i18n.Lang;
+import com.minecraftdiscordbridge.core.i18n.Language;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,8 +26,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.Supplier;
 
 final class TestSupport {
+    static final Supplier<Lang> ENGLISH = () -> Lang.of(Language.EN);
+
     private TestSupport() {}
 
     static DiscordSettings settings(List<CommandSpec> commands) {

@@ -55,7 +55,8 @@ final class DiscordConnection {
                 CoreLoop loop,
                 DiscordListener listener,
                 WebhookRepository webhooks,
-                CommandHashRepository commandHashes);
+                CommandHashRepository commandHashes,
+                Supplier<Lang> lang);
     }
 
     private final Services services;
@@ -181,7 +182,8 @@ final class DiscordConnection {
                         services.loop(),
                         new Listener(target),
                         new StoredWebhooks(stores.webhooks(), services.io()),
-                        new StoredCommandHashes(stores.commandHashes(), services.io()));
+                        new StoredCommandHashes(stores.commandHashes(), services.io()),
+                        lang);
                 services.discord().swap(created);
                 created.start();
             } catch (RuntimeException failure) {

@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
+import java.util.function.LongFunction;
 import org.jspecify.annotations.Nullable;
 
 final class Outbox {
@@ -22,15 +23,17 @@ final class Outbox {
     private final Author server;
     private final MessageSender sender;
     private final Executor serial;
+    private final LongFunction<String> skippedText;
     private final Map<DiscordId, Channel> channels = new HashMap<>();
     private volatile Map<DiscordId, ChannelStatus> snapshot = Map.of();
     private volatile boolean closed;
     private boolean open;
 
-    Outbox(Author server, MessageSender sender, Executor serial) {
+    Outbox(Author server, MessageSender sender, Executor serial, LongFunction<String> skippedText) {
         this.server = server;
         this.sender = sender;
         this.serial = serial;
+        this.skippedText = skippedText;
     }
 
     void enqueue(OutboundMessage message) {
@@ -65,7 +68,7 @@ final class Outbox {
         if (closed || !open || channel.inFlight) {
             return;
         }
-        Optional<Batches.Batch> next = Batches.take(channelId, channel.queue, channel.skipped, server);
+        Optional<Batches.Batch> next = Batches.take(channelId, channel.queue, channel.skipped, skippedText, server);
         if (next.isEmpty()) {
             return;
         }

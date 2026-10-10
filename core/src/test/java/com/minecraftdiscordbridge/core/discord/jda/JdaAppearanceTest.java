@@ -43,7 +43,13 @@ class JdaAppearanceTest extends JdaTestBase {
     @Test
     void setsATopicAskedForBeforeTheConnectionWasReady() throws InterruptedException {
         bridge = new JdaDiscord(
-                TestSupport.settings(List.of()), discord.endpoints(), loop, listener, webhooks, commandHashes);
+                TestSupport.settings(List.of()),
+                discord.endpoints(),
+                loop,
+                listener,
+                webhooks,
+                commandHashes,
+                TestSupport.ENGLISH);
         bridge.updateTopic(CHANNEL, "3/20 players online");
         CountDownLatch applied = new CountDownLatch(1);
         loop.control(applied::countDown);

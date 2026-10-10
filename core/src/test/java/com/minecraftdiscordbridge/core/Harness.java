@@ -67,7 +67,7 @@ final class Harness implements AutoCloseable {
         this.platform = new FakePlatform(directory);
         this.bridge = new Bridge(
                 platform,
-                (settings, loop, listener, webhooks, hashes) -> {
+                (settings, loop, listener, webhooks, hashes, lang) -> {
                     RecordingDiscord discord = new RecordingDiscord(settings, loop, listener);
                     discords.add(discord);
                     return discord;

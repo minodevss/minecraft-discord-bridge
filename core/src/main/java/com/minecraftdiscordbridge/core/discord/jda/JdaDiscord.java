@@ -14,6 +14,7 @@ import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.discord.RoleInfo;
 import com.minecraftdiscordbridge.core.discord.StatusReason;
 import com.minecraftdiscordbridge.core.discord.WebhookRepository;
+import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
 import com.minecraftdiscordbridge.core.loop.Deadline;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
@@ -73,7 +75,8 @@ public final class JdaDiscord implements Discord {
             CoreLoop loop,
             DiscordListener listener,
             WebhookRepository webhookRepository,
-            CommandHashRepository commandHashes) {
+            CommandHashRepository commandHashes,
+            Supplier<Lang> lang) {
         this.settings = settings;
         this.scope = new GuildScope(settings);
         this.loop = loop;
@@ -81,9 +84,10 @@ public final class JdaDiscord implements Discord {
         this.connection = new JdaConnection(settings, endpoints, rateLimits, new ConnectionCallbacks());
         this.guild = new JdaGuild(this::currentGuild);
         this.webhooks = new WebhookSender(connection::jda, webhookRepository, rateLimits, System::nanoTime);
-        this.outbox = new Outbox(settings.serverAuthor(), webhooks, loop);
+        this.outbox = new Outbox(
+                settings.serverAuthor(), webhooks, loop, skipped -> lang.get().count("discord.skipped", skipped));
         this.commands = new CommandRegistrar(settings.commands(), commandHashes);
-        this.events = new JdaEvents(settings, scope, loop, listener, webhooks);
+        this.events = new JdaEvents(settings, scope, loop, listener, webhooks, lang);
         this.appearance = new Appearance(connection::jda, System::nanoTime, loop);
     }
 
@@ -92,8 +96,9 @@ public final class JdaDiscord implements Discord {
             CoreLoop loop,
             DiscordListener listener,
             WebhookRepository webhooks,
-            CommandHashRepository commandHashes) {
-        return new JdaDiscord(settings, Endpoints.DISCORD, loop, listener, webhooks, commandHashes);
+            CommandHashRepository commandHashes,
+            Supplier<Lang> lang) {
+        return new JdaDiscord(settings, Endpoints.DISCORD, loop, listener, webhooks, commandHashes, lang);
     }
 
     @Override

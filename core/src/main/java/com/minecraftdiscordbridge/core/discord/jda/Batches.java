@@ -8,6 +8,7 @@ import java.util.Deque;
 import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.LongFunction;
 
 final class Batches {
     static final int CROWD_SIZE = 5;
@@ -15,9 +16,14 @@ final class Batches {
 
     private Batches() {}
 
-    static Optional<Batch> take(DiscordId channelId, Deque<OutboundMessage> queue, long skipped, Author server) {
+    static Optional<Batch> take(
+            DiscordId channelId,
+            Deque<OutboundMessage> queue,
+            long skipped,
+            LongFunction<String> skippedText,
+            Author server) {
         if (skipped > 0 || isCrowded(queue)) {
-            return Optional.of(digest(channelId, queue, skipped, server));
+            return Optional.of(digest(channelId, queue, skipped, skippedText, server));
         }
         if (queue.isEmpty()) {
             return Optional.empty();
@@ -47,10 +53,15 @@ final class Batches {
         return lines.batch(first.channelId(), first.author());
     }
 
-    private static Batch digest(DiscordId channelId, Deque<OutboundMessage> queue, long skipped, Author server) {
+    private static Batch digest(
+            DiscordId channelId,
+            Deque<OutboundMessage> queue,
+            long skipped,
+            LongFunction<String> skippedText,
+            Author server) {
         Lines lines = new Lines();
         if (skipped > 0) {
-            lines.add(skipped == 1 ? "(1 message skipped)" : "(" + skipped + " messages skipped)");
+            lines.add(skippedText.apply(skipped));
         }
         OutboundMessage next = queue.peekFirst();
         while (next != null && (lines.isEmpty() || lines.fits(DiscordText.asBot(next)))) {
