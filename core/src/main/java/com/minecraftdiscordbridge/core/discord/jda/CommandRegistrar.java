@@ -81,9 +81,7 @@ final class CommandRegistrar {
                 .setIntegrationTypes(IntegrationType.GUILD_INSTALL)
                 .setDefaultPermissions(
                         spec.adminOnly() ? DefaultMemberPermissions.DISABLED : DefaultMemberPermissions.ENABLED);
-        spec.korean()
-                .ifPresent(korean -> command.setNameLocalization(DiscordLocale.KOREAN, korean.name())
-                        .setDescriptionLocalization(DiscordLocale.KOREAN, korean.description()));
+        spec.koreanDescription().ifPresent(korean -> command.setDescriptionLocalization(DiscordLocale.KOREAN, korean));
         return command.addOptions(
                         spec.options().stream().map(CommandRegistrar::toData).toList())
                 .addSubcommands(spec.subcommands().stream()
@@ -93,10 +91,8 @@ final class CommandRegistrar {
 
     private static SubcommandData toData(CommandSpec.Subcommand spec) {
         SubcommandData subcommand = new SubcommandData(spec.name(), spec.description());
-        spec.korean()
-                .ifPresent(korean -> subcommand
-                        .setNameLocalization(DiscordLocale.KOREAN, korean.name())
-                        .setDescriptionLocalization(DiscordLocale.KOREAN, korean.description()));
+        spec.koreanDescription()
+                .ifPresent(korean -> subcommand.setDescriptionLocalization(DiscordLocale.KOREAN, korean));
         return subcommand.addOptions(
                 spec.options().stream().map(CommandRegistrar::toData).toList());
     }
@@ -104,9 +100,7 @@ final class CommandRegistrar {
     private static OptionData toData(CommandSpec.Option spec) {
         OptionData option = new OptionData(
                 type(spec.type()), spec.name(), spec.description(), spec.required(), spec.autocomplete());
-        spec.korean()
-                .ifPresent(korean -> option.setNameLocalization(DiscordLocale.KOREAN, korean.name())
-                        .setDescriptionLocalization(DiscordLocale.KOREAN, korean.description()));
+        spec.koreanDescription().ifPresent(korean -> option.setDescriptionLocalization(DiscordLocale.KOREAN, korean));
         return option;
     }
 

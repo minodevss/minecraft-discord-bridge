@@ -31,7 +31,7 @@ class JdaCommandsTest extends JdaTestBase {
         DataArray commands = DataArray.fromJson(registrations().get(0).getBody().utf8());
         DataObject list = commands.getObject(0);
         DataObject whitelist = commands.getObject(1);
-        assertThat(list.getObject("name_localizations").getString("ko")).isEqualTo("목록");
+        assertThat(list.getObject("description_localizations").getString("ko")).isEqualTo("접속 중인 플레이어");
         assertThat(list.isNull("default_member_permissions")).isTrue();
         assertThat(list.getArray("contexts").getInt(0)).isZero();
         assertThat(whitelist.getString("default_member_permissions")).isEqualTo("0");

@@ -6,7 +6,7 @@ import java.util.Optional;
 public record CommandSpec(
         String name,
         String description,
-        Optional<Localized> korean,
+        Optional<String> koreanDescription,
         List<Option> options,
         List<Subcommand> subcommands,
         boolean adminOnly,
@@ -23,25 +23,24 @@ public record CommandSpec(
     public CommandSpec(
             String name,
             String description,
-            Optional<Localized> korean,
+            Optional<String> koreanDescription,
             List<Option> options,
             boolean adminOnly,
             boolean slow,
             boolean ephemeral) {
-        this(name, description, korean, options, List.of(), adminOnly, slow, ephemeral);
+        this(name, description, koreanDescription, options, List.of(), adminOnly, slow, ephemeral);
     }
-
-    public record Localized(String name, String description) {}
 
     public record Option(
             OptionType type,
             String name,
             String description,
-            Optional<Localized> korean,
+            Optional<String> koreanDescription,
             boolean required,
             boolean autocomplete) {}
 
-    public record Subcommand(String name, String description, Optional<Localized> korean, List<Option> options) {
+    public record Subcommand(
+            String name, String description, Optional<String> koreanDescription, List<Option> options) {
         public Subcommand {
             options = List.copyOf(options);
         }

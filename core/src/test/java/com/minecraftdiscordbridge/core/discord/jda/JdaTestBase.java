@@ -43,7 +43,7 @@ abstract class JdaTestBase {
     static final CommandSpec LIST = new CommandSpec(
             "list",
             "Show who is online",
-            Optional.of(new CommandSpec.Localized("목록", "접속 중인 플레이어")),
+            Optional.of("접속 중인 플레이어"),
             List.of(new CommandSpec.Option(
                     CommandSpec.OptionType.INTEGER, "page", "Page", Optional.empty(), false, false)),
             false,
@@ -54,12 +54,7 @@ abstract class JdaTestBase {
             "Add a player to the whitelist",
             Optional.empty(),
             List.of(new CommandSpec.Option(
-                    CommandSpec.OptionType.STRING,
-                    "player",
-                    "Player name",
-                    Optional.of(new CommandSpec.Localized("플레이어", "플레이어 이름")),
-                    true,
-                    true)),
+                    CommandSpec.OptionType.STRING, "player", "Player name", Optional.of("플레이어 이름"), true, true)),
             true,
             true,
             false);

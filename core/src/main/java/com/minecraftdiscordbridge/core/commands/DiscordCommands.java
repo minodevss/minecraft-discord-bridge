@@ -7,7 +7,6 @@ import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
 import com.minecraftdiscordbridge.core.discord.CommandReply;
 import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
-import com.minecraftdiscordbridge.core.discord.CommandSpec.Localized;
 import com.minecraftdiscordbridge.core.discord.CommandSpec.Option;
 import com.minecraftdiscordbridge.core.discord.CommandSpec.OptionType;
 import com.minecraftdiscordbridge.core.discord.CommandSpec.Subcommand;
@@ -86,7 +85,7 @@ public final class DiscordCommands {
             commands.add(new CommandSpec(
                     WHITELIST,
                     english("command.whitelist"),
-                    korean(WHITELIST, "command.whitelist"),
+                    korean("command.whitelist"),
                     List.of(),
                     List.of(whitelistChange(Actions.ADD), whitelistChange(Actions.REMOVE)),
                     true,
@@ -151,25 +150,25 @@ public final class DiscordCommands {
         return new Subcommand(
                 change,
                 english(key),
-                korean(change, key),
+                korean(key),
                 List.of(option(OptionType.STRING, Actions.PLAYER_OPTION, "command.player", true, false)));
     }
 
     private static CommandSpec command(
             String name, List<Option> options, boolean adminOnly, boolean slow, boolean ephemeral) {
         String key = "command." + name;
-        return new CommandSpec(name, english(key), korean(name, key), options, adminOnly, slow, ephemeral);
+        return new CommandSpec(name, english(key), korean(key), options, adminOnly, slow, ephemeral);
     }
 
     private static Option option(OptionType type, String name, String key, boolean required, boolean autocomplete) {
-        return new Option(type, name, english(key), korean(name, key), required, autocomplete);
+        return new Option(type, name, english(key), korean(key), required, autocomplete);
     }
 
     private static String english(String key) {
         return ENGLISH.text(key);
     }
 
-    private static Optional<Localized> korean(String name, String key) {
-        return Optional.of(new Localized(name, KOREAN.text(key)));
+    private static Optional<String> korean(String key) {
+        return Optional.of(KOREAN.text(key));
     }
 }

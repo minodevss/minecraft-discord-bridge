@@ -12,14 +12,9 @@ class CommandRegistrarTest {
     private static final CommandSpec KICK = new CommandSpec(
             "kick",
             "Kick a player",
-            Optional.of(new CommandSpec.Localized("추방", "플레이어를 추방합니다")),
+            Optional.of("플레이어를 추방합니다"),
             List.of(new CommandSpec.Option(
-                    CommandSpec.OptionType.STRING,
-                    "player",
-                    "Player name",
-                    Optional.of(new CommandSpec.Localized("플레이어", "플레이어 이름")),
-                    true,
-                    true)),
+                    CommandSpec.OptionType.STRING, "player", "Player name", Optional.of("플레이어 이름"), true, true)),
             true,
             false,
             true);
@@ -44,13 +39,15 @@ class CommandRegistrarTest {
     }
 
     @Test
-    void carriesKoreanNamesAndAutocomplete() {
+    void carriesKoreanDescriptionsButKeepsTheEnglishNames() {
         DataObject kick = CommandRegistrar.toData(KICK).toData();
         DataObject option = kick.getArray("options").getObject(0);
 
-        assertThat(kick.getObject("name_localizations").getString("ko")).isEqualTo("추방");
+        assertThat(kick.getObject("name_localizations").keys()).isEmpty();
         assertThat(kick.getObject("description_localizations").getString("ko")).isEqualTo("플레이어를 추방합니다");
-        assertThat(option.getObject("name_localizations").getString("ko")).isEqualTo("플레이어");
+        assertThat(option.getObject("name_localizations").keys()).isEmpty();
+        assertThat(option.getObject("description_localizations").getString("ko"))
+                .isEqualTo("플레이어 이름");
         assertThat(option.getBoolean("autocomplete")).isTrue();
         assertThat(option.getBoolean("required")).isTrue();
     }
@@ -65,7 +62,7 @@ class CommandRegistrarTest {
                 List.of(new CommandSpec.Subcommand(
                         "add",
                         "Add a player",
-                        Optional.of(new CommandSpec.Localized("add", "플레이어를 추가합니다")),
+                        Optional.of("플레이어를 추가합니다"),
                         List.of(new CommandSpec.Option(
                                 CommandSpec.OptionType.STRING,
                                 "player",
