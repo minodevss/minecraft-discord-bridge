@@ -47,7 +47,7 @@ final class TranslationFormat {
             if (type.equals("%") && explicitIndex == null) {
                 pieces.add(Component.text("%"));
             } else if (type.equals("s")) {
-                int index = explicitIndex == null ? nextArgument++ : parseIndex(explicitIndex);
+                int index = explicitIndex == null ? nextArgument++ : ArgumentIndex.parse(explicitIndex) - 1;
                 if (index < 0 || index >= arguments.size()) {
                     return false;
                 }
@@ -68,13 +68,5 @@ final class TranslationFormat {
             pieces.add(Component.text(literal));
         }
         return true;
-    }
-
-    private static int parseIndex(String digits) {
-        try {
-            return Integer.parseInt(digits) - 1;
-        } catch (NumberFormatException tooLarge) {
-            return -1;
-        }
     }
 }

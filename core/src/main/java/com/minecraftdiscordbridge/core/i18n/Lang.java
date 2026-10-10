@@ -1,5 +1,6 @@
 package com.minecraftdiscordbridge.core.i18n;
 
+import com.minecraftdiscordbridge.core.text.ArgumentIndex;
 import com.minecraftdiscordbridge.core.text.Format;
 import java.io.IOException;
 import java.io.InputStream;
@@ -92,10 +93,7 @@ public final class Lang {
     }
 
     private static int index(String digits) {
-        if (digits.length() > 2 || !digits.chars().allMatch(Character::isDigit)) {
-            return -1;
-        }
-        return Integer.parseInt(digits);
+        return digits.length() > 2 ? ArgumentIndex.NONE : ArgumentIndex.parse(digits);
     }
 
     private static Lang load(Language language) {
