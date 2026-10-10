@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.chat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.config.ChatConfig;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.minecraftdiscordbridge.core.storage.Edition;
 import com.minecraftdiscordbridge.core.storage.Link;
@@ -12,8 +13,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 class PlayerPingsTest {
-    private static final Link BEDROCK =
-            new Link(UUID.randomUUID(), "100000000000000001", ".Bedrock_Kid", Edition.BEDROCK, Instant.EPOCH);
+    private static final Link BEDROCK = new Link(
+            UUID.randomUUID(), new DiscordId(100000000000000001L), ".Bedrock_Kid", Edition.BEDROCK, Instant.EPOCH);
 
     @Test
     void pingsFloodgateNamesAndEscapesTheRest() {

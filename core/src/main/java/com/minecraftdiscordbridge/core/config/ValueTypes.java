@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.config;
 import com.minecraftdiscordbridge.core.config.YamlValue.Mapping;
 import com.minecraftdiscordbridge.core.config.YamlValue.Scalar;
 import com.minecraftdiscordbridge.core.config.YamlValue.Sequence;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -13,18 +14,17 @@ import java.util.regex.PatternSyntaxException;
 import org.jspecify.annotations.Nullable;
 
 final class ValueTypes {
-    private static final Pattern DISCORD_ID_PATTERN = Pattern.compile("[0-9]{17,20}");
     private static final String DISCORD_ID_TEXT = "a Discord ID (17 to 20 digits)";
 
     static final ValueType<Boolean> BOOLEAN = new BooleanType();
     static final ValueType<String> TEXT = new TextType("text", text -> true, false);
     static final ValueType<String> TEXT_OR_NOTHING = new TextType("text", text -> true, true);
     static final ValueType<String> NAME = new TextType("a name", text -> !text.isBlank(), false);
-    static final ValueType<String> DISCORD_ID = new TextType(
-            DISCORD_ID_TEXT, text -> DISCORD_ID_PATTERN.matcher(text).matches(), false);
+    static final ValueType<String> DISCORD_ID =
+            new TextType(DISCORD_ID_TEXT, text -> DiscordId.parse(text).isPresent(), false);
     static final ValueType<String> DISCORD_ID_OR_EMPTY = new TextType(
             DISCORD_ID_TEXT + " or \"\"",
-            text -> text.isEmpty() || DISCORD_ID_PATTERN.matcher(text).matches(),
+            text -> text.isEmpty() || DiscordId.parse(text).isPresent(),
             true);
     static final ValueType<String> REGEX = new RegexType();
     static final ValueType<RoleSyncRule> ROLE_SYNC_RULE = new RoleSyncRuleType();
@@ -234,7 +234,7 @@ final class ValueTypes {
             if (role == null || group == null || direction == null) {
                 return null;
             }
-            return new RoleSyncRule(role, group, direction);
+            return new RoleSyncRule(DiscordId.require(role, path + "." + DISCORD_ROLE), group, direction);
         }
 
         private static <T> @Nullable T field(
@@ -266,7 +266,7 @@ final class ValueTypes {
             out.append(first)
                     .append(DISCORD_ROLE)
                     .append(": ")
-                    .append(YamlText.quote(value.discordRole()))
+                    .append(YamlText.quote(value.discordRole().toString()))
                     .append('\n');
             out.append(rest)
                     .append(GROUP)

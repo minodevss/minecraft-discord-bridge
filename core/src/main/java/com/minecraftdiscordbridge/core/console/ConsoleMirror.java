@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.console;
 import com.minecraftdiscordbridge.core.config.ConsoleConfig;
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.Discord;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
@@ -15,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.concurrent.ScheduledFuture;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
@@ -57,7 +57,7 @@ public final class ConsoleMirror implements AutoCloseable {
 
     public static Optional<ConsoleMirror> start(
             ConsoleConfig config,
-            OptionalLong channel,
+            Optional<DiscordId> channel,
             Discord discord,
             Lang lang,
             CoreLoop loop,
@@ -73,7 +73,7 @@ public final class ConsoleMirror implements AutoCloseable {
             return Optional.empty();
         }
         ConsoleMirror mirror =
-                new ConsoleMirror(buffer, channel.getAsLong(), discord, lang, secrets, ZoneId.systemDefault());
+                new ConsoleMirror(buffer, channel.get().value(), discord, lang, secrets, ZoneId.systemDefault());
         mirror.detach = detach.get();
         mirror.timer = loop.repeat(INTERVAL, mirror::flush);
         return Optional.of(mirror);

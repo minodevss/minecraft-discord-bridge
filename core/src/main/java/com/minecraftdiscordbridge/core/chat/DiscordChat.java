@@ -1,6 +1,7 @@
 package com.minecraftdiscordbridge.core.chat;
 
 import com.minecraftdiscordbridge.core.config.ChatConfig;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.platform.Delivery;
@@ -15,7 +16,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.OptionalLong;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -30,7 +31,7 @@ public final class DiscordChat {
     private static final Set<String> ATTACHMENT_HOSTS = Set.of("cdn.discordapp.com", "media.discordapp.net");
 
     private final ChatConfig config;
-    private final OptionalLong channel;
+    private final Optional<DiscordId> channel;
     private final Format format;
     private final Lang lang;
     private final Platform platform;
@@ -38,7 +39,7 @@ public final class DiscordChat {
 
     public DiscordChat(
             ChatConfig config,
-            OptionalLong channel,
+            Optional<DiscordId> channel,
             Format format,
             Lang lang,
             Platform platform,
@@ -56,7 +57,9 @@ public final class DiscordChat {
     }
 
     public void onMessage(DiscordMessage message) {
-        if (!config.discordToMinecraft() || channel.isEmpty() || message.channelId() != channel.getAsLong()) {
+        if (!config.discordToMinecraft()
+                || channel.isEmpty()
+                || message.channelId() != channel.get().value()) {
             return;
         }
         if (Blocklist.blocks(config.blockedWords(), message.content())) {

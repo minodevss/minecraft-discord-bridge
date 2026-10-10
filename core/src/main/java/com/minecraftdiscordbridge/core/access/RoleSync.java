@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.access;
 import com.minecraftdiscordbridge.core.config.RoleSyncConfig;
 import com.minecraftdiscordbridge.core.config.RoleSyncRule;
 import com.minecraftdiscordbridge.core.config.SyncDirection;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.RoleInfo;
 import com.minecraftdiscordbridge.core.platform.PlatformInfo;
@@ -104,12 +105,12 @@ public final class RoleSync {
     }
 
     public void memberUpdated(MemberLookup.Member member) {
-        context.links().byDiscordId(Long.toUnsignedString(member.userId())).ifPresent(link -> sync(link, member));
+        context.links().byDiscordId(new DiscordId(member.userId())).ifPresent(link -> sync(link, member));
     }
 
     public void memberLeft(long userId) {
         context.links()
-                .byDiscordId(Long.toUnsignedString(userId))
+                .byDiscordId(new DiscordId(userId))
                 .ifPresent(link -> sync(link, new MemberLookup.NotMember(userId)));
     }
 
@@ -121,7 +122,7 @@ public final class RoleSync {
         if (activeRules().isEmpty()) {
             return;
         }
-        long userId = Long.parseUnsignedLong(link.discordId());
+        long userId = link.discordId().value();
         MemberLookup recent = known != null
                 ? known
                 : context.memory().freshMember(userId, context.now()).orElse(null);
@@ -158,10 +159,10 @@ public final class RoleSync {
                         link,
                         "remove from group " + remove.group());
             } else if (change instanceof RoleChange.AddRole add && assignable(add.roleId())) {
-                long userId = Long.parseUnsignedLong(link.discordId());
+                long userId = link.discordId().value();
                 report(context.discord().addRole(userId, add.roleId()), link, "give Discord role " + add.roleId());
             } else if (change instanceof RoleChange.RemoveRole remove && assignable(remove.roleId())) {
-                long userId = Long.parseUnsignedLong(link.discordId());
+                long userId = link.discordId().value();
                 report(
                         context.discord().removeRole(userId, remove.roleId()),
                         link,

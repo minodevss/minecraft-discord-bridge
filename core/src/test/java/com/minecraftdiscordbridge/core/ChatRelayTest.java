@@ -9,6 +9,7 @@ import static com.minecraftdiscordbridge.core.Harness.STEVE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.Author;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.platform.Delivery;
@@ -72,8 +73,12 @@ class ChatRelayTest {
     void pingsOnlyLinkedPlayersAndAtMostThree() throws IOException {
         LinkStore links = LinkStore.open(directory);
         for (int i = 1; i <= 4; i++) {
-            links.link(
-                    new Link(UUID.randomUUID(), "10000000000000000" + i, "Friend_" + i, Edition.JAVA, Instant.EPOCH));
+            links.link(new Link(
+                    UUID.randomUUID(),
+                    new DiscordId(100000000000000000L + i),
+                    "Friend_" + i,
+                    Edition.JAVA,
+                    Instant.EPOCH));
         }
         try (Harness harness = Harness.started(directory, CHANNELS + """
                 chat:
@@ -94,7 +99,8 @@ class ChatRelayTest {
     @Test
     void leavesAtNamesAloneWhenPingsAreOff() throws IOException {
         LinkStore.open(directory)
-                .link(new Link(UUID.randomUUID(), "100000000000000001", "Friend", Edition.JAVA, Instant.EPOCH));
+                .link(new Link(
+                        UUID.randomUUID(), new DiscordId(100000000000000001L), "Friend", Edition.JAVA, Instant.EPOCH));
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             harness.publish(new GameEvent.PlayerChatted(STEVE, "@Friend"));
 

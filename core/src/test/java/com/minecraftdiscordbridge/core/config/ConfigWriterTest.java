@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -29,7 +30,7 @@ class ConfigWriterTest {
                 .set(
                         ConfigSchema.ROLE_SYNC_RULES,
                         List.of(new RoleSyncRule(
-                                "123456789012345678", "vip: gold", SyncDirection.MINECRAFT_TO_DISCORD)))
+                                new DiscordId(123456789012345678L), "vip: gold", SyncDirection.MINECRAFT_TO_DISCORD)))
                 .set(ConfigSchema.INPUT_USERS, List.of("12345678901234567890"))
                 .set(ConfigSchema.CHAT_CHANNEL, "123456789012345678")
                 .build();
@@ -45,7 +46,8 @@ class ConfigWriterTest {
                 .set(ConfigSchema.INPUT_USERS, List.of("123456789012345678"))
                 .set(
                         ConfigSchema.ROLE_SYNC_RULES,
-                        List.of(new RoleSyncRule("223456789012345678", "vip", SyncDirection.DISCORD_TO_MINECRAFT)))
+                        List.of(new RoleSyncRule(
+                                new DiscordId(223456789012345678L), "vip", SyncDirection.DISCORD_TO_MINECRAFT)))
                 .build();
 
         assertThat(ConfigWriter.render(values))

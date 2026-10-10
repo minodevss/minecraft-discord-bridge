@@ -2,17 +2,19 @@ package com.minecraftdiscordbridge.core.status;
 
 import com.minecraftdiscordbridge.core.config.StatusConfig;
 import com.minecraftdiscordbridge.core.discord.Discord;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.i18n.Lang;
-import java.util.OptionalLong;
+import java.util.Optional;
 
 public final class StatusBoard {
     private final StatusConfig config;
-    private final OptionalLong topicChannel;
+    private final Optional<DiscordId> topicChannel;
     private final Lang lang;
     private final Discord discord;
     private final Roster roster;
 
-    public StatusBoard(StatusConfig config, OptionalLong topicChannel, Lang lang, Discord discord, Roster roster) {
+    public StatusBoard(
+            StatusConfig config, Optional<DiscordId> topicChannel, Lang lang, Discord discord, Roster roster) {
         this.config = config;
         this.topicChannel = topicChannel;
         this.lang = lang;
@@ -26,7 +28,7 @@ public final class StatusBoard {
             discord.updatePresence(online);
         }
         if (config.topic() && topicChannel.isPresent()) {
-            discord.updateTopic(topicChannel.getAsLong(), online);
+            discord.updateTopic(topicChannel.get().value(), online);
         }
     }
 }

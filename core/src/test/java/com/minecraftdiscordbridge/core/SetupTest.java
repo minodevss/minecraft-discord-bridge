@@ -10,6 +10,7 @@ import static com.minecraftdiscordbridge.core.Harness.STEVE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.storage.BindingStore;
 import com.minecraftdiscordbridge.core.storage.ChannelRole;
 import java.io.IOException;
@@ -38,7 +39,7 @@ class SetupTest {
             assertThat(reply.next())
                     .isEqualTo(new RecordingReply.Answer("This channel now shows the Minecraft chat.", true));
             assertThat(BindingStore.open(directory).current().orElseThrow().channel(ChannelRole.CHAT))
-                    .contains(Long.toUnsignedString(CHAT));
+                    .contains(new DiscordId(CHAT));
             RecordingDiscord bound = harness.discord(2);
             assertThat(bound.settings.guildId()).isEqualTo(GUILD);
             assertThat(bound.settings.channelIds()).containsExactly(CHAT);

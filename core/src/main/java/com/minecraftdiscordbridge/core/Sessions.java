@@ -14,6 +14,7 @@ import com.minecraftdiscordbridge.core.config.Channels;
 import com.minecraftdiscordbridge.core.config.ConfigSnapshot;
 import com.minecraftdiscordbridge.core.console.ConsoleInput;
 import com.minecraftdiscordbridge.core.console.ConsoleMirror;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.events.EventPosts;
 import com.minecraftdiscordbridge.core.i18n.Lang;
@@ -26,7 +27,7 @@ import com.minecraftdiscordbridge.core.text.Format;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.OptionalLong;
+import java.util.Optional;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,19 +42,19 @@ final class Sessions {
             Stores stores,
             ConfigSnapshot snapshot,
             Channels channels,
-            OptionalLong console,
+            Optional<DiscordId> console,
             Consumer<ChannelBinding> rebound) {
         BridgeConfig config = snapshot.config();
         Lang lang = Lang.of(config.language());
         Replies replies = new Replies(lang, shared.platform().info().dataVersion());
-        OptionalLong chat = Ids.parse(channels.chat());
-        OptionalLong events = Ids.parse(channels.events());
+        Optional<DiscordId> chat = channels.chat();
+        Optional<DiscordId> events = channels.events();
         boolean hasGuild = chat.isPresent() || events.isPresent() || console.isPresent();
         ChannelSetup setup = new ChannelSetup(
                 shared.discord(),
                 stores.bindings(),
                 config.discord(),
-                Ids.parse(channels.console()),
+                channels.console(),
                 shared.io(),
                 shared.setupCodes(),
                 shared.setupAttempts(),
@@ -99,7 +100,7 @@ final class Sessions {
                 RoleSync.create(config.roleSync(), shared.platform().info(), access),
                 new ConsoleInput(
                         config.console(),
-                        Ids.parse(config.discord().consoleChannel()),
+                        config.discord().consoleChannel(),
                         shared.platform(),
                         shared.discord(),
                         shared.loop()::control,

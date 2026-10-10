@@ -50,7 +50,9 @@ final class PlayerPings {
     private static Map<String, Long> byName(List<Link> links) {
         Map<String, Long> byName = new HashMap<>();
         for (Link link : links) {
-            byName.put(link.minecraftName().toLowerCase(Locale.ROOT), Long.parseUnsignedLong(link.discordId()));
+            byName.put(
+                    link.minecraftName().toLowerCase(Locale.ROOT),
+                    link.discordId().value());
         }
         return byName;
     }

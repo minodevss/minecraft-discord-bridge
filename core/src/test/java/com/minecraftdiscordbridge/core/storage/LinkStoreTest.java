@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.storage;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,10 +17,14 @@ import org.junit.jupiter.api.io.TempDir;
 class LinkStoreTest {
     private static final Instant NOW = Instant.parse("2026-10-10T12:00:00Z");
     private static final Link STEVE = new Link(
-            UUID.fromString("00000000-0000-0000-0000-000000000001"), "100000000000000001", "Steve", Edition.JAVA, NOW);
+            UUID.fromString("00000000-0000-0000-0000-000000000001"),
+            new DiscordId(100000000000000001L),
+            "Steve",
+            Edition.JAVA,
+            NOW);
     private static final Link ALEX = new Link(
             UUID.fromString("00000000-0000-0000-0000-000000000002"),
-            "100000000000000002",
+            new DiscordId(100000000000000002L),
             ".Alex",
             Edition.BEDROCK,
             NOW);

@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.storage.ChannelBinding;
 import com.minecraftdiscordbridge.core.storage.ChannelRole;
 import java.util.Map;
@@ -9,13 +10,13 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class ChannelsTest {
-    private static final String GUILD = "100000000000000000";
+    private static final DiscordId GUILD = new DiscordId(100000000000000000L);
     private static final ChannelBinding SETUP = new ChannelBinding(
             GUILD,
             Map.of(
-                    ChannelRole.CHAT, "100000000000000001",
-                    ChannelRole.EVENTS, "100000000000000002",
-                    ChannelRole.CONSOLE, "100000000000000003"));
+                    ChannelRole.CHAT, new DiscordId(100000000000000001L),
+                    ChannelRole.EVENTS, new DiscordId(100000000000000002L),
+                    ChannelRole.CONSOLE, new DiscordId(100000000000000003L)));
 
     @Test
     void usesChannelsFromSetupWhenTheConfigLeavesThemEmpty() {
@@ -24,9 +25,9 @@ class ChannelsTest {
         assertThat(channels)
                 .isEqualTo(new Channels(
                         Optional.of(GUILD),
-                        Optional.of("100000000000000001"),
-                        Optional.of("100000000000000002"),
-                        Optional.of("100000000000000003")));
+                        Optional.of(new DiscordId(100000000000000001L)),
+                        Optional.of(new DiscordId(100000000000000002L)),
+                        Optional.of(new DiscordId(100000000000000003L))));
     }
 
     @Test
@@ -34,9 +35,9 @@ class ChannelsTest {
         Channels channels =
                 Channels.resolve(config("200000000000000001", "", "200000000000000003"), Optional.of(SETUP));
 
-        assertThat(channels.chat()).contains("200000000000000001");
-        assertThat(channels.events()).contains("100000000000000002");
-        assertThat(channels.console()).contains("200000000000000003");
+        assertThat(channels.chat()).contains(new DiscordId(200000000000000001L));
+        assertThat(channels.events()).contains(new DiscordId(100000000000000002L));
+        assertThat(channels.console()).contains(new DiscordId(200000000000000003L));
     }
 
     @Test
@@ -44,7 +45,7 @@ class ChannelsTest {
         Channels channels = Channels.resolve(config("200000000000000001", "", ""), Optional.empty());
 
         assertThat(channels.guild()).isEmpty();
-        assertThat(channels.events()).contains("200000000000000001");
+        assertThat(channels.events()).contains(new DiscordId(200000000000000001L));
         assertThat(channels.console()).isEmpty();
     }
 
@@ -52,7 +53,7 @@ class ChannelsTest {
         return new DiscordConfig(optional(chat), optional(events), optional(console), true);
     }
 
-    private static Optional<String> optional(String id) {
-        return id.isEmpty() ? Optional.empty() : Optional.of(id);
+    private static Optional<DiscordId> optional(String id) {
+        return DiscordId.parse(id);
     }
 }

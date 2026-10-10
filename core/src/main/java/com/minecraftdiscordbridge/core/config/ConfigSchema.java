@@ -1,7 +1,7 @@
 package com.minecraftdiscordbridge.core.config;
 
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -170,9 +170,9 @@ final class ConfigSchema {
         return new BridgeConfig(
                 values.get(LANGUAGE),
                 new DiscordConfig(
-                        id(values.get(CHAT_CHANNEL)),
-                        id(values.get(EVENTS_CHANNEL)),
-                        id(values.get(CONSOLE_CHANNEL)),
+                        DiscordId.parse(values.get(CHAT_CHANNEL)),
+                        DiscordId.parse(values.get(EVENTS_CHANNEL)),
+                        DiscordId.parse(values.get(CONSOLE_CHANNEL)),
                         values.get(AUTO_ENABLE_MESSAGE_CONTENT)),
                 new ChatConfig(
                         values.get(MINECRAFT_TO_DISCORD),
@@ -189,20 +189,20 @@ final class ConfigSchema {
                         values.get(ADVANCEMENT),
                         values.get(SERVER_START),
                         values.get(SERVER_STOP),
-                        id(values.get(SERVER_START_PING_ROLE))),
+                        DiscordId.parse(values.get(SERVER_START_PING_ROLE))),
                 new StatusConfig(values.get(PRESENCE), values.get(TOPIC)),
                 new LinkingConfig(
                         values.get(LINKING_ENABLED),
                         values.get(REQUIRE_FOR_JOIN),
-                        id(values.get(REQUIRED_ROLE)),
+                        DiscordId.parse(values.get(REQUIRED_ROLE)),
                         values.get(WHEN_DISCORD_UNREACHABLE)),
                 new RoleSyncConfig(values.get(ROLE_SYNC_RULES)),
                 new ActionsConfig(values.get(WHITELIST), values.get(KICK)),
-                new ConsoleConfig(values.get(MIRROR), values.get(INPUT_USERS)));
+                new ConsoleConfig(values.get(MIRROR), ids(values.get(INPUT_USERS))));
     }
 
-    private static Optional<String> id(String value) {
-        return value.isEmpty() ? Optional.empty() : Optional.of(value);
+    private static List<DiscordId> ids(List<String> values) {
+        return values.stream().flatMap(value -> DiscordId.parse(value).stream()).toList();
     }
 
     private static Option<Boolean> flag(String path, boolean value, String... comment) {

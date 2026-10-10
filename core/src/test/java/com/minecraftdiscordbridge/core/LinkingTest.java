@@ -7,6 +7,7 @@ import static com.minecraftdiscordbridge.core.Harness.STEVE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.storage.Edition;
 import com.minecraftdiscordbridge.core.storage.Link;
@@ -37,7 +38,7 @@ class LinkingTest {
                     .isEqualTo(new RecordingReply.Answer("Linked to the Minecraft account **Steve**.", true));
             assertThat(steve.nextPlain()).isEqualTo("Your account is now linked to the Discord account Alex.");
             Link stored = LinkStore.open(directory).byMinecraftId(STEVE.id()).orElseThrow();
-            assertThat(stored.discordId()).isEqualTo(Long.toUnsignedString(MEMBER));
+            assertThat(stored.discordId()).isEqualTo(new DiscordId(MEMBER));
             assertThat(stored.minecraftName()).isEqualTo("Steve");
             assertThat(stored.edition()).isEqualTo(Edition.JAVA);
             assertThat(harness.run(steve, "link").nextPlain()).contains("already linked");
@@ -103,7 +104,7 @@ class LinkingTest {
     @Test
     void unlinksFromDiscordAndFromMinecraft() throws IOException {
         LinkStore.open(directory)
-                .link(new Link(STEVE.id(), Long.toUnsignedString(MEMBER), "Steve", Edition.JAVA, Instant.EPOCH));
+                .link(new Link(STEVE.id(), new DiscordId(MEMBER), "Steve", Edition.JAVA, Instant.EPOCH));
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             RecordingReply unlinked =
                     harness.discord().command(Harness.request("unlink", null, Map.of(), MEMBER, CHAT));

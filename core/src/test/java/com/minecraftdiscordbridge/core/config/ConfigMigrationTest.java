@@ -5,6 +5,7 @@ import static com.minecraftdiscordbridge.core.config.ConfigFiles.loaded;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.config.YamlValue.Scalar;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,7 +50,7 @@ class ConfigMigrationTest {
 
         ConfigSnapshot snapshot = loaded(loader().load());
 
-        assertThat(snapshot.config().discord().chatChannel()).contains("123456789012345678");
+        assertThat(snapshot.config().discord().chatChannel()).contains(new DiscordId(123456789012345678L));
         assertThat(snapshot.config().chat().minecraftToDiscord()).isFalse();
         assertThat(directory.resolve("config.yml.v0.bak")).hasContent(VERSION_ZERO);
         String upgraded = Files.readString(file);
@@ -73,7 +74,7 @@ class ConfigMigrationTest {
         ConfigSnapshot snapshot = loaded(loader().load());
 
         assertThat(file).hasContent(VERSION_ZERO);
-        assertThat(snapshot.config().discord().chatChannel()).contains("123456789012345678");
+        assertThat(snapshot.config().discord().chatChannel()).contains(new DiscordId(123456789012345678L));
         Path migrated = directory.resolve("config.yml.migrated");
         assertThat(Files.readString(migrated))
                 .contains("config-version: 1\n")
@@ -164,7 +165,9 @@ class ConfigMigrationTest {
         BridgeConfig config = snapshot.config();
         return ConfigValues.builder()
                 .setDefaultsForAll()
-                .set(ConfigSchema.CHAT_CHANNEL, config.discord().chatChannel().orElse(""))
+                .set(
+                        ConfigSchema.CHAT_CHANNEL,
+                        config.discord().chatChannel().map(DiscordId::toString).orElse(""))
                 .set(ConfigSchema.MINECRAFT_TO_DISCORD, config.chat().minecraftToDiscord())
                 .build();
     }

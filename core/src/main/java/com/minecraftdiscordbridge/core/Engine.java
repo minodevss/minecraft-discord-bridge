@@ -11,6 +11,7 @@ import com.minecraftdiscordbridge.core.config.Language;
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
 import com.minecraftdiscordbridge.core.discord.Discord;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordListener;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
@@ -36,7 +37,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.OptionalLong;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -234,7 +235,7 @@ final class Engine {
     private void linkChanged(LinkChange change) {
         if (change instanceof LinkChange.Unlinked) {
             Link link = change.link();
-            shared.access().forget(link.minecraftId(), Long.parseUnsignedLong(link.discordId()));
+            shared.access().forget(link.minecraftId(), link.discordId().value());
         }
         Session current = session;
         if (current != null) {
@@ -307,9 +308,10 @@ final class Engine {
         BridgeConfig config = loaded.config();
         lang = Lang.of(config.language());
         Channels channels = Channels.resolve(config.discord(), ready.bindings().current());
-        OptionalLong console = config.console().mirror() && loaded.secrets().hasDiscordToken()
-                ? Ids.parse(config.discord().consoleChannel())
-                : OptionalLong.empty();
+        Optional<DiscordId> console =
+                config.console().mirror() && loaded.secrets().hasDiscordToken()
+                        ? config.discord().consoleChannel()
+                        : Optional.empty();
         synchronized (lock) {
             if (closed) {
                 return Outcome.APPLIED;

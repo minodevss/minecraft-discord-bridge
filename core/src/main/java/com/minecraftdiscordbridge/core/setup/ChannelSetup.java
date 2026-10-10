@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.setup;
 import com.minecraftdiscordbridge.core.config.DiscordConfig;
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.Discord;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.InteractionReply;
 import com.minecraftdiscordbridge.core.discord.InteractionRequest;
 import com.minecraftdiscordbridge.core.i18n.Lang;
@@ -21,7 +22,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -35,7 +35,7 @@ public final class ChannelSetup {
     private final Discord discord;
     private final BindingStore bindings;
     private final DiscordConfig config;
-    private final OptionalLong consoleChannel;
+    private final Optional<DiscordId> consoleChannel;
     private final IoExecutor io;
     private final SetupCodes codes;
     private final Attempts attempts;
@@ -47,7 +47,7 @@ public final class ChannelSetup {
             Discord discord,
             BindingStore bindings,
             DiscordConfig config,
-            OptionalLong consoleChannel,
+            Optional<DiscordId> consoleChannel,
             IoExecutor io,
             SetupCodes codes,
             Attempts attempts,
@@ -71,7 +71,7 @@ public final class ChannelSetup {
         Optional<ChannelRole> role = role(request.options().get(ROLE_OPTION));
         if (role.isEmpty()) {
             reply.replyEphemeral(reader.text("discord.setup.bad-role"));
-        } else if (consoleChannel.isPresent() && consoleChannel.getAsLong() == request.channelId()) {
+        } else if (consoleChannel.isPresent() && consoleChannel.get().value() == request.channelId()) {
             reply.replyEphemeral(reader.text("discord.setup.console-channel"));
         } else if (authorized(request, reply, reader)) {
             save(request, reply, reader, role.get());
@@ -141,7 +141,7 @@ public final class ChannelSetup {
 
     private String confirmation(Lang reader, ChannelRole role) {
         String done = reader.text("discord.setup.done." + id(role));
-        Optional<String> configured = role == ChannelRole.CHAT ? config.chatChannel() : config.eventsChannel();
+        Optional<DiscordId> configured = role == ChannelRole.CHAT ? config.chatChannel() : config.eventsChannel();
         if (configured.isEmpty()) {
             return done;
         }
@@ -149,11 +149,11 @@ public final class ChannelSetup {
     }
 
     static ChannelBinding bind(Optional<ChannelBinding> current, long guildId, ChannelRole role, long channelId) {
-        String guild = Long.toUnsignedString(guildId);
-        Map<ChannelRole, String> channels = new EnumMap<>(ChannelRole.class);
+        DiscordId guild = new DiscordId(guildId);
+        Map<ChannelRole, DiscordId> channels = new EnumMap<>(ChannelRole.class);
         current.filter(binding -> binding.guildId().equals(guild))
                 .ifPresent(binding -> channels.putAll(binding.channels()));
-        channels.put(role, Long.toUnsignedString(channelId));
+        channels.put(role, new DiscordId(channelId));
         return new ChannelBinding(guild, channels);
     }
 

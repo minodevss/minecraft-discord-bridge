@@ -7,22 +7,23 @@ import com.minecraftdiscordbridge.core.config.ConfigSnapshot;
 import com.minecraftdiscordbridge.core.config.DiscordConfig;
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.OptionalLong;
+import java.util.Optional;
 import java.util.Set;
 
 final class DiscordPlan {
     private DiscordPlan() {}
 
-    static DiscordSettings settings(ConfigSnapshot snapshot, Channels channels, OptionalLong console) {
+    static DiscordSettings settings(ConfigSnapshot snapshot, Channels channels, Optional<DiscordId> console) {
         BridgeConfig config = snapshot.config();
         Set<Long> channelIds = new LinkedHashSet<>();
-        Ids.parse(channels.chat()).ifPresent(channelIds::add);
-        Ids.parse(channels.events()).ifPresent(channelIds::add);
-        console.ifPresent(channelIds::add);
-        consoleInput(config).ifPresent(channelIds::add);
+        channels.chat().ifPresent(id -> channelIds.add(id.value()));
+        channels.events().ifPresent(id -> channelIds.add(id.value()));
+        console.ifPresent(id -> channelIds.add(id.value()));
+        consoleInput(config).ifPresent(id -> channelIds.add(id.value()));
         List<CommandSpec> commands =
                 channelIds.isEmpty() ? SlashCommandCatalog.setupOnly() : SlashCommandCatalog.forConfig(config);
         return new DiscordSettings(
@@ -42,16 +43,16 @@ final class DiscordPlan {
                 || config.linking().requiredRole().isPresent();
     }
 
-    static OptionalLong consoleInput(BridgeConfig config) {
+    static Optional<DiscordId> consoleInput(BridgeConfig config) {
         return config.console().inputUsers().isEmpty()
-                ? OptionalLong.empty()
-                : Ids.parse(config.discord().consoleChannel());
+                ? Optional.empty()
+                : config.discord().consoleChannel();
     }
 
     private static long guild(DiscordConfig config, Channels channels) {
         if (config.chatChannel().isPresent() || config.eventsChannel().isPresent()) {
             return DiscordSettings.NO_GUILD;
         }
-        return Ids.parse(channels.guild()).orElse(DiscordSettings.NO_GUILD);
+        return channels.guild().map(DiscordId::value).orElse(DiscordSettings.NO_GUILD);
     }
 }
