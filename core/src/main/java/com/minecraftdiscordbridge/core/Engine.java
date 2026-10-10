@@ -8,24 +8,13 @@ import com.minecraftdiscordbridge.core.config.ConfigLoader;
 import com.minecraftdiscordbridge.core.config.ConfigProblem;
 import com.minecraftdiscordbridge.core.config.ConfigResult;
 import com.minecraftdiscordbridge.core.config.ConfigSnapshot;
-import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
-import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
-import com.minecraftdiscordbridge.core.discord.CommandReply;
-import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.Discord;
-import com.minecraftdiscordbridge.core.discord.DiscordId;
-import com.minecraftdiscordbridge.core.discord.DiscordListener;
-import com.minecraftdiscordbridge.core.discord.DiscordMessage;
-import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
-import com.minecraftdiscordbridge.core.discord.MemberLookup;
-import com.minecraftdiscordbridge.core.discord.OfflineDiscord;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.i18n.Replies;
 import com.minecraftdiscordbridge.core.log.Failures;
-import com.minecraftdiscordbridge.core.loop.Deadline;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.Permission;
@@ -35,8 +24,6 @@ import com.minecraftdiscordbridge.core.status.StatusReport;
 import com.minecraftdiscordbridge.core.storage.Link;
 import com.minecraftdiscordbridge.core.storage.LinkChange;
 import com.minecraftdiscordbridge.core.storage.ShutdownMarker;
-import com.minecraftdiscordbridge.core.storage.StoredCommandHashes;
-import com.minecraftdiscordbridge.core.storage.StoredWebhooks;
 import com.minecraftdiscordbridge.core.storage.Stores;
 import com.minecraftdiscordbridge.core.text.Format.Slot;
 import java.io.IOException;
@@ -45,24 +32,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.function.BooleanSupplier;
 import org.jspecify.annotations.Nullable;
 
 final class Engine implements BridgeCommand.Callbacks {
     static final Duration REBIND_DELAY = Duration.ofSeconds(2);
 
-    private enum Outcome {
-        APPLIED,
-        RECONNECTING,
-        NO_TOKEN
-    }
-
     private record Boot(Stores stores, ConfigResult config, boolean recovered) {}
 
     private final Services services;
-    private final ExecutorService lifecycle;
-    private final DiscordFactory factory;
+    private final DiscordConnection connection;
     private final ConfigLoader loader;
     private final ShutdownMarker marker;
     private final BooleanSupplier stopping;
@@ -73,24 +52,22 @@ final class Engine implements BridgeCommand.Callbacks {
     private volatile boolean closed;
     private @Nullable Stores stores;
     private @Nullable ConfigSnapshot snapshot;
-    private @Nullable DiscordSettings settings;
     private Lang lang = Lang.of(Language.EN);
     private boolean recovered;
     private boolean serverStarted;
     private boolean startAnnounced;
-    private int generation;
     private long droppedEvents;
 
     Engine(
             Services services,
             ExecutorService lifecycle,
-            DiscordFactory factory,
+            DiscordConnection.Factory factory,
             ConfigLoader loader,
             ShutdownMarker marker,
             BooleanSupplier stopping) {
         this.services = services;
-        this.lifecycle = lifecycle;
-        this.factory = factory;
+        this.connection =
+                new DiscordConnection(services, lifecycle, factory, () -> Optional.ofNullable(features), () -> lang);
         this.loader = loader;
         this.marker = marker;
         this.stopping = stopping;
@@ -179,7 +156,7 @@ final class Engine implements BridgeCommand.Callbacks {
             current.close();
         }
         services.vanilla().close();
-        return services.discord().swap(OfflineDiscord.stopped(OfflineDiscord.STOPPED));
+        return connection.close();
     }
 
     void clearMarker() throws IOException {
@@ -236,7 +213,7 @@ final class Engine implements BridgeCommand.Callbacks {
             joins.release();
             return;
         }
-        Outcome outcome = activate(((ConfigResult.Loaded) result).snapshot());
+        DiscordConnection.Outcome outcome = activate(((ConfigResult.Loaded) result).snapshot());
         joins.release();
         if (source != null) {
             replies()
@@ -254,7 +231,7 @@ final class Engine implements BridgeCommand.Callbacks {
         errors.forEach(error -> LOGGER.error("{}", error));
         SetupGuide.logConfigErrors();
         if (snapshot == null) {
-            services.discord().swap(OfflineDiscord.stopped(OfflineDiscord.CONFIG_ERRORS));
+            connection.showConfigErrors();
         }
         if (source != null) {
             Replies replies = replies();
@@ -264,7 +241,7 @@ final class Engine implements BridgeCommand.Callbacks {
         }
     }
 
-    private Outcome activate(ConfigSnapshot loaded) {
+    private DiscordConnection.Outcome activate(ConfigSnapshot loaded) {
         Stores ready = requireStores();
         snapshot = loaded;
         BridgeConfig config = loaded.config();
@@ -272,7 +249,7 @@ final class Engine implements BridgeCommand.Callbacks {
         Channels channels = Channels.resolve(config.discord(), ready.bindings().current());
         synchronized (lock) {
             if (closed) {
-                return Outcome.APPLIED;
+                return DiscordConnection.Outcome.APPLIED;
             }
             Features previous = features;
             if (previous != null) {
@@ -280,22 +257,7 @@ final class Engine implements BridgeCommand.Callbacks {
             }
             features = Features.build(services, ready, loaded, channels, this::rebound, this);
         }
-        Outcome outcome;
-        if (!loaded.secrets().hasDiscordToken()) {
-            SetupGuide.log(services.platform().dataDirectory());
-            settings = null;
-            replaceDiscord(OfflineDiscord.stopped(OfflineDiscord.NO_TOKEN));
-            outcome = Outcome.NO_TOKEN;
-        } else {
-            DiscordSettings next = DiscordPlan.settings(loaded, channels);
-            if (next.equals(settings) && services.discord().status().state() == DiscordStatus.State.READY) {
-                outcome = Outcome.APPLIED;
-            } else {
-                settings = next;
-                connect(next);
-                outcome = Outcome.RECONNECTING;
-            }
-        }
+        DiscordConnection.Outcome outcome = connection.apply(loaded, channels, ready);
         announceStart();
         refreshStatus();
         Features current = features;
@@ -312,57 +274,6 @@ final class Engine implements BridgeCommand.Callbacks {
                 activate(current);
             }
         });
-    }
-
-    private void connect(DiscordSettings next) {
-        int target = ++generation;
-        Discord previous = services.discord().swap(OfflineDiscord.connecting(OfflineDiscord.CONNECTING));
-        try {
-            lifecycle.execute(() -> {
-                previous.shutdown(List.of(), Deadline.after(Bridge.DISCORD_STOP_BUDGET));
-                services.loop().control(() -> create(target, next));
-            });
-        } catch (RejectedExecutionException stopped) {
-            LOGGER.debug("Not reconnecting to Discord because the bridge is stopping");
-        }
-    }
-
-    private void replaceDiscord(Discord next) {
-        generation++;
-        Discord previous = services.discord().swap(next);
-        if (previous instanceof OfflineDiscord) {
-            return;
-        }
-        try {
-            lifecycle.execute(() -> previous.shutdown(List.of(), Deadline.after(Bridge.DISCORD_STOP_BUDGET)));
-        } catch (RejectedExecutionException stopped) {
-            LOGGER.debug("Discord is already shutting down");
-        }
-    }
-
-    private void create(int target, DiscordSettings next) {
-        synchronized (lock) {
-            if (closed || target != generation) {
-                return;
-            }
-            try {
-                Discord created = factory.create(
-                        next,
-                        services.loop(),
-                        new Listener(target),
-                        new StoredWebhooks(requireStores().webhooks(), services.io()),
-                        new StoredCommandHashes(requireStores().commandHashes(), services.io()));
-                services.discord().swap(created);
-                created.start();
-            } catch (RuntimeException failure) {
-                LOGGER.error(
-                        "Could not start the Discord connection: {}. Run /discord reload to try again",
-                        Failures.describe(failure));
-                services.discord().swap(OfflineDiscord.stopped(failure.toString()));
-                return;
-            }
-        }
-        refreshStatus();
     }
 
     private void announceStart() {
@@ -399,80 +310,5 @@ final class Engine implements BridgeCommand.Callbacks {
             throw new IllegalStateException("The bridge stores are not open yet");
         }
         return ready;
-    }
-
-    private final class Listener implements DiscordListener {
-        private final int target;
-
-        Listener(int target) {
-            this.target = target;
-        }
-
-        @Override
-        public void onStatusChanged(DiscordStatus status) {
-            if (target == generation && status.state() == DiscordStatus.State.READY) {
-                refreshStatus();
-            }
-            Features current = features;
-            if (target == generation && current != null && status.isConnected()) {
-                current.roleSync().discordReady();
-            }
-        }
-
-        @Override
-        public void onMessage(DiscordMessage message) {
-            Features current = features;
-            if (target == generation && current != null) {
-                current.discordChat().onMessage(message);
-                current.consoleInput().onMessage(message);
-            }
-        }
-
-        @Override
-        public void onMemberUpdated(MemberLookup.Member member) {
-            if (target != generation) {
-                return;
-            }
-            services.access().remember(member, services.clock().instant());
-            Features current = features;
-            if (current != null) {
-                current.roleSync().memberUpdated(member);
-            }
-        }
-
-        @Override
-        public void onMemberLeft(DiscordId userId) {
-            if (target != generation) {
-                return;
-            }
-            services.access()
-                    .remember(
-                            new MemberLookup.NotMember(userId), services.clock().instant());
-            Features current = features;
-            if (current != null) {
-                current.roleSync().memberLeft(userId);
-            }
-        }
-
-        @Override
-        public void onCommand(CommandRequest request, CommandReply reply) {
-            Features current = features;
-            if (target != generation || current == null) {
-                reply.replyEphemeral(
-                        Lang.forDiscordLocale(request.locale(), lang).text("discord.not-ready"));
-                return;
-            }
-            current.discordCommands().onCommand(request, reply);
-        }
-
-        @Override
-        public void onAutocomplete(AutocompleteRequest request, AutocompleteReply reply) {
-            Features current = features;
-            if (target != generation || current == null) {
-                reply.respond(List.of());
-                return;
-            }
-            current.discordCommands().onAutocomplete(request, reply);
-        }
     }
 }

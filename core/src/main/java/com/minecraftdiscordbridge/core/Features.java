@@ -56,7 +56,7 @@ record Features(
         Replies replies = new Replies(lang, services.platform().info().dataVersion());
         Optional<DiscordId> chat = channels.chat();
         Optional<DiscordId> events = channels.events();
-        boolean hasGuild = !DiscordPlan.channelIds(config, channels).isEmpty();
+        boolean hasGuild = !DiscordConnection.channelIds(config, channels).isEmpty();
         FeatureContext context = new FeatureContext(services.discord(), services.io(), services.clock(), replies);
         ChannelSetup setup = new ChannelSetup(
                 context, config.discord(), stores.bindings(), services.setupCodes(), services.setupAttempts(), rebound);

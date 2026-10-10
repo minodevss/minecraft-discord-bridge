@@ -64,7 +64,7 @@ public final class Bridge {
 
     Bridge(
             Platform platform,
-            DiscordFactory discordFactory,
+            DiscordConnection.Factory discordFactory,
             Map<String, String> environment,
             InstantSource clock,
             Codes codes,
