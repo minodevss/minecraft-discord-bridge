@@ -12,11 +12,11 @@ public final class OfflineDiscord implements Discord {
             "The settings have errors. See the server log, fix them and run /discord reload";
     public static final String STOPPED = "The bridge has stopped";
 
-    private final DiscordStatus status;
+    private final DiscordStatus.State state;
     private final String reason;
 
-    public OfflineDiscord(DiscordStatus.State state, String reason) {
-        this.status = new DiscordStatus(state, reason, -1, Map.of());
+    private OfflineDiscord(DiscordStatus.State state, String reason) {
+        this.state = state;
         this.reason = reason;
     }
 
@@ -33,7 +33,7 @@ public final class OfflineDiscord implements Discord {
 
     @Override
     public DiscordStatus status() {
-        return status;
+        return new DiscordStatus(state, reason, -1, Map.of());
     }
 
     @Override

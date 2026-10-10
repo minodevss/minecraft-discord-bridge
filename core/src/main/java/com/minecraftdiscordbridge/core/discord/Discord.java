@@ -5,8 +5,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public interface Discord {
-    String NOT_CONNECTED = "Discord is not connected";
-
     void start();
 
     DiscordStatus status();
@@ -19,21 +17,13 @@ public interface Discord {
 
     boolean isApplicationOwner(long userId);
 
-    default CompletableFuture<MemberLookup> member(long userId) {
-        return CompletableFuture.completedFuture(new MemberLookup.Unavailable(NOT_CONNECTED));
-    }
+    CompletableFuture<MemberLookup> member(long userId);
 
-    default Map<Long, RoleInfo> roles() {
-        return Map.of();
-    }
+    Map<Long, RoleInfo> roles();
 
-    default CompletableFuture<Void> addRole(long userId, long roleId) {
-        return CompletableFuture.failedFuture(new IllegalStateException(NOT_CONNECTED));
-    }
+    CompletableFuture<Void> addRole(long userId, long roleId);
 
-    default CompletableFuture<Void> removeRole(long userId, long roleId) {
-        return CompletableFuture.failedFuture(new IllegalStateException(NOT_CONNECTED));
-    }
+    CompletableFuture<Void> removeRole(long userId, long roleId);
 
     void shutdown(List<OutboundMessage> finalMessages);
 }

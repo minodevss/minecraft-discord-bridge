@@ -9,7 +9,7 @@ public interface DiscordListener {
 
     void onAutocomplete(AutocompleteRequest request, AutocompleteReply reply);
 
-    default void onMemberUpdated(MemberLookup.Member member) {}
+    void onMemberUpdated(MemberLookup.Member member);
 
-    default void onMemberLeft(long userId) {}
+    void onMemberLeft(long userId);
 }

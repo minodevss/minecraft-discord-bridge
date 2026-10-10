@@ -38,16 +38,6 @@ final class JdaInteractionReply implements InteractionReply {
         }
     }
 
-    @Override
-    public void editReply(String text) {
-        if (stage.compareAndSet(Stage.OPEN, Stage.ANSWERED)) {
-            interaction.reply(Messages.create(text)).queue(null, JdaInteractionReply::logFailure);
-            return;
-        }
-        stage.set(Stage.ANSWERED);
-        interaction.getHook().editOriginal(Messages.edit(text)).queue(null, JdaInteractionReply::logFailure);
-    }
-
     private void answer(String text, boolean ephemeral) {
         if (stage.compareAndSet(Stage.OPEN, Stage.ANSWERED)) {
             interaction

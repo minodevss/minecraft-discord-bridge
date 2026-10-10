@@ -77,6 +77,7 @@ public final class JdaDiscord implements Discord {
         Permission.MANAGE_WEBHOOKS,
         Permission.MANAGE_CHANNEL
     };
+    private static final String NOT_CONNECTED = "Discord is not connected";
     private static final Duration MEMBER_LOOKUP_TIMEOUT = Duration.ofSeconds(5);
     private static final String ROLE_SYNC_REASON = "Minecraft Discord Bridge role sync";
     private static final Map<Permission, String> DANGEROUS_PERMISSIONS = dangerousPermissions();

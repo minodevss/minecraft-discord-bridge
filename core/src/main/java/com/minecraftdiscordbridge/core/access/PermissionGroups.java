@@ -29,8 +29,4 @@ public interface PermissionGroups {
         }
         return LuckPermsGroups.create();
     }
-
-    static PermissionGroups absent() {
-        return AbsentGroups.INSTANCE;
-    }
 }

@@ -6,6 +6,4 @@ public interface InteractionReply {
     void replyEphemeral(String text);
 
     void defer(boolean ephemeral);
-
-    void editReply(String text);
 }

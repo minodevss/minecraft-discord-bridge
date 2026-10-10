@@ -17,6 +17,7 @@ public final class CoreLoop implements AutoCloseable {
     private static final int CONTENT_CAPACITY = 1024;
     private static final long IDLE = 0;
     private static final Duration CLOSE_WAIT = Duration.ofMillis(200);
+    private static final Duration SLOW_TASK = Duration.ofSeconds(1);
 
     private final BlockingQueue<Runnable> control = new LinkedBlockingQueue<>();
     private final BlockingQueue<Runnable> content = new ArrayBlockingQueue<>(CONTENT_CAPACITY);
@@ -24,22 +25,16 @@ public final class CoreLoop implements AutoCloseable {
     private final AtomicLong dropped = new AtomicLong();
     private final AtomicLong taskStartedNanos = new AtomicLong(IDLE);
     private final AtomicLong reportedTaskNanos = new AtomicLong(IDLE);
-    private final Duration slowTask;
     private final ScheduledExecutorService timer;
     private final Thread thread;
     private final ScheduledFuture<?> watchdog;
     private volatile boolean running = true;
 
     public CoreLoop() {
-        this(Duration.ofSeconds(1));
-    }
-
-    CoreLoop(Duration slowTask) {
-        this.slowTask = slowTask;
         this.timer = Executors.newSingleThreadScheduledExecutor(Threads.named("Timer"));
         this.thread = Threads.named("Core").newThread(this::run);
         this.thread.start();
-        long period = Math.max(10, slowTask.toMillis() / 2);
+        long period = SLOW_TASK.toMillis() / 2;
         this.watchdog = timer.scheduleAtFixedRate(this::checkSlowTask, period, period, TimeUnit.MILLISECONDS);
     }
 
@@ -126,11 +121,11 @@ public final class CoreLoop implements AutoCloseable {
         if (started == IDLE || started == reportedTaskNanos.get()) {
             return;
         }
-        if (System.nanoTime() - started < slowTask.toNanos()) {
+        if (System.nanoTime() - started < SLOW_TASK.toNanos()) {
             return;
         }
         reportedTaskNanos.set(started);
-        Throwable trace = new Throwable("Core loop task running for over " + slowTask.toMillis() + " ms");
+        Throwable trace = new Throwable("Core loop task running for over " + SLOW_TASK.toMillis() + " ms");
         trace.setStackTrace(thread.getStackTrace());
         LOGGER.warn("The bridge core loop is blocked", trace);
     }

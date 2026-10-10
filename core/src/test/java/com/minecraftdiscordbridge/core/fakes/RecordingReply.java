@@ -22,11 +22,6 @@ public final class RecordingReply implements InteractionReply {
     @Override
     public void defer(boolean ephemeral) {}
 
-    @Override
-    public void editReply(String text) {
-        answers.add(new Answer(text, false));
-    }
-
     public Answer next() {
         return Waits.take(answers);
     }
