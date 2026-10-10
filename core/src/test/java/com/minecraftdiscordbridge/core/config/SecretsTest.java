@@ -74,7 +74,7 @@ class SecretsTest {
 
         assertThat(errors(result))
                 .containsExactly("MCDB_DISCORD_TOKEN_FILE: cannot read " + missing
-                        + " (NoSuchFileException). Check the path and the file permissions.");
+                        + " (NoSuchFileException). Check the path and the file permissions");
     }
 
     @Test

@@ -66,7 +66,7 @@ class FormatTest {
         assertThatThrownBy(() -> Format.compile("join", "<yellow><plyer> joined", Set.of("player")))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Format 'join' is not valid MiniMessage: unknown tag <plyer>. "
-                        + "Available placeholders: <player>.");
+                        + "Available placeholders: <player>");
     }
 
     @Test
@@ -114,7 +114,7 @@ class FormatTest {
     void warnsAboutLegacyColorCodes(String template, String code) {
         assertThat(Format.compile("motd", template, Set.of()).legacyCodeWarning())
                 .hasValue("Format 'motd' contains the legacy color code '" + code
-                        + "', which shows as plain text. Use MiniMessage tags such as <green> or <bold> instead.");
+                        + "', which shows as plain text. Use MiniMessage tags such as <green> or <bold> instead");
     }
 
     @ParameterizedTest
@@ -123,7 +123,7 @@ class FormatTest {
         assertThatThrownBy(() -> Format.compile("motd", template, Set.of()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageStartingWith("Format 'motd' uses the legacy color code '§")
-                .hasMessageEndingWith("Use MiniMessage tags such as <green> or <bold> instead.");
+                .hasMessageEndingWith("Use MiniMessage tags such as <green> or <bold> instead");
     }
 
     @Test

@@ -24,7 +24,7 @@ final class ConfigReader {
                     null,
                     ConfigSchema.VERSION_KEY,
                     "missing; assuming " + ConfigSchema.VERSION + ". Add \"" + ConfigSchema.VERSION_KEY + ": "
-                            + ConfigSchema.VERSION + "\" at the end of the file.");
+                            + ConfigSchema.VERSION + "\" at the end of the file");
             return ConfigSchema.VERSION;
         }
         YamlValue value = entry.get().value();

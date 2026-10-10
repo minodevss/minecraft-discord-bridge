@@ -44,12 +44,12 @@ public final class Format {
         String sectionCode = firstLegacyCode(template, '§');
         if (sectionCode != null) {
             throw new IllegalArgumentException("Format '" + name + "' uses the legacy color code '" + sectionCode
-                    + "', which MiniMessage cannot read. Use MiniMessage tags such as <green> or <bold> instead.");
+                    + "', which MiniMessage cannot read. Use MiniMessage tags such as <green> or <bold> instead");
         }
         Set<String> problems = problems(template, placeholders);
         if (!problems.isEmpty()) {
             throw new IllegalArgumentException("Format '" + name + "' is not valid MiniMessage: "
-                    + String.join("; ", problems) + ". Available placeholders: " + describe(placeholders) + ".");
+                    + String.join("; ", problems) + ". Available placeholders: " + describe(placeholders));
         }
         return new Format(name, template, Set.copyOf(placeholders));
     }
@@ -86,7 +86,7 @@ public final class Format {
             return Optional.empty();
         }
         return Optional.of("Format '" + name + "' contains the legacy color code '" + code
-                + "', which shows as plain text. Use MiniMessage tags such as <green> or <bold> instead.");
+                + "', which shows as plain text. Use MiniMessage tags such as <green> or <bold> instead");
     }
 
     private static void checkPlaceholderName(String format, String placeholder) {

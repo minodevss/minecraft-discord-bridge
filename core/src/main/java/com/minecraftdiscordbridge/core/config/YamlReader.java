@@ -119,7 +119,7 @@ final class YamlReader {
     }
 
     static String duplicate(Location first) {
-        return "duplicate key; it is already set at line " + first.line() + ". Remove one of them.";
+        return "duplicate key; it is already set at line " + first.line() + ". Remove one of them";
     }
 
     private static Scalar.Kind kind(Tag tag) {

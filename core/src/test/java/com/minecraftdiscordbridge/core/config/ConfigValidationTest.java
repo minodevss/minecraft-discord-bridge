@@ -82,7 +82,7 @@ class ConfigValidationTest {
 
         assertThat(errors(result))
                 .containsExactly(
-                        "config.yml:4:3 chat.format: duplicate key; it is already set at line 3. Remove one of them.");
+                        "config.yml:4:3 chat.format: duplicate key; it is already set at line 3. Remove one of them");
     }
 
     @Test
@@ -201,7 +201,7 @@ class ConfigValidationTest {
         ConfigResult result = new ConfigLoader(directory, Map.of()).load();
 
         assertThat(errors(result))
-                .containsExactly("config.yml: the file is not valid UTF-8. Save it with UTF-8 encoding.");
+                .containsExactly("config.yml: the file is not valid UTF-8. Save it with UTF-8 encoding");
     }
 
     @Test
@@ -211,7 +211,7 @@ class ConfigValidationTest {
         assertThat(loaded(result).config()).isEqualTo(BridgeConfig.defaults());
         assertThat(warnings(result))
                 .containsExactly("config.yml config-version: missing; assuming 1. Add \"config-version: 1\" at the end"
-                        + " of the file.");
+                        + " of the file");
     }
 
     @Test

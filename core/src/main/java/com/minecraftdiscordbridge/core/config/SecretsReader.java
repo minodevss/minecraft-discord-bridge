@@ -28,7 +28,7 @@ final class SecretsReader {
             """;
 
     private static final String DETAILS_HIDDEN = "is not written as discord-token: \"your token\". Fix it; the"
-            + " details are not shown because this file holds the token.";
+            + " details are not shown because this file holds the token";
 
     private SecretsReader() {}
 
@@ -40,7 +40,7 @@ final class SecretsReader {
         if (!token.isEmpty()) {
             if (!tokenFile.isEmpty()) {
                 problems.forSource(TOKEN_FILE_VARIABLE)
-                        .warning(null, "", "ignored because " + TOKEN_VARIABLE + " is also set. Unset one of them.");
+                        .warning(null, "", "ignored because " + TOKEN_VARIABLE + " is also set. Unset one of them");
             }
             return Secrets.of(token, TOKEN_VARIABLE);
         }
@@ -63,7 +63,7 @@ final class SecretsReader {
                             null,
                             "",
                             "could not create " + file + " (" + failure.getMessage()
-                                    + "). Check that the folder is writable, or set " + TOKEN_VARIABLE + ".");
+                                    + "). Check that the folder is writable, or set " + TOKEN_VARIABLE);
         }
     }
 
@@ -72,7 +72,7 @@ final class SecretsReader {
             Path path = Path.of(location);
             String token = Files.readString(path).strip();
             if (token.isEmpty()) {
-                problems.error(null, "", path + " is empty. Put the Discord bot token in it.");
+                problems.error(null, "", path + " is empty. Put the Discord bot token in it");
             }
             return Secrets.of(token, TOKEN_FILE_VARIABLE);
         } catch (IOException | InvalidPathException failure) {
@@ -80,7 +80,7 @@ final class SecretsReader {
                     null,
                     "",
                     "cannot read " + location + " (" + failure.getClass().getSimpleName()
-                            + "). Check the path and the file permissions.");
+                            + "). Check the path and the file permissions");
             return Secrets.none();
         }
     }
@@ -96,7 +96,7 @@ final class SecretsReader {
                     null,
                     "",
                     "cannot read " + file + " (" + failure.getClass().getSimpleName()
-                            + "). Check the file permissions and that it is saved as UTF-8.");
+                            + "). Check the file permissions and that it is saved as UTF-8");
             return Secrets.none();
         }
         Problems hidden = problems.hidingDetails(DETAILS_HIDDEN);

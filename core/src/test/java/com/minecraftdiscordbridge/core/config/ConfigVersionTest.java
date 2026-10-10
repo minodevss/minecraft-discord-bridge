@@ -53,7 +53,7 @@ class ConfigVersionTest {
         assertThat(loaded(result).config().chat().format()).isEqualTo("x");
         assertThat(ConfigFiles.warnings(result))
                 .containsExactly("config.yml config-version: this file is from a newer version of the bridge (7). This"
-                        + " version reads version 1 and ignores settings it does not know.");
+                        + " version reads version 1 and ignores settings it does not know");
         assertThat(file).hasContent(newer);
     }
 

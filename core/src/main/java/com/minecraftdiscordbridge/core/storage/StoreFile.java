@@ -105,7 +105,7 @@ final class StoreFile {
     void save(Versioned document) throws IOException {
         if (readOnly) {
             throw new ReadOnlyStoreException(contents + " were not saved because " + path
-                    + " could not be read at startup. Fix or delete that file, then restart the server.");
+                    + " could not be read at startup. Fix or delete that file, then restart the server");
         }
         byte[] bytes = JSON.writeValueAsBytes(document);
         keepBackup();
@@ -136,7 +136,7 @@ final class StoreFile {
     private <T> T damaged(String reason, T empty) {
         readOnly = true;
         LOGGER.error(
-                "{} is damaged: {}. {} are read-only until you fix or delete the file and restart the server.",
+                "{} is damaged: {}. {} are read-only until you fix or delete the file and restart the server",
                 path,
                 reason,
                 contents);
