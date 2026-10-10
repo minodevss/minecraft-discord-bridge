@@ -41,21 +41,19 @@ gh attestation verify minecraft-discord-bridge-paper-<version>.jar --repo minode
 Setup takes about two minutes.
 
 1. Open the [Discord Developer Portal](https://discord.com/developers/applications) and click **New Application**. Open **Bot**, click **Reset Token** and copy the token.
-2. Start the server once. The bridge creates its folder and an empty `secrets.yml` in it. Paste the token into `secrets.yml`:
+2. Start the server once. The bridge creates its folder with `config.yml` and `secrets.yml` in it: `plugins/MinecraftDiscordBridge` on Paper, `plugins/minecraftdiscordbridge` on Velocity, and `config/minecraftdiscordbridge` on Fabric, NeoForge and Forge. Paste the token into `secrets.yml`:
 
    ```yaml
    discord-token: "your token"
    ```
 
    Or set the `MCDB_DISCORD_TOKEN` environment variable to the token, or `MCDB_DISCORD_TOKEN_FILE` to the path of a file that holds it. An environment variable takes priority over `secrets.yml`.
-3. Run `/discord reload` in the server console. The bridge connects and logs an invite link with the permissions it needs. Open the link and add the bot to your Discord server.
+3. Run `/discord reload` in the server console. The bridge connects and, while the bot is in no Discord server, logs an invite link with the permissions it needs. Open the link and add the bot to your Discord server.
 4. In the Discord channel for the chat, run `/setup`.
 
-By default, Discord shows `/setup` only to members with the **Manage Server** permission. The bot's owner, the account that owns the application in the Developer Portal, can run it directly. Anyone else also needs a one-time code: run `/discord setup` in the server console, then run `/setup code:<code>` in Discord within 10 minutes. To post events in a different channel, run `/setup as:events` there.
+By default, Discord shows `/setup` only to members with the **Manage Server** permission. The bot's owner can run it directly: the account that owns the application in the Developer Portal, or an admin or developer of the team that owns it. Anyone else also needs a one-time code: run `/discord setup` in the server console, then run `/setup code:<code>` in Discord within 10 minutes. To post events in a different channel, run `/setup as:events` there.
 
-The bridge folder is `plugins/MinecraftDiscordBridge` on Paper, `plugins/minecraftdiscordbridge` on Velocity, and `config/minecraftdiscordbridge` on Fabric, NeoForge and Forge.
-
-The bridge turns on the bot's **Message Content Intent** by itself, because it needs it to read Discord messages. If that fails, the log says so; turn it on under **Bot** in the Developer Portal.
+The bridge turns on the bot's **Message Content Intent** by itself, because it needs it to read Discord messages. If that fails, the log says so; turn it on under **Bot** in the Developer Portal. `linking.required-role` and `role-sync` also need the **Server Members Intent**, which you turn on there yourself.
 
 ## Commands
 
