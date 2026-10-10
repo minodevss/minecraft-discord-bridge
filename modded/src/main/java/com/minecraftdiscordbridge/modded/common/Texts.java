@@ -1,6 +1,7 @@
 package com.minecraftdiscordbridge.modded.common;
 
 import com.minecraftdiscordbridge.core.platform.RichText;
+import com.minecraftdiscordbridge.core.text.TextRenderer;
 import java.util.Optional;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.chat.Component;
@@ -27,8 +28,20 @@ final class Texts {
         }
     }
 
+    static Component parseOrPlain(String json, RegistryAccess registries) {
+        return parse(json, registries).orElseGet(() -> plain(json));
+    }
+
     static RichText richText(Component component, RegistryAccess registries) {
         return new RichText(toJson(component, registries), component.getString());
+    }
+
+    private static Component plain(String json) {
+        try {
+            return Component.literal(TextRenderer.plain(TextRenderer.fromJson(json)));
+        } catch (IllegalArgumentException unreadable) {
+            return Component.translatable("disconnect.disconnected");
+        }
     }
 
     //? if >=1.21 {

@@ -9,8 +9,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 
 public final class ModdedJoinGate {
-    private static final String REFUSED = "You cannot join this server right now.";
-
     private final ModdedEvents events;
 
     public ModdedJoinGate(ModdedEvents events) {
@@ -32,8 +30,7 @@ public final class ModdedJoinGate {
 
     private static Optional<Component> kickMessage(JoinDecision decision, MinecraftServer server) {
         if (decision instanceof JoinDecision.Deny deny) {
-            return Optional.of(
-                    Texts.parse(deny.json(), server.registryAccess()).orElseGet(() -> Component.literal(REFUSED)));
+            return Optional.of(Texts.parseOrPlain(deny.json(), server.registryAccess()));
         }
         return Optional.empty();
     }
