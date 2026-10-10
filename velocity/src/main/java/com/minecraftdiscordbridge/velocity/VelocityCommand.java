@@ -1,26 +1,29 @@
 package com.minecraftdiscordbridge.velocity;
 
 import com.minecraftdiscordbridge.core.Bridge;
+import com.minecraftdiscordbridge.core.platform.GameCommand;
 import com.mojang.brigadier.Command;
-import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.velocitypowered.api.command.BrigadierCommand;
 import com.velocitypowered.api.command.CommandSource;
 
 final class VelocityCommand {
-    private static final String ARGUMENTS = "arguments";
-
     private VelocityCommand() {}
 
     static BrigadierCommand create(Bridge bridge) {
-        return new BrigadierCommand(BrigadierCommand.literalArgumentBuilder("discord")
-                .executes(context -> run(bridge, context.getSource(), ""))
-                .then(BrigadierCommand.requiredArgumentBuilder(ARGUMENTS, StringArgumentType.greedyString())
-                        .executes(context ->
-                                run(bridge, context.getSource(), StringArgumentType.getString(context, ARGUMENTS)))));
-    }
-
-    private static int run(Bridge bridge, CommandSource source, String input) {
-        bridge.command(new VelocityCommandSource(source), CommandArguments.split(input));
-        return Command.SINGLE_SUCCESS;
+        LiteralArgumentBuilder<CommandSource> root = BrigadierCommand.literalArgumentBuilder(GameCommand.ROOT)
+                .executes(context -> {
+                    bridge.help(new VelocityCommandSource(context.getSource()));
+                    return Command.SINGLE_SUCCESS;
+                });
+        for (GameCommand command : GameCommand.values()) {
+            root.then(BrigadierCommand.literalArgumentBuilder(command.literal())
+                    .requires(source -> bridge.canUse(new VelocityCommandSource(source), command))
+                    .executes(context -> {
+                        bridge.command(new VelocityCommandSource(context.getSource()), command);
+                        return Command.SINGLE_SUCCESS;
+                    }));
+        }
+        return new BrigadierCommand(root);
     }
 }
