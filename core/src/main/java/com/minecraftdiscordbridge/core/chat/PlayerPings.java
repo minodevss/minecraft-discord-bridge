@@ -30,21 +30,24 @@ final class PlayerPings {
         }
         Map<String, Long> byName = byName(links);
         Set<Long> pinged = new LinkedHashSet<>();
-        StringBuilder out = new StringBuilder(message.length() + 16);
-        Matcher matcher = MENTION.matcher(message);
-        int copied = 0;
-        while (matcher.find()) {
-            Long userId = byName.get(matcher.group(1).toLowerCase(Locale.ROOT));
-            if (userId == null || (!pinged.contains(userId) && pinged.size() >= MAX_PINGS)) {
-                continue;
+        Matcher mention = MENTION.matcher(message).useTransparentBounds(true);
+        String text = DiscordEscaper.escape(message, (source, start, out) -> {
+            if (source.charAt(start) != '@') {
+                return DiscordEscaper.Verbatim.NONE;
             }
-            out.append(DiscordEscaper.escape(message.substring(copied, matcher.start())));
+            mention.region(start, source.length());
+            if (!mention.lookingAt()) {
+                return DiscordEscaper.Verbatim.NONE;
+            }
+            Long userId = byName.get(mention.group(1).toLowerCase(Locale.ROOT));
+            if (userId == null || (!pinged.contains(userId) && pinged.size() >= MAX_PINGS)) {
+                return DiscordEscaper.Verbatim.NONE;
+            }
             out.append("<@").append(Long.toUnsignedString(userId)).append('>');
             pinged.add(userId);
-            copied = matcher.end();
-        }
-        out.append(DiscordEscaper.escape(message.substring(copied)));
-        return new Pinged(out.toString(), pinged);
+            return mention.end();
+        });
+        return new Pinged(text, pinged);
     }
 
     private static Map<String, Long> byName(List<Link> links) {

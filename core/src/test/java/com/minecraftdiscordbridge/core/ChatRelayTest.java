@@ -19,6 +19,7 @@ import com.minecraftdiscordbridge.core.storage.Link;
 import com.minecraftdiscordbridge.core.storage.LinkStore;
 import com.minecraftdiscordbridge.core.text.TextRenderer;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
@@ -93,6 +94,27 @@ class ChatRelayTest {
                             + " mail@Friend\\_1");
             assertThat(sent.pingUserIds())
                     .containsExactlyInAnyOrder(100000000000000001L, 100000000000000002L, 100000000000000003L);
+        }
+    }
+
+    @Test
+    void relaysChatAsPlainTextWhenAStoredDiscordIdIsTooLarge() throws IOException {
+        Path links = directory.resolve("data").resolve("links.json");
+        Files.createDirectories(links.getParent());
+        Files.writeString(links, """
+                {"version": 1, "links": [{"minecraftId": "00000000-0000-4000-8000-000000000009",
+                  "discordId": "99999999999999999999", "minecraftName": "Friend", "edition": "java",
+                  "linkedAt": "2026-10-10T00:00:00Z"}]}
+                """);
+        try (Harness harness = Harness.started(directory, CHANNELS + """
+                chat:
+                  ping-linked-players: true
+                """)) {
+            harness.publish(new GameEvent.PlayerChatted(STEVE, "@Friend hi"));
+
+            OutboundMessage sent = harness.discord().nextSent();
+            assertThat(sent.text()).isEqualTo("@Friend hi");
+            assertThat(sent.pingUserIds()).isEmpty();
         }
     }
 

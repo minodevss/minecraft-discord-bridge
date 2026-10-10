@@ -25,6 +25,22 @@ class PlayerPingsTest {
     }
 
     @Test
+    void escapesTextAfterAPingLikeTheMiddleOfALine() {
+        PlayerPings.Pinged pinged = PlayerPings.escape("@.bedrock_kid - see 1. above", List.of(BEDROCK));
+
+        assertThat(pinged.text()).isEqualTo("<@100000000000000001> - see 1. above");
+    }
+
+    @Test
+    void leavesAtNamesInsideLinksAlone() {
+        PlayerPings.Pinged pinged =
+                PlayerPings.escape("look https://example.com/@.Bedrock_Kid/page ok", List.of(BEDROCK));
+
+        assertThat(pinged.text()).isEqualTo("look https://example.com/@.Bedrock_Kid/page ok");
+        assertThat(pinged.userIds()).isEmpty();
+    }
+
+    @Test
     void ignoresAtSignsInsideWords() {
         assertThat(PlayerPings.escape("mail me@.Bedrock_Kid", List.of(BEDROCK)).userIds())
                 .isEmpty();
