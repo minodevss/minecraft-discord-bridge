@@ -106,7 +106,9 @@ final class Sessions {
 
     private static Format chatFormat(String template) {
         try {
-            return DiscordChat.compileFormat(template);
+            Format format = DiscordChat.compileFormat(template);
+            format.legacyCodeWarning().ifPresent(LOGGER::warn);
+            return format;
         } catch (IllegalArgumentException invalid) {
             LOGGER.warn(
                     "{} Using the default chat.format; fix chat.format in config.yml and run /discord reload",

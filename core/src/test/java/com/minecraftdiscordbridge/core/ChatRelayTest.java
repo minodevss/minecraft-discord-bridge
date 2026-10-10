@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.event.Level;
 
 class ChatRelayTest {
     @TempDir
@@ -206,6 +207,20 @@ class ChatRelayTest {
 
             assertThat(plain(Waits.take(harness.platform.deliveries)))
                     .isEqualTo("↳ Bob: first line\n[Discord] Alex: me too");
+        }
+    }
+
+    @Test
+    void warnsThatLegacyColorCodesInTheChatFormatShowAsText() throws IOException {
+        try (RecordingLogs.Capture logs = RecordingLogs.capture();
+                Harness harness = Harness.started(directory, CHANNELS + """
+                        chat:
+                          format: "&a<author>: <message>"
+                        """)) {
+            assertThat(harness.discord().started).isTrue();
+            assertThat(logs.lines(Level.WARN))
+                    .anySatisfy(line ->
+                            assertThat(line).contains("legacy color code '&a'").contains("<green>"));
         }
     }
 
