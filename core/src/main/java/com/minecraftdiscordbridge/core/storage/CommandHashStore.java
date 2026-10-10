@@ -18,7 +18,7 @@ public final class CommandHashStore {
     }
 
     public static CommandHashStore open(Path dataDirectory) {
-        return new CommandHashStore(StoreFile.plain(dataDirectory, "command-hashes.json", "Slash command hashes"));
+        return new CommandHashStore(StoreFile.cache(dataDirectory, "command-hashes.json", "Slash command hashes"));
     }
 
     public boolean readOnly() {

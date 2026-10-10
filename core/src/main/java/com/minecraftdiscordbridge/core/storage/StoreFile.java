@@ -55,6 +55,10 @@ final class StoreFile {
         return new StoreFile(locate(dataDirectory, fileName), contents, 0, true);
     }
 
+    static StoreFile cache(Path dataDirectory, String fileName, String contents) {
+        return new StoreFile(locate(dataDirectory, "cache").resolve(fileName), contents, 0, false);
+    }
+
     private static Path locate(Path dataDirectory, String fileName) {
         return dataDirectory.resolve("data").resolve(fileName);
     }
