@@ -6,6 +6,7 @@ import com.minecraftdiscordbridge.core.FakePlatform;
 import com.minecraftdiscordbridge.core.config.ConsoleConfig;
 import com.minecraftdiscordbridge.core.config.Language;
 import com.minecraftdiscordbridge.core.discord.Discord;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
@@ -16,7 +17,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.OptionalLong;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.jupiter.api.Test;
@@ -27,7 +28,7 @@ class ConsoleInputTest {
     private static final long CHAT = 222222222222222222L;
     private static final long ADMIN = 555555555555555555L;
     private static final long MEMBER = 666666666666666666L;
-    private static final ConsoleConfig ADMIN_ONLY = new ConsoleConfig(false, List.of(Long.toUnsignedString(ADMIN)));
+    private static final ConsoleConfig ADMIN_ONLY = new ConsoleConfig(false, List.of(new DiscordId(ADMIN)));
 
     @TempDir
     Path directory;
@@ -136,7 +137,7 @@ class ConsoleInputTest {
     private ConsoleInput input(ConsoleConfig config, FakePlatform platform) {
         return new ConsoleInput(
                 config,
-                OptionalLong.of(CONSOLE),
+                Optional.of(new DiscordId(CONSOLE)),
                 platform,
                 discord,
                 Runnable::run,
@@ -154,7 +155,6 @@ class ConsoleInputTest {
     private static DiscordMessage message(long channel, long author, boolean bot, boolean webhook, String content) {
         return new DiscordMessage(
                 channel,
-                1,
                 new DiscordMessage.Sender(author, "Admin", null, bot, webhook),
                 content,
                 Map.of(),

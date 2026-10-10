@@ -1,6 +1,7 @@
 package com.minecraftdiscordbridge.core.linking;
 
 import com.minecraftdiscordbridge.core.config.LinkingConfig;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.InteractionReply;
 import com.minecraftdiscordbridge.core.discord.InteractionRequest;
 import com.minecraftdiscordbridge.core.i18n.Lang;
@@ -113,7 +114,7 @@ public final class Linking {
             return;
         }
         PendingLinks.Pending code = found.get();
-        String discordId = Long.toUnsignedString(request.userId());
+        DiscordId discordId = new DiscordId(request.userId());
         Link link = new Link(
                 code.playerId(), discordId, code.playerName(), code.bedrock() ? Edition.BEDROCK : Edition.JAVA, now);
         io.run(
@@ -137,7 +138,7 @@ public final class Linking {
     public void unlink(InteractionRequest request, InteractionReply reply) {
         Lang reader = Lang.forDiscordLocale(request.locale(), replies.lang());
         io.call(
-                () -> store.unlinkDiscord(Long.toUnsignedString(request.userId())),
+                () -> store.unlinkDiscord(new DiscordId(request.userId())),
                 removed -> reply.replyEphemeral(removed.map(
                                 link -> reader.text("discord.unlink.done", DiscordEscaper.escape(link.minecraftName())))
                         .orElseGet(() -> reader.text("discord.unlink.none"))),

@@ -1,9 +1,10 @@
 package com.minecraftdiscordbridge.core.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -11,8 +12,12 @@ import org.junit.jupiter.api.io.TempDir;
 
 class BindingStoreTest {
     private static final ChannelBinding BINDING = new ChannelBinding(
-            "100000000000000000",
-            Map.of(ChannelRole.CHAT, "100000000000000001", ChannelRole.CONSOLE, "100000000000000003"));
+            new DiscordId(100000000000000000L),
+            Map.of(
+                    ChannelRole.CHAT,
+                    new DiscordId(100000000000000001L),
+                    ChannelRole.EVENTS,
+                    new DiscordId(100000000000000002L)));
 
     @TempDir
     Path directory;
@@ -29,13 +34,19 @@ class BindingStoreTest {
         BindingStore reopened = BindingStore.open(directory);
 
         assertThat(reopened.current()).contains(BINDING);
-        assertThat(reopened.current().orElseThrow().channel(ChannelRole.EVENTS)).isEmpty();
     }
 
     @Test
-    void rejectsChannelsThatAreNotDiscordIds() {
-        assertThatThrownBy(() -> new ChannelBinding("100000000000000000", Map.of(ChannelRole.CHAT, "general")))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("chat channel");
+    void keepsAFileWithAChannelThatIsNotADiscordIdUntouched() throws IOException {
+        Path file = directory.resolve("data").resolve("channels.json");
+        Files.createDirectories(file.getParent());
+        Files.writeString(file, """
+                {"version": 1, "guildId": "100000000000000000", "channels": {"chat": "general"}}
+                """);
+
+        BindingStore store = BindingStore.open(directory);
+
+        assertThat(store.current()).isEmpty();
+        assertThat(store.readOnly()).isTrue();
     }
 }

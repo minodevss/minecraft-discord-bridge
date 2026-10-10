@@ -10,6 +10,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
+import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import java.io.IOException;
@@ -22,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.event.Level;
 
 class BridgeLifecycleTest {
     @TempDir
@@ -79,7 +81,7 @@ class BridgeLifecycleTest {
     void staysIdleWithABrokenConfigAndStartsAfterAFixAndReload() throws IOException {
         try (Harness harness = Harness.create(directory, CHANNELS + "events:\n  join: maybe\n")) {
             harness.bridge.start();
-            assertThat(harness.settledStatus()).contains("config.yml has errors");
+            assertThat(harness.settledStatus()).contains("The settings have errors");
             assertThat(harness.discords).isEmpty();
 
             harness.writeConfig(CHANNELS);
@@ -119,6 +121,85 @@ class BridgeLifecycleTest {
     }
 
     @Test
+    void connectsAfterATokenIsPutInSecretsYmlAndTheConfigIsReloaded() throws IOException {
+        try (Harness harness = Harness.create(directory, CHANNELS, Map.of())) {
+            harness.bridge.start();
+            assertThat(harness.settledStatus()).contains("No bot token is set");
+            Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"" + TOKEN + "\"\n");
+
+            RecordingSource console = harness.run(RecordingSource.console(), "reload");
+
+            assertThat(console.nextPlain()).isEqualTo("Reloaded config.yml. Reconnecting to Discord.");
+            assertThat(harness.discord().settings.token()).isEqualTo(TOKEN);
+            assertThat(harness.discord().started).isTrue();
+        }
+    }
+
+    @Test
+    void explainsTheMissingTokenInAShortBannerThatAgreesWithItself() throws IOException {
+        try (RecordingLogs.Capture logs = RecordingLogs.capture();
+                Harness harness = Harness.create(directory, CHANNELS, Map.of())) {
+            harness.bridge.start();
+            harness.settledStatus();
+
+            assertThat(logs.lines(Level.WARN))
+                    .hasSizeLessThanOrEqualTo(3)
+                    .anySatisfy(line -> assertThat(line).contains(SetupGuide.QUICK_START))
+                    .anySatisfy(line -> assertThat(line)
+                            .contains("https://discord.com/developers/applications")
+                            .contains(directory.resolve("secrets.yml").toString())
+                            .contains("/discord reload"));
+            assertThat(logs.lines()).noneSatisfy(line -> assertThat(line).contains("restart"));
+        }
+    }
+
+    @Test
+    void reconnectsOnReloadWhenDiscordStoppedEvenIfNothingChanged() throws IOException {
+        try (Harness harness = Harness.started(directory, CHANNELS)) {
+            harness.discord().state = DiscordStatus.State.STOPPED;
+
+            RecordingSource console = harness.run(RecordingSource.console(), "reload");
+
+            assertThat(console.nextPlain()).isEqualTo("Reloaded config.yml. Reconnecting to Discord.");
+            assertThat(harness.discord(2).started).isTrue();
+        }
+    }
+
+    @Test
+    void answersCommandsThatReachTheOldConnectionDuringAReconnect() throws IOException {
+        Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"first\"\n");
+        try (Harness harness = Harness.create(directory, CHANNELS, Map.of())) {
+            harness.bridge.start();
+            RecordingDiscord first = harness.discord(1);
+            Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"second\"\n");
+            harness.run(RecordingSource.console(), "reload");
+            harness.discord(2);
+
+            RecordingReply reply = first.command(Harness.request("list", null, Map.of(), Harness.MEMBER, CHAT));
+
+            assertThat(reply.next())
+                    .isEqualTo(new RecordingReply.Answer("The bridge is still starting. Try again in a moment.", true));
+        }
+    }
+
+    @Test
+    void connectsAgainOnlyAfterTheOldConnectionHasStopped() throws IOException {
+        Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"first\"\n");
+        try (Harness harness = Harness.create(directory, CHANNELS, Map.of())) {
+            harness.bridge.start();
+            RecordingDiscord first = harness.discord(1);
+            first.shutdownTime = Duration.ofMillis(500);
+            Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"second\"\n");
+
+            harness.run(RecordingSource.console(), "reload");
+            harness.run(RecordingSource.console(), "reload");
+
+            harness.discord(2);
+            assertThat(first.shutDown).isTrue();
+        }
+    }
+
+    @Test
     void reconnectsOnReloadWhenTheTokenChanges() throws IOException {
         Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"first\"\n");
         try (Harness harness = Harness.create(directory, CHANNELS, Map.of())) {
@@ -131,6 +212,26 @@ class BridgeLifecycleTest {
             RecordingDiscord second = harness.discord(2);
             assertThat(second.settings.token()).isEqualTo("second");
             assertThat(first.shutDown).isTrue();
+        }
+    }
+
+    @Test
+    void hidesPendingLinkCodesInTheMirroredConsole() throws IOException {
+        try (Harness harness = Harness.started(directory, CHANNELS + """
+                  console-channel: "444444444444444444"
+                console:
+                  mirror: true
+                """)) {
+            String code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
+                    .nextPlain());
+
+            LogManager.getLogger("net.minecraft.server.MinecraftServer").error("Disconnecting Steve: {}", code);
+
+            OutboundMessage mirrored = harness.discord().nextSent();
+            assertThat(mirrored.channelId()).isEqualTo(Harness.CONSOLE);
+            assertThat(mirrored.text())
+                    .contains("Disconnecting Steve: [hidden]")
+                    .doesNotContain(code);
         }
     }
 
@@ -222,14 +323,14 @@ class BridgeLifecycleTest {
     }
 
     @Test
-    void stopsWithinTheBudgetWhenDiscordHangs() throws IOException {
+    void stopsWithinThreeSecondsWhenDiscordHangs() throws IOException {
         Harness harness = Harness.started(directory, CHANNELS);
-        harness.discord().shutdownTime = Duration.ofSeconds(3);
+        harness.discord().shutdownTime = Duration.ofSeconds(10);
 
         long started = System.nanoTime();
         harness.bridge.stop();
 
-        assertThat(Duration.ofNanos(System.nanoTime() - started)).isLessThan(Bridge.STOP_BUDGET);
+        assertThat(Duration.ofNanos(System.nanoTime() - started)).isLessThanOrEqualTo(Duration.ofSeconds(3));
     }
 
     @Test

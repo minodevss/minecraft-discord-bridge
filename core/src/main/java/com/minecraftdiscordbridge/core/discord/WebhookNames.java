@@ -1,5 +1,6 @@
 package com.minecraftdiscordbridge.core.discord;
 
+import com.minecraftdiscordbridge.core.text.Graphemes;
 import java.util.regex.Pattern;
 
 final class WebhookNames {
@@ -29,10 +30,6 @@ final class WebhookNames {
     }
 
     private static String truncate(String name) {
-        if (name.length() <= MAX_LENGTH) {
-            return name;
-        }
-        int end = Character.isHighSurrogate(name.charAt(MAX_LENGTH - 1)) ? MAX_LENGTH - 1 : MAX_LENGTH;
-        return name.substring(0, end);
+        return Graphemes.fit(name, MAX_LENGTH);
     }
 }

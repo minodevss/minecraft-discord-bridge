@@ -9,15 +9,20 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Consumer;
 
 public final class IoExecutor implements AutoCloseable {
-    private final ExecutorService executor = Executors.newSingleThreadExecutor(Threads.named("I/O"));
+    private final ExecutorService executor;
     private final Executor callbacks;
 
     public IoExecutor(Executor callbacks) {
+        this(callbacks, "I/O");
+    }
+
+    private IoExecutor(Executor callbacks, String role) {
+        this.executor = Executors.newSingleThreadExecutor(Threads.named(role));
         this.callbacks = callbacks;
     }
 
-    public static IoExecutor forLoop(CoreLoop loop) {
-        return new IoExecutor(loop::control);
+    public static IoExecutor forLoop(CoreLoop loop, String role) {
+        return new IoExecutor(loop::control, role);
     }
 
     public <T> CompletableFuture<T> submit(Task<T> task) {

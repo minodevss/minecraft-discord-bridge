@@ -163,7 +163,6 @@ class AccessTest {
     private static DiscordMessage fromOwner(String content) {
         return new DiscordMessage(
                 CONSOLE,
-                1,
                 new DiscordMessage.Sender(OWNER, "Owner", null, false, false),
                 content,
                 Map.of(),

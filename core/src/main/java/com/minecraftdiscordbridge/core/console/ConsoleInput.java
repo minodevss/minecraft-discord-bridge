@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.console;
 import com.minecraftdiscordbridge.core.config.ConsoleConfig;
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.Discord;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.i18n.Lang;
@@ -10,10 +11,11 @@ import com.minecraftdiscordbridge.core.platform.ActionOutcome;
 import com.minecraftdiscordbridge.core.platform.GameAction;
 import com.minecraftdiscordbridge.core.platform.Platform;
 import com.minecraftdiscordbridge.core.text.DiscordEscaper;
+import com.minecraftdiscordbridge.core.text.Graphemes;
 import com.minecraftdiscordbridge.core.text.SafeText;
 import java.time.Duration;
 import java.util.Collection;
-import java.util.OptionalLong;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -33,7 +35,7 @@ public final class ConsoleInput {
     private static final Author SERVER = Author.server();
     private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
-    private final OptionalLong channel;
+    private final Optional<DiscordId> channel;
     private final Set<Long> users;
     private final Platform platform;
     private final Discord discord;
@@ -44,15 +46,15 @@ public final class ConsoleInput {
 
     public ConsoleInput(
             ConsoleConfig config,
-            OptionalLong channel,
+            Optional<DiscordId> channel,
             Platform platform,
             Discord discord,
             Executor loop,
             Lang lang,
             Duration timeout,
             Supplier<Collection<String>> secrets) {
-        this.channel = config.inputUsers().isEmpty() ? OptionalLong.empty() : channel;
-        this.users = config.inputUsers().stream().map(Long::parseUnsignedLong).collect(Collectors.toUnmodifiableSet());
+        this.channel = config.inputUsers().isEmpty() ? Optional.empty() : channel;
+        this.users = config.inputUsers().stream().map(DiscordId::value).collect(Collectors.toUnmodifiableSet());
         this.platform = platform;
         this.discord = discord;
         this.loop = loop;
@@ -63,7 +65,7 @@ public final class ConsoleInput {
 
     public void onMessage(DiscordMessage message) {
         if (channel.isEmpty()
-                || message.channelId() != channel.getAsLong()
+                || message.channelId() != channel.get().value()
                 || !allowed(message.author())
                 || message.content().isBlank()) {
             return;
@@ -119,10 +121,7 @@ public final class ConsoleInput {
 
     private String block(String output) {
         String body = DiscordEscaper.escapeCodeBlock(ConsoleRedactor.redact(output.strip(), secrets.get()));
-        if (body.length() > MAX_OUTPUT_LENGTH) {
-            body = body.substring(0, MAX_OUTPUT_LENGTH - 1) + "…";
-        }
-        return FENCE + "\n" + body + "\n" + FENCE;
+        return FENCE + "\n" + Graphemes.fit(body, MAX_OUTPUT_LENGTH, "…") + "\n" + FENCE;
     }
 
     private String describe(@Nullable Throwable failure) {
@@ -135,6 +134,6 @@ public final class ConsoleInput {
     }
 
     private void post(String text) {
-        discord.send(OutboundMessage.of(channel.getAsLong(), SERVER, text));
+        discord.send(OutboundMessage.of(channel.get().value(), SERVER, text));
     }
 }

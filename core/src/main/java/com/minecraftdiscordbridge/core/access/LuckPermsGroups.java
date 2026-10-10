@@ -1,20 +1,32 @@
 package com.minecraftdiscordbridge.core.access;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.cacheddata.CachedPermissionData;
+import net.luckperms.api.event.EventBus;
+import net.luckperms.api.event.EventSubscription;
+import net.luckperms.api.event.node.NodeMutateEvent;
+import net.luckperms.api.event.user.UserDataRecalculateEvent;
+import net.luckperms.api.event.user.UserUnloadEvent;
 import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
+import net.luckperms.api.node.Node;
 import net.luckperms.api.node.NodeType;
 import net.luckperms.api.node.types.InheritanceNode;
 import net.luckperms.api.query.QueryOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class LuckPermsGroups implements PermissionGroups {
+    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
+
     private LuckPermsGroups() {}
 
     static PermissionGroups create() {
@@ -60,6 +72,34 @@ final class LuckPermsGroups implements PermissionGroups {
                         .asBoolean()));
     }
 
+    @Override
+    public Runnable onGroupsChanged(Consumer<UUID> changed) {
+        try {
+            EventBus events = LuckPermsProvider.get().getEventBus();
+            GroupChanges changes = new GroupChanges(changed);
+            List<EventSubscription<?>> subscriptions = List.of(
+                    events.subscribe(UserDataRecalculateEvent.class, event -> {
+                        User user = event.getUser();
+                        changes.recalculated(user.getUniqueId(), groups(user).inherited());
+                    }),
+                    events.subscribe(NodeMutateEvent.class, event -> {
+                        if (event.getTarget() instanceof User user && changesInheritance(event)) {
+                            changes.edited(user.getUniqueId());
+                        }
+                    }),
+                    events.subscribe(
+                            UserUnloadEvent.class,
+                            event -> changes.unloaded(event.getUser().getUniqueId())));
+            return () -> subscriptions.forEach(EventSubscription::close);
+        } catch (RuntimeException | LinkageError unavailable) {
+            LOGGER.warn(
+                    "Could not watch LuckPerms for group changes ({}). Role sync updates Discord roles when players"
+                            + " join or link, or after /discord reload",
+                    unavailable.toString());
+            return () -> {};
+        }
+    }
+
     private static <T> CompletableFuture<T> call(Function<LuckPerms, CompletableFuture<T>> request) {
         try {
             return request.apply(LuckPermsProvider.get());
@@ -86,6 +126,14 @@ final class LuckPermsGroups implements PermissionGroups {
                 .map(Group::getName)
                 .collect(Collectors.toSet());
         return new PlayerGroups(direct, inherited);
+    }
+
+    private static boolean changesInheritance(NodeMutateEvent event) {
+        return !inheritance(event.getDataBefore()).equals(inheritance(event.getDataAfter()));
+    }
+
+    private static Set<Node> inheritance(Set<Node> nodes) {
+        return nodes.stream().filter(NodeType.INHERITANCE::matches).collect(Collectors.toSet());
     }
 
     private static InheritanceNode membership(String group) {

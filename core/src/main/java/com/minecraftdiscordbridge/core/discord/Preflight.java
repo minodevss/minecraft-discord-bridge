@@ -61,13 +61,15 @@ final class Preflight {
                 return info.withFlags(flags);
             }
             LOGGER.warn(
-                    "Could not turn on the Message Content intent (HTTP {}). Turn on Message Content Intent at {}",
+                    "Could not turn on the Message Content intent (HTTP {}). Turn on Message Content Intent at {} and run"
+                            + " /discord reload",
                     response.code(),
                     info.botSettingsUrl());
             return info;
         } catch (IOException failure) {
             LOGGER.warn(
-                    "Could not turn on the Message Content intent ({}). Turn on Message Content Intent at {}",
+                    "Could not turn on the Message Content intent ({}). Turn on Message Content Intent at {} and run"
+                            + " /discord reload",
                     Failures.describe(failure),
                     info.botSettingsUrl());
             return info;

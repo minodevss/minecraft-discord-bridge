@@ -6,7 +6,6 @@ import org.jspecify.annotations.Nullable;
 
 public record DiscordMessage(
         long channelId,
-        long messageId,
         Sender author,
         String content,
         Map<Long, String> mentionedUsers,
@@ -31,8 +30,7 @@ public record DiscordMessage(
 
     public record MentionedRole(String name, @Nullable Integer color) {}
 
-    public record Attachment(
-            String fileName, String url, @Nullable String contentType, boolean image, boolean video) {}
+    public record Attachment(String fileName, String url, boolean image) {}
 
     public record Reply(String authorName, String excerpt) {}
 }

@@ -1,8 +1,9 @@
 package com.minecraftdiscordbridge.core.storage;
 
-public record Webhook(String id, String token) {
+import com.minecraftdiscordbridge.core.discord.DiscordId;
+
+public record Webhook(DiscordId id, String token) {
     public Webhook {
-        DiscordIds.require(id, "webhook id");
         if (token.isBlank()) {
             throw new IllegalArgumentException("webhook token must not be blank");
         }

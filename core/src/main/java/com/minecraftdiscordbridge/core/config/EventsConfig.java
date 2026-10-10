@@ -1,5 +1,6 @@
 package com.minecraftdiscordbridge.core.config;
 
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import java.util.Optional;
 
 public record EventsConfig(
@@ -9,4 +10,4 @@ public record EventsConfig(
         boolean advancement,
         boolean serverStart,
         boolean serverStop,
-        Optional<String> serverStartPingRole) {}
+        Optional<DiscordId> serverStartPingRole) {}

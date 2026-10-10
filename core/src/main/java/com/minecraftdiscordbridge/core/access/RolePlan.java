@@ -67,7 +67,7 @@ final class RolePlan {
     }
 
     static long role(RoleSyncRule rule) {
-        return Long.parseUnsignedLong(rule.discordRole());
+        return rule.discordRole().value();
     }
 
     static String group(RoleSyncRule rule) {

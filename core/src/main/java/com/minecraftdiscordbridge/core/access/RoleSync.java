@@ -3,22 +3,28 @@ package com.minecraftdiscordbridge.core.access;
 import com.minecraftdiscordbridge.core.config.RoleSyncConfig;
 import com.minecraftdiscordbridge.core.config.RoleSyncRule;
 import com.minecraftdiscordbridge.core.config.SyncDirection;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.RoleInfo;
 import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.minecraftdiscordbridge.core.storage.Link;
 import com.minecraftdiscordbridge.core.storage.LinkChange;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class RoleSync {
+public final class RoleSync implements AutoCloseable {
+    static final Duration GROUP_CHANGE_DELAY = Duration.ofSeconds(2);
     private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private enum Check {
@@ -52,6 +58,9 @@ public final class RoleSync {
 
     private final List<RuleState> rules;
     private final AccessContext context;
+    private final Set<UUID> changedGroups = new HashSet<>();
+    private Runnable unwatch = () -> {};
+    private volatile boolean closed;
 
     private RoleSync(List<RuleState> rules, AccessContext context) {
         this.rules = rules;
@@ -72,6 +81,10 @@ public final class RoleSync {
         }
         RoleSync sync = new RoleSync(states(config.rules()), context);
         sync.rules.forEach(sync::inspectGroup);
+        if (sync.rules.stream().anyMatch(state -> !state.grantsGroup())) {
+            sync.unwatch = context.groups()
+                    .onGroupsChanged(player -> context.loop().execute(() -> sync.groupsChanged(player)));
+        }
         return sync;
     }
 
@@ -104,13 +117,35 @@ public final class RoleSync {
     }
 
     public void memberUpdated(MemberLookup.Member member) {
-        context.links().byDiscordId(Long.toUnsignedString(member.userId())).ifPresent(link -> sync(link, member));
+        context.links().byDiscordId(new DiscordId(member.userId())).ifPresent(link -> sync(link, member));
     }
 
     public void memberLeft(long userId) {
         context.links()
-                .byDiscordId(Long.toUnsignedString(userId))
+                .byDiscordId(new DiscordId(userId))
                 .ifPresent(link -> sync(link, new MemberLookup.NotMember(userId)));
+    }
+
+    @Override
+    public void close() {
+        closed = true;
+        unwatch.run();
+    }
+
+    private void groupsChanged(UUID player) {
+        if (closed || !changedGroups.add(player)) {
+            return;
+        }
+        context.later().schedule(GROUP_CHANGE_DELAY, () -> {
+            changedGroups.remove(player);
+            if (!closed && pushesGroups()) {
+                context.links().byMinecraftId(player).ifPresent(link -> sync(link, null));
+            }
+        });
+    }
+
+    private boolean pushesGroups() {
+        return activeRules().stream().anyMatch(rule -> rule.direction() == SyncDirection.MINECRAFT_TO_DISCORD);
     }
 
     private void sync(Link link, @Nullable MemberLookup known) {
@@ -121,7 +156,7 @@ public final class RoleSync {
         if (activeRules().isEmpty()) {
             return;
         }
-        long userId = Long.parseUnsignedLong(link.discordId());
+        long userId = link.discordId().value();
         MemberLookup recent = known != null
                 ? known
                 : context.memory().freshMember(userId, context.now()).orElse(null);
@@ -158,10 +193,10 @@ public final class RoleSync {
                         link,
                         "remove from group " + remove.group());
             } else if (change instanceof RoleChange.AddRole add && assignable(add.roleId())) {
-                long userId = Long.parseUnsignedLong(link.discordId());
+                long userId = link.discordId().value();
                 report(context.discord().addRole(userId, add.roleId()), link, "give Discord role " + add.roleId());
             } else if (change instanceof RoleChange.RemoveRole remove && assignable(remove.roleId())) {
-                long userId = Long.parseUnsignedLong(link.discordId());
+                long userId = link.discordId().value();
                 report(
                         context.discord().removeRole(userId, remove.roleId()),
                         link,

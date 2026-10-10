@@ -7,12 +7,7 @@ enum Origin {
     BOT,
     USER;
 
-    boolean relayed(boolean relayBots, boolean relayWebhooks) {
-        return switch (this) {
-            case SELF, OWN_WEBHOOK -> false;
-            case WEBHOOK -> relayWebhooks;
-            case BOT -> relayBots;
-            case USER -> true;
-        };
+    boolean relayed() {
+        return this == USER;
     }
 }

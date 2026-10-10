@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.access;
 
 import com.minecraftdiscordbridge.core.config.LinkingConfig;
 import com.minecraftdiscordbridge.core.config.UnreachablePolicy;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.RoleInfo;
 import com.minecraftdiscordbridge.core.i18n.Replies;
@@ -15,7 +16,6 @@ import com.minecraftdiscordbridge.core.text.Format.Slot;
 import com.minecraftdiscordbridge.core.text.TextRenderer;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import org.jspecify.annotations.Nullable;
@@ -29,14 +29,14 @@ public final class JoinGate {
 
     private final boolean active;
     private final UnreachablePolicy policy;
-    private final OptionalLong requiredRole;
+    private final Optional<DiscordId> requiredRole;
     private final AccessContext context;
     private final Replies replies;
 
     JoinGate(
             boolean active,
             UnreachablePolicy policy,
-            OptionalLong requiredRole,
+            Optional<DiscordId> requiredRole,
             AccessContext context,
             Replies replies) {
         this.active = active;
@@ -48,10 +48,7 @@ public final class JoinGate {
 
     public static JoinGate create(LinkingConfig config, PlatformInfo info, AccessContext context, Replies replies) {
         boolean active = config.requireForJoin() && usable(config, info);
-        OptionalLong role = config.requiredRole()
-                .map(id -> OptionalLong.of(Long.parseUnsignedLong(id)))
-                .orElseGet(OptionalLong::empty);
-        return new JoinGate(active, config.whenDiscordUnreachable(), role, context, replies);
+        return new JoinGate(active, config.whenDiscordUnreachable(), config.requiredRole(), context, replies);
     }
 
     public boolean active() {
@@ -107,7 +104,7 @@ public final class JoinGate {
             allow(player, result);
             return;
         }
-        long userId = Long.parseUnsignedLong(link.get().discordId());
+        long userId = link.get().discordId().value();
         Optional<MemberLookup> cached = context.memory().freshMember(userId, context.now());
         if (cached.isPresent()) {
             judge(player, cached.get(), result);
@@ -123,7 +120,7 @@ public final class JoinGate {
     }
 
     private void judge(PlayerProfile player, MemberLookup lookup, CompletableFuture<JoinDecision> result) {
-        long role = requiredRole.orElseThrow();
+        long role = requiredRole.orElseThrow().value();
         if (lookup instanceof MemberLookup.Member member && member.roleIds().contains(role)) {
             allow(player, result);
         } else if (lookup instanceof MemberLookup.Member) {

@@ -1,5 +1,6 @@
 package com.minecraftdiscordbridge.core;
 
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.WebhookCredentials;
 import com.minecraftdiscordbridge.core.discord.WebhookRepository;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
@@ -19,20 +20,19 @@ final class StoredWebhooks implements WebhookRepository {
 
     @Override
     public CompletionStage<Optional<WebhookCredentials>> find(long channelId) {
-        return io.submit(() -> store.forChannel(Long.toUnsignedString(channelId))
-                .map(webhook -> new WebhookCredentials(Long.parseUnsignedLong(webhook.id()), webhook.token())));
+        return io.submit(() -> store.forChannel(new DiscordId(channelId))
+                .map(webhook -> new WebhookCredentials(webhook.id().value(), webhook.token())));
     }
 
     @Override
     public CompletionStage<Void> save(long channelId, WebhookCredentials webhook) {
-        return io.perform(() -> store.put(
-                        Long.toUnsignedString(channelId),
-                        new Webhook(Long.toUnsignedString(webhook.id()), webhook.token())))
+        return io.perform(() ->
+                        store.put(new DiscordId(channelId), new Webhook(new DiscordId(webhook.id()), webhook.token())))
                 .thenAccept(done -> {});
     }
 
     @Override
     public CompletionStage<Void> forget(long channelId) {
-        return io.perform(() -> store.remove(Long.toUnsignedString(channelId))).thenAccept(done -> {});
+        return io.perform(() -> store.remove(new DiscordId(channelId))).thenAccept(done -> {});
     }
 }

@@ -16,6 +16,7 @@ import static com.minecraftdiscordbridge.core.discord.TestSupport.take;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
+import com.minecraftdiscordbridge.core.RecordingLogs;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus.State;
 import com.minecraftdiscordbridge.core.discord.TestSupport.MemoryCommandHashes;
 import com.minecraftdiscordbridge.core.discord.TestSupport.MemoryWebhooks;
@@ -26,7 +27,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 import mockwebserver3.RecordedRequest;
 import net.dv8tion.jda.api.utils.data.DataArray;
@@ -34,6 +37,7 @@ import net.dv8tion.jda.api.utils.data.DataObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.event.Level;
 
 class JdaDiscordTest {
     private static final Author STEVE = Author.player("uuid-steve", "Steve", "https://mc-heads.net/avatar/Steve");
@@ -104,7 +108,7 @@ class JdaDiscordTest {
         assertThatCode(() -> bridge = start(TestSupport.settings(List.of()))).doesNotThrowAnyException();
 
         awaitState(State.STOPPED);
-        assertThat(bridge.status().reason()).contains("rejected the bot token");
+        assertThat(bridge.status().reason()).contains("rejected the bot token").contains("secrets.yml");
         assertThat(discord.timeline).containsExactly("GET applications/@me");
     }
 
@@ -166,7 +170,7 @@ class JdaDiscordTest {
                 .isNotZero();
         assertThat(discord.identifies.get(1).getInt("intents") & MESSAGE_CONTENT_INTENT)
                 .isZero();
-        assertThat(bridge.status().reason()).contains("refused the Message Content intent");
+        assertThat(bridge.status().reason()).contains("refused the bot's privileged intents");
     }
 
     @Test
@@ -207,8 +211,7 @@ class JdaDiscordTest {
                 .containsEntry(ROLE_ID, new DiscordMessage.MentionedRole("Builders", 0x3498db));
         assertThat(received.mentionedChannels()).containsEntry(CHANNEL_ID, "minecraft");
         assertThat(received.attachments())
-                .containsExactly(new DiscordMessage.Attachment(
-                        "cat.png", "https://cdn.example.com/cat.png", "image/png", true, false));
+                .containsExactly(new DiscordMessage.Attachment("cat.png", "https://cdn.example.com/cat.png", true));
         assertThat(received.stickers()).containsExactly("wave");
         assertThat(received.reply()).isNotNull();
         assertThat(received.reply().authorName()).isEqualTo("Author" + FRIEND_ID);
@@ -560,6 +563,41 @@ class JdaDiscordTest {
     }
 
     @Test
+    void setsATopicAskedForBeforeTheConnectionWasReady() throws InterruptedException {
+        bridge = new JdaDiscord(
+                TestSupport.settings(List.of()), discord.endpoints(), loop, listener, webhooks, commandHashes);
+        bridge.updateTopic(CHANNEL_ID, "3/20 players online");
+        CountDownLatch applied = new CountDownLatch(1);
+        loop.control(applied::countDown);
+        assertThat(applied.await(5, TimeUnit.SECONDS)).isTrue();
+
+        bridge.start();
+
+        await("topic", () -> topicEdits().size() == 1);
+        assertThat(FakeDiscord.body(topicEdits().get(0)).getString("topic")).isEqualTo("3/20 players online");
+    }
+
+    @Test
+    void warnsOnceWhileTheBotCannotChangeTheTopic() {
+        discord.everyonePermissions = FakeDiscord.NO_WEBHOOKS;
+        bridge = startReady();
+        AtomicLong now = new AtomicLong();
+        Appearance appearance = new Appearance(bridge::currentJda, now::get, (delay, task) -> {});
+
+        try (RecordingLogs.Capture logs = RecordingLogs.capture()) {
+            for (int players = 1; players <= 3; players++) {
+                appearance.topic(CHANNEL_ID, players + " players online");
+                now.addAndGet(Appearance.TOPIC_INTERVAL.toNanos());
+            }
+
+            assertThat(logs.lines(Level.WARN))
+                    .filteredOn(line -> line.contains("Manage Channel"))
+                    .hasSize(1);
+        }
+        assertThat(topicEdits()).isEmpty();
+    }
+
+    @Test
     void knowsTheOwnerAndAcceptedAdminsOrDevelopersOfTheTeam() {
         bridge = startReady();
 
@@ -599,7 +637,7 @@ class JdaDiscordTest {
         bridge = start(unbound(Set.of(CHANNEL_ID + 1), List.of(LIST)));
 
         awaitState(State.DEGRADED);
-        assertThat(bridge.status().reason()).contains("cannot see any of the configured channels");
+        assertThat(bridge.status().reason()).contains("cannot see any channel set under discord: in config.yml");
         assertThat(registrations()).isEmpty();
     }
 
@@ -676,8 +714,6 @@ class JdaDiscordTest {
                 base.serverAuthor(),
                 base.autoEnableMessageContent(),
                 base.requestMembersIntent(),
-                base.relayBotMessages(),
-                base.relayWebhookMessages(),
                 base.commands());
     }
 
@@ -781,8 +817,6 @@ class JdaDiscordTest {
                 base.serverAuthor(),
                 autoEnable,
                 base.requestMembersIntent(),
-                base.relayBotMessages(),
-                base.relayWebhookMessages(),
                 base.commands());
     }
 

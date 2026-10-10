@@ -24,7 +24,9 @@ final class ConsoleRedactor {
         text = WEBHOOK.matcher(text).replaceAll(HIDDEN);
         for (String secret : secrets) {
             if (!secret.isEmpty()) {
-                text = text.replace(secret, HIDDEN);
+                text = Pattern.compile(Pattern.quote(secret), Pattern.CASE_INSENSITIVE)
+                        .matcher(text)
+                        .replaceAll(Matcher.quoteReplacement(HIDDEN));
             }
         }
         text = TOKEN.matcher(text).replaceAll(HIDDEN);

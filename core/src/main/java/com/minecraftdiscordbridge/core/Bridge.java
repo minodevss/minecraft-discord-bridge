@@ -43,11 +43,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class Bridge {
-    static final Duration STOP_BUDGET = Duration.ofMillis(3500);
+    static final Duration STOP_BUDGET = Duration.ofSeconds(3);
+    static final Duration DISCORD_STOP_BUDGET = Duration.ofMillis(2500);
     private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private final CoreLoop loop;
     private final IoExecutor io;
+    private final IoExecutor downloads;
     private final ExecutorService lifecycle;
     private final Engine engine;
     private final AtomicBoolean started = new AtomicBoolean();
@@ -65,7 +67,8 @@ public final class Bridge {
             Fetcher fetcher,
             PermissionGroups groups) {
         this.loop = new CoreLoop();
-        this.io = IoExecutor.forLoop(loop);
+        this.io = IoExecutor.forLoop(loop, "I/O");
+        this.downloads = IoExecutor.forLoop(loop, "Downloads");
         this.lifecycle = Executors.newSingleThreadExecutor(Threads.named("Reconnect"));
         Shared shared = new Shared(
                 platform,
@@ -77,10 +80,11 @@ public final class Bridge {
                 new PendingLinks(codes),
                 new SetupCodes(codes),
                 Attempts.standard(),
+                Attempts.standard(),
                 actionTimeout,
                 new VanillaTranslations(
                         new LanguageFiles(platform.dataDirectory(), fetcher),
-                        io,
+                        downloads,
                         platform.info().minecraftVersion()),
                 groups,
                 new AccessMemory());
@@ -151,15 +155,33 @@ public final class Bridge {
         List<OutboundMessage> farewell = engine.farewell(crashed);
         CompletableFuture<Boolean> markerCleared = io.perform(engine::clearMarker);
         Discord discord = engine.close();
-        try {
-            discord.shutdown(farewell);
-        } catch (RuntimeException failure) {
-            LOGGER.warn("Discord did not stop cleanly: {}", failure.toString());
-        }
+        stopDiscord(discord, farewell);
         loop.close();
         awaitMarker(markerCleared, deadline);
         io.close();
+        downloads.close();
         lifecycle.shutdownNow();
+    }
+
+    private static void stopDiscord(Discord discord, List<OutboundMessage> farewell) {
+        Thread stopping = Threads.named("Shutdown").newThread(() -> {
+            try {
+                discord.shutdown(farewell);
+            } catch (RuntimeException failure) {
+                LOGGER.warn("Discord did not stop cleanly: {}", failure.toString());
+            }
+        });
+        stopping.start();
+        try {
+            stopping.join(DISCORD_STOP_BUDGET.toMillis());
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+        }
+        if (stopping.isAlive()) {
+            LOGGER.warn(
+                    "Discord did not stop within {} ms; the server stops without waiting for it",
+                    DISCORD_STOP_BUDGET.toMillis());
+        }
     }
 
     private static void awaitMarker(CompletableFuture<Boolean> cleared, long deadline) {
@@ -168,7 +190,8 @@ public final class Bridge {
             cleared.get(remaining, TimeUnit.NANOSECONDS);
         } catch (ExecutionException failure) {
             LOGGER.warn(
-                    "Could not delete data/running: {}. The next start will report an unclean shutdown",
+                    "Could not delete data/running: {}. The next start will report an unclean shutdown; check that"
+                            + " the data folder is writable",
                     failure.getCause() == null
                             ? failure.toString()
                             : failure.getCause().toString());

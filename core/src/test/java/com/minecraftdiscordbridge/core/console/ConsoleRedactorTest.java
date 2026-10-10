@@ -23,6 +23,12 @@ class ConsoleRedactorTest {
     }
 
     @Test
+    void hidesSecretsTypedInAnyCase() {
+        assertThat(ConsoleRedactor.redact("<Steve> what is abcd2345? ABCD2345", List.of("ABCD2345")))
+                .isEqualTo("<Steve> what is [hidden]? [hidden]");
+    }
+
+    @Test
     void hidesPasswordCommandArguments() {
         assertThat(ConsoleRedactor.redact("Steve issued server command: /login hunter2", List.of()))
                 .isEqualTo("Steve issued server command: /login [hidden]");

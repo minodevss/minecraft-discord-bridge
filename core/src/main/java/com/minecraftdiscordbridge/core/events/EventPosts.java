@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.events;
 import com.minecraftdiscordbridge.core.config.EventsConfig;
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.Discord;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.platform.AdvancementFrame;
@@ -14,20 +15,23 @@ import com.minecraftdiscordbridge.core.text.TextRenderer;
 import com.minecraftdiscordbridge.core.text.Translations;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.Set;
 
 public final class EventPosts {
     private static final Author SERVER = Author.server();
 
     private final EventsConfig config;
-    private final OptionalLong channel;
+    private final Optional<DiscordId> channel;
     private final Lang lang;
     private final Optional<Translations> gameText;
     private final Discord discord;
 
     public EventPosts(
-            EventsConfig config, OptionalLong channel, Lang lang, Optional<Translations> gameText, Discord discord) {
+            EventsConfig config,
+            Optional<DiscordId> channel,
+            Lang lang,
+            Optional<Translations> gameText,
+            Discord discord) {
         this.config = config;
         this.channel = channel;
         this.lang = lang;
@@ -72,13 +76,18 @@ public final class EventPosts {
             return;
         }
         String text = lang.text(recovered ? "discord.event.server-recovered" : "discord.event.server-started");
-        OptionalLong role = config.serverStartPingRole().map(EventPosts::id).orElse(OptionalLong.empty());
+        Optional<DiscordId> role = config.serverStartPingRole();
         if (role.isEmpty()) {
             post(text);
             return;
         }
-        String ping = "<@&" + Long.toUnsignedString(role.getAsLong()) + "> ";
-        discord.send(new OutboundMessage(channel.getAsLong(), SERVER, ping + text, Set.of(), Set.of(role.getAsLong())));
+        String ping = "<@&" + role.get() + "> ";
+        discord.send(new OutboundMessage(
+                channel.get().value(),
+                SERVER,
+                ping + text,
+                Set.of(),
+                Set.of(role.get().value())));
     }
 
     public Optional<OutboundMessage> serverStopped(boolean crashed) {
@@ -86,12 +95,12 @@ public final class EventPosts {
             return Optional.empty();
         }
         String text = lang.text(crashed ? "discord.event.server-crashed" : "discord.event.server-stopped");
-        return Optional.of(OutboundMessage.of(channel.getAsLong(), SERVER, text));
+        return Optional.of(OutboundMessage.of(channel.get().value(), SERVER, text));
     }
 
     private void post(String text) {
         if (channel.isPresent()) {
-            discord.send(OutboundMessage.of(channel.getAsLong(), SERVER, text));
+            discord.send(OutboundMessage.of(channel.get().value(), SERVER, text));
         }
     }
 
@@ -107,13 +116,5 @@ public final class EventPosts {
 
     private static String name(String text) {
         return DiscordEscaper.escape(SafeText.strip(text));
-    }
-
-    private static OptionalLong id(String snowflake) {
-        try {
-            return OptionalLong.of(Long.parseUnsignedLong(snowflake));
-        } catch (NumberFormatException invalid) {
-            return OptionalLong.empty();
-        }
     }
 }

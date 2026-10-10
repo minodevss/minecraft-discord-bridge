@@ -27,5 +27,6 @@ record Session(
         ConsoleInput consoleInput) {
     void close() {
         console.ifPresent(ConsoleMirror::close);
+        roleSync.close();
     }
 }

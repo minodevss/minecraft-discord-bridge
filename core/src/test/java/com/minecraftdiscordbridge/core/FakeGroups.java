@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 
 public final class FakeGroups implements PermissionGroups {
     public volatile boolean present = true;
@@ -18,6 +19,15 @@ public final class FakeGroups implements PermissionGroups {
     public final Map<UUID, Set<String>> members = new ConcurrentHashMap<>();
     public final Map<UUID, Set<String>> permissions = new ConcurrentHashMap<>();
     public final List<String> changes = new CopyOnWriteArrayList<>();
+    private final List<Consumer<UUID>> watchers = new CopyOnWriteArrayList<>();
+
+    public void groupsChanged(UUID player) {
+        watchers.forEach(watcher -> watcher.accept(player));
+    }
+
+    public int watchers() {
+        return watchers.size();
+    }
 
     @Override
     public boolean present() {
@@ -53,6 +63,12 @@ public final class FakeGroups implements PermissionGroups {
     public CompletableFuture<Boolean> hasPermission(UUID player, String node) {
         return CompletableFuture.completedFuture(
                 permissions.getOrDefault(player, Set.of()).contains(node));
+    }
+
+    @Override
+    public Runnable onGroupsChanged(Consumer<UUID> changed) {
+        watchers.add(changed);
+        return () -> watchers.remove(changed);
     }
 
     private static Set<String> union(Set<String> first, Set<String> second) {

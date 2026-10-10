@@ -3,10 +3,12 @@ package com.minecraftdiscordbridge.core.console;
 import com.minecraftdiscordbridge.core.config.ConsoleConfig;
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.Discord;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
 import com.minecraftdiscordbridge.core.text.DiscordEscaper;
+import com.minecraftdiscordbridge.core.text.Graphemes;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -15,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.concurrent.ScheduledFuture;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
@@ -37,6 +38,7 @@ public final class ConsoleMirror implements AutoCloseable {
     private final Lang lang;
     private final Supplier<Collection<String>> secrets;
     private final DateTimeFormatter time;
+    private @Nullable String carried;
     private volatile @Nullable Runnable detach;
     private volatile @Nullable ScheduledFuture<?> timer;
 
@@ -57,7 +59,7 @@ public final class ConsoleMirror implements AutoCloseable {
 
     public static Optional<ConsoleMirror> start(
             ConsoleConfig config,
-            OptionalLong channel,
+            Optional<DiscordId> channel,
             Discord discord,
             Lang lang,
             CoreLoop loop,
@@ -73,7 +75,7 @@ public final class ConsoleMirror implements AutoCloseable {
             return Optional.empty();
         }
         ConsoleMirror mirror =
-                new ConsoleMirror(buffer, channel.getAsLong(), discord, lang, secrets, ZoneId.systemDefault());
+                new ConsoleMirror(buffer, channel.get().value(), discord, lang, secrets, ZoneId.systemDefault());
         mirror.detach = detach.get();
         mirror.timer = loop.repeat(INTERVAL, mirror::flush);
         return Optional.of(mirror);
@@ -89,25 +91,22 @@ public final class ConsoleMirror implements AutoCloseable {
 
     void flush() {
         Collection<String> hidden = secrets.get();
-        List<String> lines = new ArrayList<>();
+        Blocks blocks = new Blocks();
         long skipped = buffer.takeDropped();
         if (skipped > 0) {
-            lines.add(lang.count("discord.console.skipped", skipped));
+            blocks.add(lang.count("discord.console.skipped", skipped));
         }
-        int budget = MAX_MESSAGES_PER_FLUSH * BODY_LENGTH;
-        int used = 0;
-        while (used < budget) {
-            List<ConsoleLine> drained = buffer.drain(64);
-            if (drained.isEmpty()) {
-                break;
-            }
-            for (ConsoleLine line : drained) {
-                String text = format(line, hidden);
-                lines.add(text);
-                used += text.length() + 1;
-            }
+        String line = carried != null ? carried : next(hidden);
+        while (line != null && blocks.add(line)) {
+            line = next(hidden);
         }
-        blocks(lines).forEach(block -> discord.send(OutboundMessage.of(channel, SERVER, block)));
+        carried = line;
+        blocks.finish().forEach(block -> discord.send(OutboundMessage.of(channel, SERVER, block)));
+    }
+
+    private @Nullable String next(Collection<String> hidden) {
+        List<ConsoleLine> drained = buffer.drain(1);
+        return drained.isEmpty() ? null : format(drained.get(0), hidden);
     }
 
     private String format(ConsoleLine line, Collection<String> hidden) {
@@ -123,30 +122,38 @@ public final class ConsoleMirror implements AutoCloseable {
             text.append('\n').append(thrown);
         }
         String redacted = DiscordEscaper.escapeCodeBlock(ConsoleRedactor.redact(text.toString(), hidden));
-        return redacted.length() <= BODY_LENGTH ? redacted : redacted.substring(0, BODY_LENGTH - 1) + "…";
+        return Graphemes.fit(redacted, BODY_LENGTH, "…");
     }
 
-    static List<String> blocks(List<String> lines) {
-        List<String> blocks = new ArrayList<>();
-        StringBuilder body = new StringBuilder();
-        for (String line : lines) {
+    private static final class Blocks {
+        private final List<String> full = new ArrayList<>();
+        private final StringBuilder body = new StringBuilder();
+
+        boolean add(String line) {
             if (body.length() > 0 && body.length() + 1 + line.length() > BODY_LENGTH) {
-                blocks.add(fence(body));
+                if (full.size() + 1 >= MAX_MESSAGES_PER_FLUSH) {
+                    return false;
+                }
+                full.add(fence(body));
                 body.setLength(0);
             }
             if (body.length() > 0) {
                 body.append('\n');
             }
             body.append(line);
+            return true;
         }
-        if (body.length() > 0) {
-            blocks.add(fence(body));
-        }
-        return blocks;
-    }
 
-    private static String fence(CharSequence body) {
-        return FENCE + "\n" + body + "\n" + FENCE;
+        List<String> finish() {
+            if (body.length() > 0) {
+                full.add(fence(body));
+            }
+            return full;
+        }
+
+        private static String fence(CharSequence body) {
+            return FENCE + "\n" + body + "\n" + FENCE;
+        }
     }
 
     @Override

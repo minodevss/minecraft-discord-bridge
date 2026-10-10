@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.config.RoleSyncRule;
 import com.minecraftdiscordbridge.core.config.SyncDirection;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import java.util.List;
 import java.util.Set;
@@ -15,11 +16,11 @@ class RolePlanTest {
     private static final long BOOSTER = 888888888888888888L;
     private static final long STAFF = 999999999999999999L;
     private static final RoleSyncRule VIP_TO_GROUP =
-            new RoleSyncRule(Long.toUnsignedString(VIP), "VIP", SyncDirection.DISCORD_TO_MINECRAFT);
+            new RoleSyncRule(new DiscordId(VIP), "VIP", SyncDirection.DISCORD_TO_MINECRAFT);
     private static final RoleSyncRule BOOSTER_TO_GROUP =
-            new RoleSyncRule(Long.toUnsignedString(BOOSTER), "vip", SyncDirection.DISCORD_TO_MINECRAFT);
+            new RoleSyncRule(new DiscordId(BOOSTER), "vip", SyncDirection.DISCORD_TO_MINECRAFT);
     private static final RoleSyncRule GROUP_TO_STAFF =
-            new RoleSyncRule(Long.toUnsignedString(STAFF), "mod", SyncDirection.MINECRAFT_TO_DISCORD);
+            new RoleSyncRule(new DiscordId(STAFF), "mod", SyncDirection.MINECRAFT_TO_DISCORD);
 
     @Test
     void addsTheGroupWhenTheMemberHasTheRole() {

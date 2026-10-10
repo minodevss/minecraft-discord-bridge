@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public final class PendingLinks {
@@ -43,6 +44,11 @@ public final class PendingLinks {
             codeByPlayer.remove(pending.playerId());
         }
         return Optional.ofNullable(pending);
+    }
+
+    public Set<String> codes(Instant now) {
+        forgetExpired(now);
+        return Set.copyOf(byCode.keySet());
     }
 
     private void forgetExpired(Instant now) {

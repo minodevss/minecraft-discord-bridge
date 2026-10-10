@@ -9,6 +9,7 @@ import static com.minecraftdiscordbridge.core.Harness.STEVE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.Author;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.platform.Delivery;
@@ -18,6 +19,7 @@ import com.minecraftdiscordbridge.core.storage.Link;
 import com.minecraftdiscordbridge.core.storage.LinkStore;
 import com.minecraftdiscordbridge.core.text.TextRenderer;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
@@ -25,6 +27,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.event.Level;
 
 class ChatRelayTest {
     @TempDir
@@ -72,8 +75,12 @@ class ChatRelayTest {
     void pingsOnlyLinkedPlayersAndAtMostThree() throws IOException {
         LinkStore links = LinkStore.open(directory);
         for (int i = 1; i <= 4; i++) {
-            links.link(
-                    new Link(UUID.randomUUID(), "10000000000000000" + i, "Friend_" + i, Edition.JAVA, Instant.EPOCH));
+            links.link(new Link(
+                    UUID.randomUUID(),
+                    new DiscordId(100000000000000000L + i),
+                    "Friend_" + i,
+                    Edition.JAVA,
+                    Instant.EPOCH));
         }
         try (Harness harness = Harness.started(directory, CHANNELS + """
                 chat:
@@ -92,9 +99,31 @@ class ChatRelayTest {
     }
 
     @Test
+    void relaysChatAsPlainTextWhenAStoredDiscordIdIsTooLarge() throws IOException {
+        Path links = directory.resolve("data").resolve("links.json");
+        Files.createDirectories(links.getParent());
+        Files.writeString(links, """
+                {"version": 1, "links": [{"minecraftId": "00000000-0000-4000-8000-000000000009",
+                  "discordId": "99999999999999999999", "minecraftName": "Friend", "edition": "java",
+                  "linkedAt": "2026-10-10T00:00:00Z"}]}
+                """);
+        try (Harness harness = Harness.started(directory, CHANNELS + """
+                chat:
+                  ping-linked-players: true
+                """)) {
+            harness.publish(new GameEvent.PlayerChatted(STEVE, "@Friend hi"));
+
+            OutboundMessage sent = harness.discord().nextSent();
+            assertThat(sent.text()).isEqualTo("@Friend hi");
+            assertThat(sent.pingUserIds()).isEmpty();
+        }
+    }
+
+    @Test
     void leavesAtNamesAloneWhenPingsAreOff() throws IOException {
         LinkStore.open(directory)
-                .link(new Link(UUID.randomUUID(), "100000000000000001", "Friend", Edition.JAVA, Instant.EPOCH));
+                .link(new Link(
+                        UUID.randomUUID(), new DiscordId(100000000000000001L), "Friend", Edition.JAVA, Instant.EPOCH));
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             harness.publish(new GameEvent.PlayerChatted(STEVE, "@Friend"));
 
@@ -113,7 +142,6 @@ class ChatRelayTest {
             harness.discord()
                     .receive(new DiscordMessage(
                             CHAT,
-                            1,
                             new DiscordMessage.Sender(MEMBER, "Alex", null, false, false),
                             "**hello** <@" + MEMBER + ">",
                             Map.of(MEMBER, "Alex"),
@@ -153,13 +181,8 @@ class ChatRelayTest {
                     "look",
                     List.of(
                             new DiscordMessage.Attachment(
-                                    "cat.png",
-                                    "https://cdn.discordapp.com/attachments/1/2/cat.png",
-                                    "image/png",
-                                    true,
-                                    false),
-                            new DiscordMessage.Attachment(
-                                    "notes.txt", "https://evil.example/notes.txt", "text/plain", false, false)),
+                                    "cat.png", "https://cdn.discordapp.com/attachments/1/2/cat.png", true),
+                            new DiscordMessage.Attachment("notes.txt", "https://evil.example/notes.txt", false)),
                     null,
                     List.of("wave"),
                     true);
@@ -188,12 +211,25 @@ class ChatRelayTest {
     }
 
     @Test
+    void warnsThatLegacyColorCodesInTheChatFormatShowAsText() throws IOException {
+        try (RecordingLogs.Capture logs = RecordingLogs.capture();
+                Harness harness = Harness.started(directory, CHANNELS + """
+                        chat:
+                          format: "&a<author>: <message>"
+                        """)) {
+            assertThat(harness.discord().started).isTrue();
+            assertThat(logs.lines(Level.WARN))
+                    .anySatisfy(line ->
+                            assertThat(line).contains("legacy color code '&a'").contains("<green>"));
+        }
+    }
+
+    @Test
     void colorsTheAuthorWithTheirRoleColor() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             harness.discord()
                     .receive(new DiscordMessage(
                             CHAT,
-                            1,
                             new DiscordMessage.Sender(MEMBER, "Alex", 0x3498db, false, false),
                             "hi",
                             Map.of(),
@@ -272,7 +308,6 @@ class ChatRelayTest {
             boolean poll) {
         return new DiscordMessage(
                 CHAT,
-                1,
                 new DiscordMessage.Sender(MEMBER, "Alex", null, false, false),
                 content,
                 Map.of(),

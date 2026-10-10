@@ -36,10 +36,6 @@ public final class ConfigLoader {
                 .toList();
     }
 
-    public static ConfigLoader forDirectory(Path directory) {
-        return new ConfigLoader(directory, System.getenv());
-    }
-
     public ConfigResult load() {
         Problems problems = new Problems(FILE);
         ConfigValues values = loadValues(problems);

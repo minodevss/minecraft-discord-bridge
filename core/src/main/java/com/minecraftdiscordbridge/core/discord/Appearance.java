@@ -2,7 +2,9 @@ package com.minecraftdiscordbridge.core.discord;
 
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 import net.dv8tion.jda.api.JDA;
@@ -25,6 +27,7 @@ final class Appearance {
     private final Throttle.Scheduler scheduler;
     private final Throttle<String> presence;
     private final Map<Long, Throttle<String>> topics = new HashMap<>();
+    private final Set<Long> topicLocked = new HashSet<>();
 
     Appearance(Supplier<@Nullable JDA> jda, LongSupplier nanoClock, Throttle.Scheduler scheduler) {
         this.jda = jda;
@@ -44,8 +47,9 @@ final class Appearance {
                 .submit(topic);
     }
 
-    void reapplyPresence() {
+    void reapply() {
         presence.reapply();
+        topics.values().forEach(Throttle::reapply);
     }
 
     private void applyPresence(String text) {
@@ -63,12 +67,22 @@ final class Appearance {
             return;
         }
         if (!channel.getGuild().getSelfMember().hasPermission(channel, Permission.MANAGE_CHANNEL)) {
-            LOGGER.warn(
-                    "Give the bot the Manage Channel permission in #{} so it can update the topic", channel.getName());
+            if (topicLocked.add(channelId)) {
+                LOGGER.warn(
+                        "Give the bot the Manage Channel permission in #{} so it can update the topic",
+                        channel.getName());
+            }
+            return;
+        }
+        if (topicLocked.remove(channelId)) {
+            LOGGER.info("The bot can update the topic of #{} again", channel.getName());
+        }
+        String fitted = DiscordText.fit(topic, MAX_TOPIC_LENGTH);
+        if (fitted.equals(channel.getTopic())) {
             return;
         }
         channel.getManager()
-                .setTopic(DiscordText.fit(topic, MAX_TOPIC_LENGTH))
+                .setTopic(fitted)
                 .queue(
                         null,
                         failure -> LOGGER.warn(

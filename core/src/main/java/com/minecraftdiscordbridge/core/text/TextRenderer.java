@@ -32,14 +32,6 @@ public final class TextRenderer {
         }
     }
 
-    public static Component fromRichText(RichText text) {
-        try {
-            return fromJson(text.json());
-        } catch (IllegalArgumentException invalid) {
-            return Component.text(text.plain());
-        }
-    }
-
     public static String plain(Component component) {
         return PlainTextComponentSerializer.plainText().serialize(component);
     }

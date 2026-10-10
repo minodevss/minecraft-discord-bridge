@@ -6,6 +6,7 @@ import static com.minecraftdiscordbridge.core.config.ConfigFiles.loaded;
 import static com.minecraftdiscordbridge.core.config.ConfigFiles.warnings;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -93,17 +94,20 @@ class ConfigValidationTest {
                   events-channel: "12345678901234567890"
                   console-channel:
                 events:
-                  server-start-ping-role: 99999999999999999999
+                  server-start-ping-role: 18446744073709551615
                 console:
                   input-users: [123456789012345678, "223456789012345678"]
                 """));
 
         BridgeConfig config = snapshot.config();
-        assertThat(config.discord().chatChannel()).contains("123456789012345678");
-        assertThat(config.discord().eventsChannel()).contains("12345678901234567890");
+        assertThat(config.discord().chatChannel()).contains(new DiscordId(123456789012345678L));
+        assertThat(config.discord().eventsChannel()).map(DiscordId::toString).contains("12345678901234567890");
         assertThat(config.discord().consoleChannel()).isEmpty();
-        assertThat(config.events().serverStartPingRole()).contains("99999999999999999999");
-        assertThat(config.console().inputUsers()).containsExactly("123456789012345678", "223456789012345678");
+        assertThat(config.events().serverStartPingRole())
+                .map(DiscordId::toString)
+                .contains("18446744073709551615");
+        assertThat(config.console().inputUsers())
+                .containsExactly(new DiscordId(123456789012345678L), new DiscordId(223456789012345678L));
     }
 
     @Test
@@ -113,6 +117,7 @@ class ConfigValidationTest {
                 discord:
                   chat-channel: 1.5e17
                   events-channel: "my-channel"
+                  console-channel: 99999999999999999999
                 console:
                   input-users: ["123", ""]
                 """);
@@ -122,8 +127,10 @@ class ConfigValidationTest {
                         "config.yml:3:17 discord.chat-channel: expected a Discord ID (17 to 20 digits) or \"\", got 1.5e17",
                         "config.yml:4:19 discord.events-channel: expected a Discord ID (17 to 20 digits) or \"\","
                                 + " got \"my-channel\"",
-                        "config.yml:6:17 console.input-users[0]: expected a Discord ID (17 to 20 digits), got \"123\"",
-                        "config.yml:6:24 console.input-users[1]: expected a Discord ID (17 to 20 digits), got \"\"");
+                        "config.yml:5:20 discord.console-channel: expected a Discord ID (17 to 20 digits) or \"\","
+                                + " got 99999999999999999999",
+                        "config.yml:7:17 console.input-users[0]: expected a Discord ID (17 to 20 digits), got \"123\"",
+                        "config.yml:7:24 console.input-users[1]: expected a Discord ID (17 to 20 digits), got \"\"");
     }
 
     @Test
@@ -245,9 +252,9 @@ class ConfigValidationTest {
                 .isEqualTo(new BridgeConfig(
                         Language.KO,
                         new DiscordConfig(
-                                Optional.of("100000000000000001"),
-                                Optional.of("100000000000000002"),
-                                Optional.of("100000000000000003"),
+                                Optional.of(new DiscordId(100000000000000001L)),
+                                Optional.of(new DiscordId(100000000000000002L)),
+                                Optional.of(new DiscordId(100000000000000003L)),
                                 false),
                         new ChatConfig(
                                 false,
@@ -257,13 +264,21 @@ class ConfigValidationTest {
                                 "https://example.com/{uuid}",
                                 true,
                                 List.of(java.util.regex.Pattern.compile("(?i)bad"))),
-                        new EventsConfig(false, false, false, false, false, false, Optional.of("100000000000000004")),
+                        new EventsConfig(
+                                false,
+                                false,
+                                false,
+                                false,
+                                false,
+                                false,
+                                Optional.of(new DiscordId(100000000000000004L))),
                         new StatusConfig(false, true),
-                        new LinkingConfig(false, true, Optional.of("100000000000000005"), UnreachablePolicy.ALLOW),
-                        new RoleSyncConfig(List.of(
-                                new RoleSyncRule("100000000000000006", "vip", SyncDirection.MINECRAFT_TO_DISCORD))),
+                        new LinkingConfig(
+                                false, true, Optional.of(new DiscordId(100000000000000005L)), UnreachablePolicy.ALLOW),
+                        new RoleSyncConfig(List.of(new RoleSyncRule(
+                                new DiscordId(100000000000000006L), "vip", SyncDirection.MINECRAFT_TO_DISCORD))),
                         new ActionsConfig(true, true),
-                        new ConsoleConfig(true, List.of("100000000000000007"))));
+                        new ConsoleConfig(true, List.of(new DiscordId(100000000000000007L)))));
         assertThat(snapshot.config().chat().blockedWords().get(0).matcher("BAD").find())
                 .isTrue();
     }

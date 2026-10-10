@@ -1,5 +1,6 @@
 package com.minecraftdiscordbridge.core.storage;
 
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -35,7 +36,7 @@ public final class LinkStore {
         return Optional.ofNullable(index.byMinecraft().get(minecraftId));
     }
 
-    public Optional<Link> byDiscordId(String discordId) {
+    public Optional<Link> byDiscordId(DiscordId discordId) {
         return Optional.ofNullable(index.byDiscord().get(discordId));
     }
 
@@ -62,7 +63,7 @@ public final class LinkStore {
         return unlink(byMinecraftId(minecraftId));
     }
 
-    public synchronized Optional<Link> unlinkDiscord(String discordId) throws IOException {
+    public synchronized Optional<Link> unlinkDiscord(DiscordId discordId) throws IOException {
         return unlink(byDiscordId(discordId));
     }
 
@@ -101,7 +102,7 @@ public final class LinkStore {
         for (LinkJson entry : json.links()) {
             links.add(new Link(
                     UUID.fromString(entry.minecraftId()),
-                    entry.discordId(),
+                    DiscordId.require(entry.discordId(), "discordId"),
                     entry.minecraftName(),
                     Edition.fromId(entry.edition()),
                     Instant.parse(entry.linkedAt())));
@@ -114,7 +115,7 @@ public final class LinkStore {
         for (Link link : links) {
             entries.add(new LinkJson(
                     link.minecraftId().toString(),
-                    link.discordId(),
+                    link.discordId().toString(),
                     link.minecraftName(),
                     link.edition().id(),
                     link.linkedAt().toString()));
@@ -122,12 +123,12 @@ public final class LinkStore {
         return new LinksJson(StoreFile.FORMAT, entries);
     }
 
-    private record Index(List<Link> links, Map<UUID, Link> byMinecraft, Map<String, Link> byDiscord) {
+    private record Index(List<Link> links, Map<UUID, Link> byMinecraft, Map<DiscordId, Link> byDiscord) {
         static final Index EMPTY = new Index(List.of(), Map.of(), Map.of());
 
         static Index of(List<Link> links) {
             Map<UUID, Link> byMinecraft = new HashMap<>();
-            Map<String, Link> byDiscord = new HashMap<>();
+            Map<DiscordId, Link> byDiscord = new HashMap<>();
             for (Link link : links) {
                 if (byMinecraft.put(link.minecraftId(), link) != null) {
                     throw new IllegalArgumentException("Minecraft account " + link.minecraftId() + " is linked twice");

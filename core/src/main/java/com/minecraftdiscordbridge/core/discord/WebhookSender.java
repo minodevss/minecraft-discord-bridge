@@ -132,10 +132,13 @@ final class WebhookSender implements MessageSender {
                     .exceptionallyCompose(failure -> botOnly(
                             channelId,
                             "Could not set up a webhook in #" + channel.getName() + " (" + Failures.describe(failure)
-                                    + "); posting as the bot until it works"));
+                                    + "); posting as the bot until it works. Check that the bot has Manage Webhooks"
+                                    + " there"));
         } catch (RuntimeException failure) {
             return botOnly(
-                    channelId, "Could not set up a webhook in #" + channel.getName() + ": " + failure.getMessage());
+                    channelId,
+                    "Could not set up a webhook in #" + channel.getName() + " (" + failure.getMessage()
+                            + "); posting as the bot until it works. Check that the bot has Manage Webhooks there");
         }
     }
 
@@ -214,7 +217,10 @@ final class WebhookSender implements MessageSender {
         WebhookCredentials credentials = new WebhookCredentials(webhook.getIdLong(), webhook.getToken());
         remember(channelId, credentials);
         var unused = repository.save(channelId, credentials).exceptionally(failure -> {
-            LOGGER.warn("Could not save the webhook for channel {}: {}", channelId, Failures.describe(failure));
+            LOGGER.warn(
+                    "Could not save the webhook for channel {}: {}. Check that the data folder is writable",
+                    channelId,
+                    Failures.describe(failure));
             return null;
         });
         return credentials;

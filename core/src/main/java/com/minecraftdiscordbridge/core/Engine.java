@@ -26,7 +26,6 @@ import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.JoinDecision;
 import com.minecraftdiscordbridge.core.platform.Permission;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
-import com.minecraftdiscordbridge.core.storage.ChannelBinding;
 import com.minecraftdiscordbridge.core.storage.Link;
 import com.minecraftdiscordbridge.core.storage.LinkChange;
 import com.minecraftdiscordbridge.core.text.Format.Slot;
@@ -36,7 +35,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -104,7 +102,8 @@ final class Engine {
                         this::booted,
                         failure -> {
                             LOGGER.error(
-                                    "The bridge could not start: {}. Fix the problem and restart the server",
+                                    "The bridge could not start: {}. Check that the plugin data folder is readable and"
+                                            + " writable, then restart the server",
                                     failure.toString());
                             releaseWaitingJoins();
                         });
@@ -234,7 +233,7 @@ final class Engine {
     private void linkChanged(LinkChange change) {
         if (change instanceof LinkChange.Unlinked) {
             Link link = change.link();
-            shared.access().forget(link.minecraftId(), Long.parseUnsignedLong(link.discordId()));
+            shared.access().forget(link.minecraftId(), link.discordId().value());
         }
         Session current = session;
         if (current != null) {
@@ -256,7 +255,8 @@ final class Engine {
         }
         shared.io().call(loader::load, result -> apply(result, source), failure -> {
             LOGGER.warn(
-                    "Could not reload config.yml: {}. Check that the file is readable and run /discord reload again",
+                    "Could not reload config.yml or secrets.yml: {}. Check that both files are readable and run"
+                            + " /discord reload again",
                     failure.toString());
             replies.send(source, "game.reload.failed");
         });
@@ -307,9 +307,6 @@ final class Engine {
         BridgeConfig config = loaded.config();
         lang = Lang.of(config.language());
         Channels channels = Channels.resolve(config.discord(), ready.bindings().current());
-        OptionalLong console = config.console().mirror() && loaded.secrets().hasDiscordToken()
-                ? Ids.parse(config.discord().consoleChannel())
-                : OptionalLong.empty();
         synchronized (lock) {
             if (closed) {
                 return Outcome.APPLIED;
@@ -318,7 +315,7 @@ final class Engine {
             if (previous != null) {
                 previous.close();
             }
-            session = Sessions.build(shared, ready, loaded, channels, console, this::rebound);
+            session = Sessions.build(shared, ready, loaded, channels, this::rebound);
         }
         Outcome outcome;
         if (!loaded.secrets().hasDiscordToken()) {
@@ -327,8 +324,8 @@ final class Engine {
             replaceDiscord(OfflineDiscord.stopped(OfflineDiscord.NO_TOKEN));
             outcome = Outcome.NO_TOKEN;
         } else {
-            DiscordSettings next = DiscordPlan.settings(loaded, channels, console);
-            if (next.equals(settings)) {
+            DiscordSettings next = DiscordPlan.settings(loaded, channels);
+            if (next.equals(settings) && shared.discord().status().state() == DiscordStatus.State.READY) {
                 outcome = Outcome.APPLIED;
             } else {
                 settings = next;
@@ -349,7 +346,7 @@ final class Engine {
         return status.state() == DiscordStatus.State.READY || status.state() == DiscordStatus.State.DEGRADED;
     }
 
-    private void rebound(ChannelBinding binding) {
+    private void rebound() {
         var unused = shared.loop().schedule(REBIND_DELAY, () -> {
             ConfigSnapshot current = snapshot;
             if (current != null && !closed) {
@@ -361,10 +358,6 @@ final class Engine {
     private void connect(DiscordSettings next) {
         int target = ++generation;
         Discord previous = shared.discord().swap(OfflineDiscord.connecting(OfflineDiscord.CONNECTING));
-        if (previous instanceof OfflineDiscord) {
-            create(target, next);
-            return;
-        }
         try {
             lifecycle.execute(() -> {
                 previous.shutdown(List.of());
@@ -503,10 +496,7 @@ final class Engine {
         @Override
         public void onCommand(InteractionRequest request, InteractionReply reply) {
             Session current = session;
-            if (target != generation) {
-                return;
-            }
-            if (current == null) {
+            if (target != generation || current == null) {
                 reply.replyEphemeral(
                         Lang.forDiscordLocale(request.locale(), lang).text("discord.not-ready"));
                 return;

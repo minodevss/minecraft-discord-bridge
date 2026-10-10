@@ -7,6 +7,7 @@ import com.minecraftdiscordbridge.core.MutableClock;
 import com.minecraftdiscordbridge.core.config.Language;
 import com.minecraftdiscordbridge.core.config.LinkingConfig;
 import com.minecraftdiscordbridge.core.config.UnreachablePolicy;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Replies;
@@ -57,12 +58,14 @@ class JoinGateTest {
     @BeforeEach
     void openStore() {
         links = LinkStore.open(directory);
-        context = new AccessContext(links, pending, discord, groups, memory, clock, Runnable::run);
+        context = new AccessContext(
+                links, pending, discord, groups, memory, clock, Runnable::run, (delay, task) -> task.run());
     }
 
     @Test
     void letsEveryoneInWithoutTouchingDiscordWhenTheGateIsOff() {
-        JoinGate gate = gate(new LinkingConfig(true, false, Optional.of("777777777777777777"), UnreachablePolicy.DENY));
+        JoinGate gate = gate(new LinkingConfig(
+                true, false, Optional.of(new DiscordId(777777777777777777L)), UnreachablePolicy.DENY));
 
         assertThat(decide(gate, STEVE)).isInstanceOf(JoinDecision.Allow.class);
         assertThat(discord.lookups).isEmpty();
@@ -235,14 +238,14 @@ class JoinGateTest {
     }
 
     private JoinGate roleGate(UnreachablePolicy policy) {
-        return gate(required(Optional.of(Long.toUnsignedString(VIP)), policy));
+        return gate(required(Optional.of(new DiscordId(VIP)), policy));
     }
 
     private JoinGate gate(LinkingConfig config) {
         return JoinGate.create(config, ONLINE, context, replies());
     }
 
-    private static LinkingConfig required(Optional<String> role, UnreachablePolicy policy) {
+    private static LinkingConfig required(Optional<DiscordId> role, UnreachablePolicy policy) {
         return new LinkingConfig(true, true, role, policy);
     }
 
@@ -251,7 +254,7 @@ class JoinGateTest {
     }
 
     private void link() throws IOException {
-        links.link(new Link(STEVE.id(), Long.toUnsignedString(STEVE_DISCORD), "Steve", Edition.JAVA, clock.instant()));
+        links.link(new Link(STEVE.id(), new DiscordId(STEVE_DISCORD), "Steve", Edition.JAVA, clock.instant()));
     }
 
     private static JoinDecision decide(JoinGate gate, PlayerProfile player) {

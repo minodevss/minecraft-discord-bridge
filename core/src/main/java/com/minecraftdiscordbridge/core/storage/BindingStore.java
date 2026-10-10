@@ -1,5 +1,6 @@
 package com.minecraftdiscordbridge.core.storage;
 
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.EnumMap;
@@ -34,15 +35,17 @@ public final class BindingStore {
     }
 
     private static ChannelBinding decode(BindingJson json) {
-        Map<ChannelRole, String> channels = new EnumMap<>(ChannelRole.class);
-        json.channels().forEach((role, channel) -> channels.put(ChannelRole.fromId(role), channel));
-        return new ChannelBinding(json.guildId(), channels);
+        Map<ChannelRole, DiscordId> channels = new EnumMap<>(ChannelRole.class);
+        json.channels()
+                .forEach((role, channel) ->
+                        channels.put(ChannelRole.fromId(role), DiscordId.require(channel, role + " channel")));
+        return new ChannelBinding(DiscordId.require(json.guildId(), "guildId"), channels);
     }
 
     private static BindingJson encode(ChannelBinding binding) {
         Map<String, String> channels = new TreeMap<>();
-        binding.channels().forEach((role, channel) -> channels.put(role.id(), channel));
-        return new BindingJson(StoreFile.FORMAT, binding.guildId(), channels);
+        binding.channels().forEach((role, channel) -> channels.put(role.id(), channel.toString()));
+        return new BindingJson(StoreFile.FORMAT, binding.guildId().toString(), channels);
     }
 
     record BindingJson(int version, String guildId, Map<String, String> channels) implements Versioned {}

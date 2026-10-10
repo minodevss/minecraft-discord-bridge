@@ -7,6 +7,7 @@ import static com.minecraftdiscordbridge.core.Harness.STEVE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.storage.Edition;
 import com.minecraftdiscordbridge.core.storage.Link;
@@ -16,12 +17,45 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 class LinkingTest {
     @TempDir
     Path directory;
+
+    @Test
+    void givesLinkCodesWhenOnlyTheConsoleChannelIsSet() throws IOException {
+        try (Harness harness = Harness.started(directory, """
+                config-version: 1
+                discord:
+                  console-channel: "444444444444444444"
+                console:
+                  input-users: ["555555555555555555"]
+                """)) {
+            String reply = harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
+                    .nextPlain();
+
+            assertThat(reply).startsWith("Run /link ");
+        }
+    }
+
+    @Test
+    void savesLinksWhileAMinecraftLanguageDownloadIsSlow() throws IOException {
+        CountDownLatch download = new CountDownLatch(1);
+        try (Harness harness = Harness.create(directory, CHANNELS + "language: ko\n")) {
+            harness.mojang.hold = download;
+            harness.bridge.start();
+            harness.discord();
+            String code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), "link")
+                    .nextPlain());
+
+            assertThat(link(harness, MEMBER, code).next().text()).contains("Steve");
+        } finally {
+            download.countDown();
+        }
+    }
 
     @Test
     void linksAccountsWithACodeFromMinecraft() throws IOException {
@@ -37,7 +71,7 @@ class LinkingTest {
                     .isEqualTo(new RecordingReply.Answer("Linked to the Minecraft account **Steve**.", true));
             assertThat(steve.nextPlain()).isEqualTo("Your account is now linked to the Discord account Alex.");
             Link stored = LinkStore.open(directory).byMinecraftId(STEVE.id()).orElseThrow();
-            assertThat(stored.discordId()).isEqualTo(Long.toUnsignedString(MEMBER));
+            assertThat(stored.discordId()).isEqualTo(new DiscordId(MEMBER));
             assertThat(stored.minecraftName()).isEqualTo("Steve");
             assertThat(stored.edition()).isEqualTo(Edition.JAVA);
             assertThat(harness.run(steve, "link").nextPlain()).contains("already linked");
@@ -103,7 +137,7 @@ class LinkingTest {
     @Test
     void unlinksFromDiscordAndFromMinecraft() throws IOException {
         LinkStore.open(directory)
-                .link(new Link(STEVE.id(), Long.toUnsignedString(MEMBER), "Steve", Edition.JAVA, Instant.EPOCH));
+                .link(new Link(STEVE.id(), new DiscordId(MEMBER), "Steve", Edition.JAVA, Instant.EPOCH));
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             RecordingReply unlinked =
                     harness.discord().command(Harness.request("unlink", null, Map.of(), MEMBER, CHAT));

@@ -147,11 +147,14 @@ class EventPostsTest {
                      "advancements.story.mine_stone.title": "석기 시대"}
                     """);
             harness.bridge.start();
-            harness.discord();
-            harness.run(RecordingSource.console(), "reload").nextPlain();
+            RecordingDiscord discord = harness.discord();
+            GameEvent fell = new GameEvent.PlayerDied(
+                    STEVE, new RichText("{\"translate\":\"death.attack.fall\",\"with\":[\"Steve\"]}", "Steve fell"));
 
-            harness.publish(new GameEvent.PlayerDied(
-                    STEVE, new RichText("{\"translate\":\"death.attack.fall\",\"with\":[\"Steve\"]}", "Steve fell")));
+            Waits.until("the Korean language file", () -> {
+                harness.publish(fell);
+                return discord.nextSent().text().equals("Steve이\\(가\\) 땅바닥으로 곤두박질쳤습니다");
+            });
             harness.publish(new GameEvent.AdvancementEarned(
                     STEVE,
                     new RichText("{\"translate\":\"advancements.story.mine_stone.title\"}", "Stone Age"),
@@ -159,8 +162,6 @@ class EventPostsTest {
             harness.publish(new GameEvent.PlayerDied(
                     STEVE, new RichText("{\"translate\":\"death.attack.mymod.wisp\"}", "Steve met a wisp")));
 
-            RecordingDiscord discord = harness.discord();
-            assertThat(discord.nextSent().text()).isEqualTo("Steve이\\(가\\) 땅바닥으로 곤두박질쳤습니다");
             assertThat(discord.nextSent().text()).isEqualTo("**Steve**님이 발전 과제 **석기 시대**을(를) 달성했습니다");
             assertThat(discord.nextSent().text()).isEqualTo("Steve met a wisp");
         }

@@ -14,6 +14,7 @@ import com.minecraftdiscordbridge.core.config.Channels;
 import com.minecraftdiscordbridge.core.config.ConfigSnapshot;
 import com.minecraftdiscordbridge.core.console.ConsoleInput;
 import com.minecraftdiscordbridge.core.console.ConsoleMirror;
+import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.events.EventPosts;
 import com.minecraftdiscordbridge.core.i18n.Lang;
@@ -21,13 +22,11 @@ import com.minecraftdiscordbridge.core.i18n.Replies;
 import com.minecraftdiscordbridge.core.linking.Linking;
 import com.minecraftdiscordbridge.core.setup.ChannelSetup;
 import com.minecraftdiscordbridge.core.status.StatusBoard;
-import com.minecraftdiscordbridge.core.storage.ChannelBinding;
 import com.minecraftdiscordbridge.core.text.Format;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.OptionalLong;
-import java.util.function.Consumer;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,27 +35,20 @@ final class Sessions {
 
     private Sessions() {}
 
-    static Session build(
-            Shared shared,
-            Stores stores,
-            ConfigSnapshot snapshot,
-            Channels channels,
-            OptionalLong console,
-            Consumer<ChannelBinding> rebound) {
+    static Session build(Shared shared, Stores stores, ConfigSnapshot snapshot, Channels channels, Runnable rebound) {
         BridgeConfig config = snapshot.config();
         Lang lang = Lang.of(config.language());
         Replies replies = new Replies(lang, shared.platform().info().dataVersion());
-        OptionalLong chat = Ids.parse(channels.chat());
-        OptionalLong events = Ids.parse(channels.events());
-        boolean hasGuild = chat.isPresent() || events.isPresent() || console.isPresent();
+        Optional<DiscordId> chat = channels.chat();
+        Optional<DiscordId> events = channels.events();
+        boolean hasGuild = !DiscordPlan.channelIds(config, channels).isEmpty();
         ChannelSetup setup = new ChannelSetup(
                 shared.discord(),
                 stores.bindings(),
                 config.discord(),
-                Ids.parse(channels.console()),
                 shared.io(),
                 shared.setupCodes(),
-                shared.attempts(),
+                shared.setupAttempts(),
                 shared.clock(),
                 replies,
                 rebound);
@@ -65,7 +57,7 @@ final class Sessions {
                 stores.links(),
                 shared.io(),
                 shared.pendingLinks(),
-                shared.attempts(),
+                shared.linkAttempts(),
                 shared.roster(),
                 shared.clock(),
                 replies,
@@ -90,7 +82,7 @@ final class Sessions {
                 new GameCommands(replies, linking, new ChatToggle(stores.preferences(), shared.io(), replies), setup),
                 ConsoleMirror.start(
                         config.console(),
-                        console,
+                        snapshot.secrets().hasDiscordToken() ? config.discord().consoleChannel() : Optional.empty(),
                         shared.discord(),
                         lang,
                         shared.loop(),
@@ -99,7 +91,7 @@ final class Sessions {
                 RoleSync.create(config.roleSync(), shared.platform().info(), access),
                 new ConsoleInput(
                         config.console(),
-                        Ids.parse(config.discord().consoleChannel()),
+                        config.discord().consoleChannel(),
                         shared.platform(),
                         shared.discord(),
                         shared.loop()::control,
@@ -114,9 +106,13 @@ final class Sessions {
 
     private static Format chatFormat(String template) {
         try {
-            return DiscordChat.compileFormat(template);
+            Format format = DiscordChat.compileFormat(template);
+            format.legacyCodeWarning().ifPresent(LOGGER::warn);
+            return format;
         } catch (IllegalArgumentException invalid) {
-            LOGGER.warn("{} Using the default chat.format until it is fixed", invalid.getMessage());
+            LOGGER.warn(
+                    "{} Using the default chat.format; fix chat.format in config.yml and run /discord reload",
+                    invalid.getMessage());
             return DiscordChat.compileFormat(BridgeConfig.defaults().chat().format());
         }
     }
@@ -127,6 +123,7 @@ final class Sessions {
             secrets.add(snapshot.secrets().discordToken());
         }
         shared.setupCodes().active(shared.clock().instant()).ifPresent(secrets::add);
+        secrets.addAll(shared.pendingLinks().codes(shared.clock().instant()));
         return secrets;
     }
 }

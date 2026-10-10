@@ -25,8 +25,6 @@ final class TestSupport {
                 Author.server("Survival", "https://example.com/server.png"),
                 true,
                 false,
-                false,
-                false,
                 commands);
     }
 
