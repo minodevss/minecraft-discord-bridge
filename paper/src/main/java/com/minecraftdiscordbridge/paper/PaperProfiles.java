@@ -13,6 +13,10 @@ final class PaperProfiles {
         this.bedrock = bedrock;
     }
 
+    PlayerProfile atLogin(UUID id, String name) {
+        return new PlayerProfile(id, name, name, null, bedrock.test(id));
+    }
+
     PlayerProfile of(Player player) {
         return new PlayerProfile(
                 player.getUniqueId(),

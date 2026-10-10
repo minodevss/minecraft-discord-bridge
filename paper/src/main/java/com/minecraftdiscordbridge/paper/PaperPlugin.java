@@ -30,6 +30,7 @@ public final class PaperPlugin extends JavaPlugin {
         bridge = started;
         started.start();
         getServer().getPluginManager().registerEvents(new PaperEvents(started, profiles), this);
+        getServer().getPluginManager().registerEvents(new PaperJoinGate(started, profiles, getSLF4JLogger()), this);
         getLifecycleManager()
                 .registerEventHandler(
                         LifecycleEvents.COMMANDS,
@@ -54,6 +55,7 @@ public final class PaperPlugin extends JavaPlugin {
                 (Bukkit.getName() + " " + Bukkit.getVersion()).trim(),
                 Bukkit.getMinecraftVersion(),
                 Bukkit.getUnsafe().getDataVersion(),
-                Bukkit.getOnlineMode());
+                Bukkit.getOnlineMode(),
+                PaperProxy.secureForwarding());
     }
 }

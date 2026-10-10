@@ -22,3 +22,6 @@ permissions:
   minecraftdiscordbridge.command.setup:
     description: Set up the Discord bot and channels
     default: op
+  minecraftdiscordbridge.gate.bypass:
+    description: Join without a linked Discord account
+    default: op
