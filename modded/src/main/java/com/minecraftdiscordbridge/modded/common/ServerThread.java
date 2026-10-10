@@ -5,6 +5,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import net.minecraft.server.MinecraftServer;
 
+// MinecraftServer.execute runs a task inline on the calling thread once the server has stopped.
 final class ServerThread {
     private ServerThread() {}
 
