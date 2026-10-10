@@ -1,15 +1,14 @@
 package com.minecraftdiscordbridge.core.discord.jda;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.dv8tion.jda.api.interactions.callbacks.IAutoCompleteCallback;
 import net.dv8tion.jda.api.interactions.commands.Command;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 final class JdaAutocompleteReply implements AutocompleteReply {
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
     private static final int MAX_CHOICE_LENGTH = 100;
 
     private final IAutoCompleteCallback interaction;

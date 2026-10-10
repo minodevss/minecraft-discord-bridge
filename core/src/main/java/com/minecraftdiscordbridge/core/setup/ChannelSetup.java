@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core.setup;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.minecraftdiscordbridge.core.codes.Attempts;
 import com.minecraftdiscordbridge.core.config.DiscordConfig;
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
@@ -23,13 +25,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class ChannelSetup {
     public static final String ROLE_OPTION = "as";
     public static final String CODE_OPTION = "code";
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private final Discord discord;
     private final BindingStore bindings;

@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core.linking;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.minecraftdiscordbridge.core.codes.Attempts;
 import com.minecraftdiscordbridge.core.config.LinkingConfig;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
@@ -25,12 +27,9 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class Linking {
     public static final String CODE_OPTION = "code";
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private final LinkingConfig config;
     private final LinkStore store;

@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core.config;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.minecraftdiscordbridge.core.storage.AtomicFile;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -12,13 +14,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class ConfigLoader {
     static final String FILE = "config.yml";
-
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private final Path directory;
     private final Map<String, String> environment;

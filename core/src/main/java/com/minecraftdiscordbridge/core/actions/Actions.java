@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core.actions;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.minecraftdiscordbridge.core.config.ActionsConfig;
 import com.minecraftdiscordbridge.core.discord.InteractionReply;
 import com.minecraftdiscordbridge.core.discord.InteractionRequest;
@@ -18,8 +20,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class Actions {
     public static final String PLAYER_OPTION = "player";
@@ -29,7 +29,6 @@ public final class Actions {
     public static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final Pattern PLAYER_NAME = Pattern.compile("[A-Za-z0-9_.]{1,16}");
     private static final int MAX_REASON_LENGTH = 256;
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private final ActionsConfig config;
     private final Platform platform;

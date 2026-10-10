@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core.storage;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.ByteBuffer;
@@ -18,11 +20,8 @@ import java.time.Duration;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class AtomicFile {
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
     private static final Duration RETRY_BUDGET = Duration.ofSeconds(5);
     private static final Duration FIRST_RETRY = Duration.ofMillis(25);
     private static final Duration LONGEST_RETRY = Duration.ofSeconds(1);

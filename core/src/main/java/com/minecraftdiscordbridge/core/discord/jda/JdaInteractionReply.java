@@ -1,14 +1,12 @@
 package com.minecraftdiscordbridge.core.discord.jda;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.minecraftdiscordbridge.core.discord.InteractionReply;
 import java.util.concurrent.atomic.AtomicReference;
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 final class JdaInteractionReply implements InteractionReply {
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
-
     private enum Stage {
         OPEN,
         DEFERRED,

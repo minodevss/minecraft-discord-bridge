@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core.discord.jda;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.minecraftdiscordbridge.core.discord.CommandHashRepository;
 import com.minecraftdiscordbridge.core.discord.Discord;
 import com.minecraftdiscordbridge.core.discord.DiscordListener;
@@ -55,8 +57,6 @@ import net.dv8tion.jda.api.requests.RestConfig;
 import net.dv8tion.jda.api.utils.ConcurrentSessionController;
 import okhttp3.OkHttpClient;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class JdaDiscord implements Discord {
     static final Duration SHUTDOWN_BUDGET = Duration.ofMillis(2300);
@@ -79,7 +79,6 @@ public final class JdaDiscord implements Discord {
     private static final Duration MEMBER_LOOKUP_TIMEOUT = Duration.ofSeconds(5);
     private static final String ROLE_SYNC_REASON = "Minecraft Discord Bridge role sync";
     private static final Map<Permission, String> DANGEROUS_PERMISSIONS = dangerousPermissions();
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     record Endpoints(String restBaseUrl, @Nullable String gatewayUrl) {
         static final Endpoints DISCORD = new Endpoints(RestConfig.DEFAULT_BASE_URL, null);

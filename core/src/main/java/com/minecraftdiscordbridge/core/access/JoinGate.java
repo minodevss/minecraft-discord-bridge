@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core.access;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.minecraftdiscordbridge.core.config.LinkingConfig;
 import com.minecraftdiscordbridge.core.config.UnreachablePolicy;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
@@ -19,13 +21,10 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class JoinGate {
     public static final Duration BUDGET = Duration.ofSeconds(3);
     private static final JoinDecision ALLOW = new JoinDecision.Allow();
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private final boolean active;
     private final UnreachablePolicy policy;

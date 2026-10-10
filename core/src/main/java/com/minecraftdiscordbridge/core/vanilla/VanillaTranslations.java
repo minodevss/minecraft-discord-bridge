@@ -1,17 +1,15 @@
 package com.minecraftdiscordbridge.core.vanilla;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.text.Translations;
 import java.util.Map;
 import java.util.Optional;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class VanillaTranslations implements Translations {
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
-
     private final LanguageFiles files;
     private final IoExecutor io;
     private final String minecraftVersion;

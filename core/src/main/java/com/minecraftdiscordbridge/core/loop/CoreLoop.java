@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core.loop;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import java.time.Duration;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -10,11 +12,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class CoreLoop implements AutoCloseable {
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
     private static final int CONTENT_CAPACITY = 1024;
     private static final long IDLE = 0;
     private static final Duration CLOSE_WAIT = Duration.ofMillis(200);

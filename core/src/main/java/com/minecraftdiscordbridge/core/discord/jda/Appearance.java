@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core.discord.jda;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -12,15 +14,12 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.channel.middleman.StandardGuildMessageChannel;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 final class Appearance {
     static final Duration PRESENCE_INTERVAL = Duration.ofSeconds(15);
     static final Duration TOPIC_INTERVAL = Duration.ofMinutes(10);
     private static final int MAX_STATUS_LENGTH = 128;
     private static final int MAX_TOPIC_LENGTH = 1024;
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private final Supplier<@Nullable JDA> jda;
     private final LongSupplier nanoClock;

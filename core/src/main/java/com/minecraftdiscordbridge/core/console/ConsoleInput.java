@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core.console;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.minecraftdiscordbridge.core.config.ConsoleConfig;
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.Discord;
@@ -25,15 +27,12 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class ConsoleInput {
     public static final int MAX_COMMAND_LENGTH = 256;
     static final int MAX_OUTPUT_LENGTH = 1900;
     private static final String FENCE = "```";
     private static final Author SERVER = Author.server();
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private final Optional<DiscordId> channel;
     private final Set<Long> users;

@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core.discord.jda;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus.ChannelStatus;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
@@ -10,12 +12,9 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 final class Outbox {
     static final int CAPACITY = 200;
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private final Author server;
     private final MessageSender sender;

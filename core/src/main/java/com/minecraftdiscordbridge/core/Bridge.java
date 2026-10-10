@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.minecraftdiscordbridge.core.access.AccessMemory;
 import com.minecraftdiscordbridge.core.access.JoinGate;
 import com.minecraftdiscordbridge.core.access.PermissionGroups;
@@ -42,13 +44,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class Bridge {
     static final Duration STOP_BUDGET = Duration.ofSeconds(3);
     static final Duration DISCORD_STOP_BUDGET = Duration.ofMillis(2500);
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private final CoreLoop loop;
     private final IoExecutor io;

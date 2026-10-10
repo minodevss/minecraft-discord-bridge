@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core.discord.jda;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.WebhookCredentials;
 import com.minecraftdiscordbridge.core.discord.WebhookRepository;
@@ -23,14 +25,11 @@ import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 final class WebhookSender implements MessageSender {
     static final String WEBHOOK_NAME = "Minecraft Bridge";
     static final int CHANNEL_WEBHOOK_LIMIT = 15;
     private static final Duration FALLBACK_RETRY = Duration.ofMinutes(10);
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private final Supplier<@Nullable JDA> jda;
     private final WebhookRepository repository;

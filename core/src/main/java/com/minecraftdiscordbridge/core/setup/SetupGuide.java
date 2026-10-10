@@ -1,12 +1,10 @@
 package com.minecraftdiscordbridge.core.setup;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import java.nio.file.Path;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class SetupGuide {
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
-
     private SetupGuide() {}
 
     public static final String QUICK_START = "https://github.com/minodevss/minecraft-discord-bridge#quick-start";

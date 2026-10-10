@@ -1,5 +1,6 @@
 package com.minecraftdiscordbridge.core;
 
+import com.minecraftdiscordbridge.core.log.Log;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.slf4j.ILoggerFactory;
@@ -14,7 +15,7 @@ import org.slf4j.spi.MDCAdapter;
 import org.slf4j.spi.SLF4JServiceProvider;
 
 public final class RecordingLogs implements SLF4JServiceProvider {
-    private static final String BRIDGE = "MinecraftDiscordBridge";
+    private static final String BRIDGE = Log.NAME;
     private static final List<Capture> CAPTURES = new CopyOnWriteArrayList<>();
 
     private final IMarkerFactory markers = new BasicMarkerFactory();

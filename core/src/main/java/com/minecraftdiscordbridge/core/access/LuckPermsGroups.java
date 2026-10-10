@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core.access;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -21,12 +23,8 @@ import net.luckperms.api.node.Node;
 import net.luckperms.api.node.NodeType;
 import net.luckperms.api.node.types.InheritanceNode;
 import net.luckperms.api.query.QueryOptions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 final class LuckPermsGroups implements PermissionGroups {
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
-
     private LuckPermsGroups() {}
 
     static PermissionGroups create() {

@@ -1,15 +1,13 @@
 package com.minecraftdiscordbridge.core.storage;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class ShutdownMarker {
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
-
     private final Path file;
 
     public ShutdownMarker(Path dataDirectory) {

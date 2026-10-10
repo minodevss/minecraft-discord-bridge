@@ -1,5 +1,6 @@
 package com.minecraftdiscordbridge.core.console;
 
+import com.minecraftdiscordbridge.core.log.Log;
 import java.util.List;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
@@ -11,7 +12,6 @@ final class ConsoleAppender extends AbstractAppender {
     static final String NAME = "MinecraftDiscordBridgeConsole";
     private static final List<String> IGNORED_PREFIXES =
             List.of("net.dv8tion.", "okhttp3.", "com.minecraftdiscordbridge.");
-    private static final String BRIDGE_LOGGER = "MinecraftDiscordBridge";
 
     private final ConsoleBuffer buffer;
 
@@ -35,7 +35,7 @@ final class ConsoleAppender extends AbstractAppender {
     }
 
     static boolean ignored(@Nullable String logger) {
-        if (logger == null || logger.equals(BRIDGE_LOGGER)) {
+        if (logger == null || logger.equals(Log.NAME)) {
             return true;
         }
         for (String prefix : IGNORED_PREFIXES) {

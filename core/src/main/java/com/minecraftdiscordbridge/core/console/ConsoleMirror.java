@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core.console;
 
+import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
+
 import com.minecraftdiscordbridge.core.config.ConsoleConfig;
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.Discord;
@@ -20,8 +22,6 @@ import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class ConsoleMirror implements AutoCloseable {
     public static final Duration INTERVAL = Duration.ofSeconds(2);
@@ -30,7 +30,6 @@ public final class ConsoleMirror implements AutoCloseable {
     private static final String FENCE = "```";
     private static final int BODY_LENGTH = MAX_MESSAGE_LENGTH - 2 * FENCE.length() - 2;
     private static final Author SERVER = Author.server();
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private final ConsoleBuffer buffer;
     private final long channel;
