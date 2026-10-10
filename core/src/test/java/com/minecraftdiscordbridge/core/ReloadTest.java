@@ -59,7 +59,7 @@ class ReloadTest {
             assertThat(console.nextPlain()).contains("events.join: expected true or false");
             assertThat(console.nextPlain()).isEqualTo("Fix them and run /discord reload.");
             harness.publish(new GameEvent.PlayerJoined(STEVE, false));
-            assertThat(harness.discord().nextSent().text()).isEqualTo("**Steve** joined the server");
+            assertThat(harness.discord().nextSent().text()).isEqualTo("Steve joined the game");
             assertThat(harness.discords).hasSize(1);
         }
     }

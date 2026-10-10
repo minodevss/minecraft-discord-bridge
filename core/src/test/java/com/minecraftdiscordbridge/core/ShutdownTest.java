@@ -32,8 +32,7 @@ class ShutdownTest {
 
         harness.publish(new GameEvent.ServerStarted(List.of()));
 
-        assertThat(harness.discord().nextSent().text())
-                .isEqualTo("The server has started. It recovered from an unclean shutdown.");
+        assertThat(harness.discord().nextSent().text()).isEqualTo("The server has started after an unclean shutdown");
         harness.close();
         assertThat(marker).doesNotExist();
     }
@@ -43,7 +42,7 @@ class ShutdownTest {
         Harness harness = Harness.started(directory, CHANNELS);
         harness.publish(new GameEvent.ServerStarted(List.of()));
 
-        assertThat(harness.discord().nextSent().text()).isEqualTo("The server has started.");
+        assertThat(harness.discord().nextSent().text()).isEqualTo("The server has started");
         assertThat(directory.resolve("data").resolve("running")).exists();
         harness.close();
     }
@@ -56,7 +55,7 @@ class ShutdownTest {
         harness.publish(new GameEvent.ServerStopping());
         harness.bridge.stop();
 
-        assertThat(discord.finalMessages).extracting(OutboundMessage::text).containsExactly("The server has stopped.");
+        assertThat(discord.finalMessages).extracting(OutboundMessage::text).containsExactly("The server has stopped");
         assertThat(discord.finalMessages.get(0).channelId()).isEqualTo(EVENTS);
         assertThat(discord.shutDown).isTrue();
     }
@@ -71,7 +70,7 @@ class ShutdownTest {
 
         assertThat(discord.finalMessages)
                 .extracting(OutboundMessage::text)
-                .containsExactly("The server has stopped unexpectedly.");
+                .containsExactly("The server has stopped unexpectedly");
     }
 
     @Test
