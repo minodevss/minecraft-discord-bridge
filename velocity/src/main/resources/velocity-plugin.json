@@ -5,6 +5,6 @@
   "description": "Minecraft ↔ Discord bridge",
   "url": "https://github.com/minodevss/minecraft-discord-bridge",
   "authors": ["minodevss"],
-  "dependencies": [],
+  "dependencies": [{ "id": "floodgate", "optional": true }],
   "main": "com.minecraftdiscordbridge.velocity.VelocityPlugin"
 }
