@@ -9,6 +9,7 @@ import com.minecraftdiscordbridge.core.discord.InteractionReply;
 import com.minecraftdiscordbridge.core.discord.InteractionRequest;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Replies;
+import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
@@ -91,7 +92,7 @@ public final class Linking {
                     LOGGER.warn(
                             "Could not unlink {}: {}. Check that the data folder is writable",
                             source.name(),
-                            failure.getMessage());
+                            Failures.describe(failure));
                     replies.send(source, "game.save-failed");
                 });
     }
@@ -130,7 +131,7 @@ public final class Linking {
                     LOGGER.warn(
                             "Could not save the link for {}: {}. Check that the data folder is writable",
                             code.playerName(),
-                            failure.getMessage());
+                            Failures.describe(failure));
                     reply.replyEphemeral(reader.text("discord.save-failed"));
                 });
     }
@@ -146,7 +147,7 @@ public final class Linking {
                     LOGGER.warn(
                             "Could not unlink Discord user {}: {}. Check that the data folder is writable",
                             Long.toUnsignedString(request.userId()),
-                            failure.getMessage());
+                            Failures.describe(failure));
                     reply.replyEphemeral(reader.text("discord.save-failed"));
                 });
     }

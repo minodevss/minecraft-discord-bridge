@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.config;
 
 import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
+import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.storage.AtomicFile;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -142,7 +143,7 @@ public final class ConfigLoader {
                     "Could not upgrade {} ({}). It is unchanged and the bridge uses the upgraded settings for now."
                             + " Review {} and replace {} with it.",
                     file,
-                    failure.getMessage(),
+                    Failures.describe(failure),
                     copy,
                     file);
         } catch (IOException copyFailure) {
@@ -150,9 +151,9 @@ public final class ConfigLoader {
                     "Could not upgrade {} ({}) or write {} ({}). It is unchanged and the bridge uses the upgraded"
                             + " settings for now. Check that the folder is writable.",
                     file,
-                    failure.getMessage(),
+                    Failures.describe(failure),
                     copy,
-                    copyFailure.getMessage());
+                    Failures.describe(copyFailure));
         }
     }
 

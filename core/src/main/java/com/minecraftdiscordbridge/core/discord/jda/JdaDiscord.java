@@ -13,6 +13,7 @@ import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.discord.RoleInfo;
 import com.minecraftdiscordbridge.core.discord.WebhookRepository;
+import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
 import com.minecraftdiscordbridge.core.loop.Threads;
 import java.time.Duration;

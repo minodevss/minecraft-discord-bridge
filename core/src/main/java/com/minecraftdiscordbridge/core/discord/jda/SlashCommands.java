@@ -4,6 +4,7 @@ import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
 import com.minecraftdiscordbridge.core.discord.CommandHashRepository;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
+import com.minecraftdiscordbridge.core.log.Failures;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

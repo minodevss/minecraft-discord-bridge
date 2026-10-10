@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.discord.jda;
 
 import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
+import com.minecraftdiscordbridge.core.log.Failures;
 import java.io.IOException;
 import net.dv8tion.jda.api.JDAInfo;
 import net.dv8tion.jda.api.utils.data.DataObject;

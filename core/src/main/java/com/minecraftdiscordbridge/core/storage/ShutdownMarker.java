@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.storage;
 
 import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
+import com.minecraftdiscordbridge.core.log.Failures;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -26,7 +27,7 @@ public final class ShutdownMarker {
                     "Could not write {} ({}); unclean shutdowns will not be reported. Check that the folder is"
                             + " writable",
                     file,
-                    failure.getMessage());
+                    Failures.describe(failure));
         }
         return leftOver;
     }

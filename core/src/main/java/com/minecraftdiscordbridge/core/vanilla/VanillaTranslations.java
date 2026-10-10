@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.vanilla;
 import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
 import com.minecraftdiscordbridge.core.i18n.Language;
+import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.text.Translations;
 import java.util.Map;
@@ -74,6 +75,6 @@ public final class VanillaTranslations implements Translations {
                         + " resources.download.minecraft.net and you run /discord reload",
                 minecraftVersion,
                 locale,
-                failure.toString());
+                Failures.describe(failure));
     }
 }

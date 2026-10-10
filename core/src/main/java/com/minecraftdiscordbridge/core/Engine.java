@@ -23,6 +23,7 @@ import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.i18n.Replies;
+import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.JoinDecision;
@@ -110,7 +111,7 @@ final class Engine {
                             LOGGER.error(
                                     "The bridge could not start: {}. Check that the plugin data folder is readable and"
                                             + " writable, then restart the server",
-                                    failure.toString());
+                                    Failures.describe(failure));
                             releaseWaitingJoins();
                         });
     }
@@ -263,7 +264,7 @@ final class Engine {
             LOGGER.warn(
                     "Could not reload config.yml or secrets.yml: {}. Check that both files are readable and run"
                             + " /discord reload again",
-                    failure.toString());
+                    Failures.describe(failure));
             replies.send(source, "game.reload.failed");
         });
     }
@@ -404,7 +405,7 @@ final class Engine {
             } catch (RuntimeException failure) {
                 LOGGER.error(
                         "Could not start the Discord connection: {}. Run /discord reload to try again",
-                        failure.toString());
+                        Failures.describe(failure));
                 shared.discord().swap(OfflineDiscord.stopped(failure.toString()));
                 return;
             }

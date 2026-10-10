@@ -15,6 +15,7 @@ import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.discord.SwappableDiscord;
 import com.minecraftdiscordbridge.core.discord.jda.JdaDiscord;
 import com.minecraftdiscordbridge.core.linking.PendingLinks;
+import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.loop.Threads;
@@ -170,7 +171,7 @@ public final class Bridge {
             try {
                 discord.shutdown(farewell);
             } catch (RuntimeException failure) {
-                LOGGER.warn("Discord did not stop cleanly: {}", failure.toString());
+                LOGGER.warn("Discord did not stop cleanly: {}", Failures.describe(failure));
             }
         });
         stopping.start();
@@ -194,9 +195,7 @@ public final class Bridge {
             LOGGER.warn(
                     "Could not delete data/running: {}. The next start will report an unclean shutdown; check that"
                             + " the data folder is writable",
-                    failure.getCause() == null
-                            ? failure.toString()
-                            : failure.getCause().toString());
+                    Failures.describe(failure));
         } catch (TimeoutException late) {
             LOGGER.warn("Gave up deleting data/running during shutdown; the next start may report an unclean shutdown");
         } catch (InterruptedException interrupted) {

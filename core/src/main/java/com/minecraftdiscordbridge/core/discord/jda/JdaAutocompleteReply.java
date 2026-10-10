@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.discord.jda;
 import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
+import com.minecraftdiscordbridge.core.log.Failures;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.dv8tion.jda.api.interactions.callbacks.IAutoCompleteCallback;

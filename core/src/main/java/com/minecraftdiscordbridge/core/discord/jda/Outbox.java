@@ -5,6 +5,7 @@ import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus.ChannelStatus;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
+import com.minecraftdiscordbridge.core.log.Failures;
 import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.Map;

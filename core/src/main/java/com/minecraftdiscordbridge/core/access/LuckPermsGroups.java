@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.access;
 
 import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
+import com.minecraftdiscordbridge.core.log.Failures;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -93,7 +94,7 @@ final class LuckPermsGroups implements PermissionGroups {
             LOGGER.warn(
                     "Could not watch LuckPerms for group changes ({}). Role sync updates Discord roles when players"
                             + " join or link, or after /discord reload",
-                    unavailable.toString());
+                    Failures.describe(unavailable));
             return () -> {};
         }
     }

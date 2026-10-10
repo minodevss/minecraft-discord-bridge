@@ -8,6 +8,7 @@ import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.RoleInfo;
 import com.minecraftdiscordbridge.core.i18n.Replies;
+import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
 import com.minecraftdiscordbridge.core.platform.JoinDecision;
 import com.minecraftdiscordbridge.core.platform.Permission;
@@ -111,7 +112,7 @@ public final class JoinGate {
         }
         var unused = context.discord()
                 .member(userId)
-                .exceptionally(failure -> new MemberLookup.Unavailable(String.valueOf(failure.getMessage())))
+                .exceptionally(failure -> new MemberLookup.Unavailable(Failures.describe(failure)))
                 .thenAccept(lookup -> context.loop().execute(() -> {
                     context.memory().remember(lookup, context.now());
                     judge(player, lookup, result);

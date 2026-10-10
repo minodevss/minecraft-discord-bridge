@@ -5,6 +5,7 @@ import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.WebhookCredentials;
 import com.minecraftdiscordbridge.core.discord.WebhookRepository;
+import com.minecraftdiscordbridge.core.log.Failures;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -138,7 +139,7 @@ final class WebhookSender implements MessageSender {
         } catch (RuntimeException failure) {
             return botOnly(
                     channelId,
-                    "Could not set up a webhook in #" + channel.getName() + " (" + failure.getMessage()
+                    "Could not set up a webhook in #" + channel.getName() + " (" + Failures.describe(failure)
                             + "); posting as the bot instead");
         }
     }

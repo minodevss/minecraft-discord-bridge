@@ -8,6 +8,7 @@ import com.minecraftdiscordbridge.core.config.SyncDirection;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.RoleInfo;
+import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.platform.PlatformInfo;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.minecraftdiscordbridge.core.storage.Link;
@@ -163,7 +164,7 @@ public final class RoleSync implements AutoCloseable {
                 ? CompletableFuture.completedFuture(recent)
                 : context.discord()
                         .member(userId)
-                        .exceptionally(failure -> new MemberLookup.Unavailable(String.valueOf(failure.getMessage())));
+                        .exceptionally(failure -> new MemberLookup.Unavailable(Failures.describe(failure)));
         CompletableFuture<Optional<PlayerGroups>> groups = context.groups()
                 .groupsOf(link.minecraftId())
                 .thenApply(Optional::of)
@@ -171,7 +172,7 @@ public final class RoleSync implements AutoCloseable {
                     LOGGER.warn(
                             "Could not read the LuckPerms groups of {}: {}. Role sync skips them until they rejoin",
                             link.minecraftName(),
-                            failure.getMessage());
+                            Failures.describe(failure));
                     return Optional.empty();
                 });
         var unused = member.thenAcceptBoth(
@@ -233,7 +234,7 @@ public final class RoleSync implements AutoCloseable {
                                 + " its role above the synced roles",
                         what,
                         link.minecraftName(),
-                        failure.getMessage());
+                        Failures.describe(failure));
             }
         });
     }
@@ -252,7 +253,7 @@ public final class RoleSync implements AutoCloseable {
             LOGGER.warn(
                     "Could not read LuckPerms group {}: {}. Its role-sync rule stays off until /discord reload",
                     group,
-                    failure == null ? "no answer" : failure.getMessage());
+                    failure == null ? "no answer" : Failures.describe(failure));
             return Check.REFUSED;
         }
         if (check instanceof GroupCheck.Missing) {

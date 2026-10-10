@@ -3,6 +3,7 @@ package com.minecraftdiscordbridge.core.chat;
 import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
 import com.minecraftdiscordbridge.core.i18n.Replies;
+import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
 import com.minecraftdiscordbridge.core.storage.PreferenceStore;
@@ -34,7 +35,7 @@ public final class ChatToggle {
                             "Could not save the Discord message setting for {}: {}. Check that the data folder is"
                                     + " writable",
                             source.name(),
-                            failure.getMessage());
+                            Failures.describe(failure));
                     replies.send(source, "game.save-failed");
                 });
     }

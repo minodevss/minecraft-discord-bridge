@@ -11,6 +11,7 @@ import com.minecraftdiscordbridge.core.discord.InteractionReply;
 import com.minecraftdiscordbridge.core.discord.InteractionRequest;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Replies;
+import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
 import com.minecraftdiscordbridge.core.storage.BindingStore;
@@ -129,7 +130,7 @@ public final class ChannelSetup {
                 failure -> {
                     LOGGER.warn(
                             "Could not save the channel from /setup: {}. Check that the data folder is writable",
-                            failure.getMessage());
+                            Failures.describe(failure));
                     reply.replyEphemeral(reader.text("discord.save-failed"));
                 });
     }
