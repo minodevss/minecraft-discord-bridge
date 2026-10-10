@@ -43,7 +43,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class Bridge {
-    static final Duration STOP_BUDGET = Duration.ofMillis(3500);
+    static final Duration STOP_BUDGET = Duration.ofSeconds(3);
+    static final Duration DISCORD_STOP_BUDGET = Duration.ofMillis(2500);
     private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
 
     private final CoreLoop loop;
@@ -151,15 +152,32 @@ public final class Bridge {
         List<OutboundMessage> farewell = engine.farewell(crashed);
         CompletableFuture<Boolean> markerCleared = io.perform(engine::clearMarker);
         Discord discord = engine.close();
-        try {
-            discord.shutdown(farewell);
-        } catch (RuntimeException failure) {
-            LOGGER.warn("Discord did not stop cleanly: {}", failure.toString());
-        }
+        stopDiscord(discord, farewell);
         loop.close();
         awaitMarker(markerCleared, deadline);
         io.close();
         lifecycle.shutdownNow();
+    }
+
+    private static void stopDiscord(Discord discord, List<OutboundMessage> farewell) {
+        Thread stopping = Threads.named("Shutdown").newThread(() -> {
+            try {
+                discord.shutdown(farewell);
+            } catch (RuntimeException failure) {
+                LOGGER.warn("Discord did not stop cleanly: {}", failure.toString());
+            }
+        });
+        stopping.start();
+        try {
+            stopping.join(DISCORD_STOP_BUDGET.toMillis());
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+        }
+        if (stopping.isAlive()) {
+            LOGGER.warn(
+                    "Discord did not stop within {} ms; the server stops without waiting for it",
+                    DISCORD_STOP_BUDGET.toMillis());
+        }
     }
 
     private static void awaitMarker(CompletableFuture<Boolean> cleared, long deadline) {

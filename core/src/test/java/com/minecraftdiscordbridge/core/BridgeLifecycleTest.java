@@ -222,14 +222,14 @@ class BridgeLifecycleTest {
     }
 
     @Test
-    void stopsWithinTheBudgetWhenDiscordHangs() throws IOException {
+    void stopsWithinThreeSecondsWhenDiscordHangs() throws IOException {
         Harness harness = Harness.started(directory, CHANNELS);
-        harness.discord().shutdownTime = Duration.ofSeconds(3);
+        harness.discord().shutdownTime = Duration.ofSeconds(10);
 
         long started = System.nanoTime();
         harness.bridge.stop();
 
-        assertThat(Duration.ofNanos(System.nanoTime() - started)).isLessThan(Bridge.STOP_BUDGET);
+        assertThat(Duration.ofNanos(System.nanoTime() - started)).isLessThanOrEqualTo(Duration.ofSeconds(3));
     }
 
     @Test

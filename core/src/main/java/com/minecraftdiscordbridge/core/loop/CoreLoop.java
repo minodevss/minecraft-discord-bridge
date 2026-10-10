@@ -17,6 +17,7 @@ public final class CoreLoop implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
     private static final int CONTENT_CAPACITY = 1024;
     private static final long IDLE = 0;
+    private static final Duration CLOSE_WAIT = Duration.ofMillis(200);
 
     private final BlockingQueue<Runnable> control = new LinkedBlockingQueue<>();
     private final BlockingQueue<Runnable> content = new ArrayBlockingQueue<>(CONTENT_CAPACITY);
@@ -87,7 +88,7 @@ public final class CoreLoop implements AutoCloseable {
         watchdog.cancel(false);
         timer.shutdownNow();
         try {
-            thread.join(Duration.ofMillis(500).toMillis());
+            thread.join(CLOSE_WAIT.toMillis());
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
         }

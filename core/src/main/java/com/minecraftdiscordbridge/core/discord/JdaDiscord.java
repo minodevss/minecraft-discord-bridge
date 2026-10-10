@@ -50,8 +50,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class JdaDiscord implements Discord {
-    static final Duration SHUTDOWN_BUDGET = Duration.ofSeconds(3);
-    static final Duration AWAIT_SHUTDOWN = Duration.ofMillis(2500);
+    static final Duration SHUTDOWN_BUDGET = Duration.ofMillis(2300);
     private static final Duration RELEASE_MARGIN = Duration.ofMillis(200);
     private static final Duration FIRST_RETRY = Duration.ofSeconds(5);
     private static final Duration MAX_RETRY = Duration.ofMinutes(5);
@@ -242,8 +241,7 @@ public final class JdaDiscord implements Discord {
             }
             graceful.get(remaining(deadline), TimeUnit.NANOSECONDS);
         } catch (TimeoutException late) {
-            LOGGER.warn(
-                    "Discord did not stop within {} seconds; closing its connections now", SHUTDOWN_BUDGET.toSeconds());
+            LOGGER.warn("Discord did not stop within {} ms; closing its connections now", SHUTDOWN_BUDGET.toMillis());
         } catch (ExecutionException | RejectedExecutionException failure) {
             LOGGER.warn("Discord did not stop cleanly: {}", Failures.describe(failure));
         } catch (InterruptedException interrupted) {
@@ -548,9 +546,8 @@ public final class JdaDiscord implements Discord {
                     });
         }
         jda.shutdown();
-        long wait = Math.min(AWAIT_SHUTDOWN.toNanos(), remaining(deadline));
         try {
-            if (!jda.awaitShutdown(wait, TimeUnit.NANOSECONDS)) {
+            if (!jda.awaitShutdown(remaining(deadline), TimeUnit.NANOSECONDS)) {
                 jda.shutdownNow();
             }
         } catch (InterruptedException interrupted) {
