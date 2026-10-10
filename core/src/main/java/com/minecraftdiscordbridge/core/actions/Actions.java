@@ -81,12 +81,24 @@ public final class Actions {
 
     private static void audit(CommandRequest request, GameAction action, ActionOutcome outcome) {
         LOGGER.info(
-                "Discord user {} ({}) ran {} {}: {}",
+                "Discord user {} ({}) asked to {}: {}",
                 request.userId(),
                 SafeText.strip(request.userDisplayName()).replaceAll("\\s+", " "),
-                verb(action),
-                name(action),
-                outcome.getClass().getSimpleName());
+                action.describe(),
+                describe(outcome));
+    }
+
+    private static String describe(ActionOutcome outcome) {
+        if (outcome instanceof ActionOutcome.Failed failed) {
+            return "failed (" + failed.reason() + ")";
+        }
+        if (outcome instanceof ActionOutcome.Unchanged) {
+            return "nothing changed";
+        }
+        if (outcome instanceof ActionOutcome.NoSuchPlayer) {
+            return "no such player";
+        }
+        return "done";
     }
 
     private static String outcomeKey(GameAction action, ActionOutcome outcome) {

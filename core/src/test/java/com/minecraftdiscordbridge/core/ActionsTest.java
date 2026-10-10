@@ -95,6 +95,21 @@ class ActionsTest {
     }
 
     @Test
+    void logsWhoAskedForWhatAndHowItWentInWords() throws IOException {
+        try (RecordingLogs.Capture logs = RecordingLogs.capture();
+                Harness harness = Harness.started(directory, ACTIONS_ON)) {
+            harness.platform.outcomes =
+                    action -> CompletableFuture.completedFuture(new ActionOutcome.Failed("the whitelist is locked"));
+
+            harness.discord().command(whitelist("remove", "Steve")).next();
+
+            assertThat(logs.lines(Level.INFO))
+                    .contains("Discord user " + MEMBER + " (Alex) asked to remove Steve from the whitelist: failed (the"
+                            + " whitelist is locked)");
+        }
+    }
+
+    @Test
     void whitelistsThroughThePlatformAndRepliesWithTheOutcome() throws IOException {
         try (Harness harness = Harness.started(directory, ACTIONS_ON)) {
             assertThat(harness.discord().command(whitelist("add", "Steve")).next())
