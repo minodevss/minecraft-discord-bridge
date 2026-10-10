@@ -2,18 +2,21 @@ package com.minecraftdiscordbridge.core.fakes;
 
 import static org.assertj.core.api.Assertions.fail;
 
+import java.time.Duration;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 
 public final class Waits {
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
+
     private Waits() {}
 
     public static <T> T take(BlockingQueue<T> queue) {
         try {
-            T value = queue.poll(5, TimeUnit.SECONDS);
+            T value = queue.poll(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             if (value == null) {
-                fail("Nothing arrived within 5 seconds");
+                fail("Nothing arrived within " + TIMEOUT.toSeconds() + " seconds");
             }
             return value;
         } catch (InterruptedException interrupted) {
@@ -35,7 +38,7 @@ public final class Waits {
     }
 
     public static void until(String what, BooleanSupplier condition) {
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        long deadline = System.nanoTime() + TIMEOUT.toNanos();
         while (!condition.getAsBoolean()) {
             if (System.nanoTime() > deadline) {
                 fail("Timed out waiting for " + what);

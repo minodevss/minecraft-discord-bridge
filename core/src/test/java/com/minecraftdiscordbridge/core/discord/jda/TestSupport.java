@@ -1,7 +1,5 @@
 package com.minecraftdiscordbridge.core.discord.jda;
 
-import static org.assertj.core.api.Assertions.fail;
-
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
@@ -25,8 +23,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.function.BooleanSupplier;
 
 final class TestSupport {
     private TestSupport() {}
@@ -40,34 +36,6 @@ final class TestSupport {
                 true,
                 false,
                 commands);
-    }
-
-    static void await(String what, BooleanSupplier condition) {
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
-        while (!condition.getAsBoolean()) {
-            if (System.nanoTime() > deadline) {
-                fail("Timed out waiting for " + what);
-            }
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException interrupted) {
-                Thread.currentThread().interrupt();
-                fail("Interrupted waiting for " + what);
-            }
-        }
-    }
-
-    static <T> T take(BlockingQueue<T> queue) {
-        try {
-            T value = queue.poll(10, TimeUnit.SECONDS);
-            if (value == null) {
-                fail("Nothing arrived");
-            }
-            return value;
-        } catch (InterruptedException interrupted) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException(interrupted);
-        }
     }
 
     static final class RecordingListener implements DiscordListener {

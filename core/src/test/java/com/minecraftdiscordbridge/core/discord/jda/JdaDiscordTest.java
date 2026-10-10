@@ -11,8 +11,8 @@ import static com.minecraftdiscordbridge.core.discord.jda.FakeDiscord.OTHER_BOT_
 import static com.minecraftdiscordbridge.core.discord.jda.FakeDiscord.OTHER_GUILD_ID;
 import static com.minecraftdiscordbridge.core.discord.jda.FakeDiscord.PLAYER_ID;
 import static com.minecraftdiscordbridge.core.discord.jda.FakeDiscord.ROLE_ID;
-import static com.minecraftdiscordbridge.core.discord.jda.TestSupport.await;
-import static com.minecraftdiscordbridge.core.discord.jda.TestSupport.take;
+import static com.minecraftdiscordbridge.core.fakes.Waits.take;
+import static com.minecraftdiscordbridge.core.fakes.Waits.until;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
@@ -275,7 +275,7 @@ class JdaDiscordTest {
         bridge.send(OutboundMessage.of(CHANNEL_ID, SERVER, "Server started"));
 
         awaitState(State.READY);
-        await("queued message", () -> executions().size() == 1);
+        until("queued message", () -> executions().size() == 1);
         assertThat(FakeDiscord.body(executions().get(0)).getString("content")).isEqualTo("Server started");
         assertThat(discord.requests("POST", "channels/" + CHANNEL_ID + "/webhooks"))
                 .hasSize(1);
@@ -286,9 +286,9 @@ class JdaDiscordTest {
         bridge = startReady();
 
         bridge.send(new OutboundMessage(CHANNEL_ID, STEVE, "hello <@" + FRIEND_ID + ">", Set.of(FRIEND_ID)));
-        await("first message", () -> executions().size() == 1);
+        until("first message", () -> executions().size() == 1);
         bridge.send(OutboundMessage.of(CHANNEL_ID, STEVE, "again"));
-        await("second message", () -> executions().size() == 2);
+        until("second message", () -> executions().size() == 2);
 
         List<RecordedRequest> creations = discord.requests("POST", "channels/" + CHANNEL_ID + "/webhooks");
         assertThat(creations).hasSize(1);
@@ -312,7 +312,7 @@ class JdaDiscordTest {
 
         bridge.send(OutboundMessage.of(CHANNEL_ID, STEVE, "hello"));
 
-        await("resent message", () -> executions().size() == 2);
+        until("resent message", () -> executions().size() == 2);
         assertThat(discord.requestsStartingWith("POST", "webhooks/777/")).hasSize(1);
         assertThat(discord.requests("POST", "channels/" + CHANNEL_ID + "/webhooks"))
                 .hasSize(1);
@@ -326,7 +326,7 @@ class JdaDiscordTest {
 
         bridge.send(OutboundMessage.of(CHANNEL_ID, STEVE, "hi"));
 
-        await("bot message", () -> botMessages().size() == 1);
+        until("bot message", () -> botMessages().size() == 1);
         DataObject body = FakeDiscord.body(botMessages().get(0));
         assertThat(body.getString("content")).isEqualTo("**Steve**: hi");
         assertThat(body.getObject("allowed_mentions").getArray("parse").length())
@@ -341,15 +341,15 @@ class JdaDiscordTest {
 
         bridge.send(OutboundMessage.of(CHANNEL_ID, STEVE, "hello"));
 
-        await("retried message", () -> executions().size() == 2);
-        await("429 count", () -> bridge.status().channels().get(CHANNEL_ID).rateLimited() == 1);
+        until("retried message", () -> executions().size() == 2);
+        until("429 count", () -> bridge.status().channels().get(CHANNEL_ID).rateLimited() == 1);
     }
 
     @Test
     void registersSlashCommandsOnlyWhenTheyChange() throws Exception {
         bridge = start(TestSupport.settings(List.of(LIST, WHITELIST)));
         awaitState(State.READY);
-        await("registration", () -> registrations().size() == 1);
+        until("registration", () -> registrations().size() == 1);
 
         DataArray commands = DataArray.fromJson(registrations().get(0).getBody().utf8());
         DataObject list = commands.getObject(0);
@@ -361,11 +361,11 @@ class JdaDiscordTest {
         assertThat(whitelist.getArray("contexts").length()).isEqualTo(1);
         assertThat(whitelist.getArray("options").getObject(0).getBoolean("autocomplete"))
                 .isTrue();
-        await("hash saved", () -> commandHashes.stored.containsKey(GUILD_ID));
+        until("hash saved", () -> commandHashes.stored.containsKey(GUILD_ID));
 
         bridge.shutdown(List.of());
         bridge = start(TestSupport.settings(List.of(LIST, WHITELIST)));
-        await(
+        until(
                 "second ready",
                 () -> discord.identifies.size() == 2 && bridge.status().state() == State.READY);
         Thread.sleep(200);
@@ -380,7 +380,7 @@ class JdaDiscordTest {
 
         discord.dispatch("INTERACTION_CREATE", discord.command(OTHER_GUILD_ID, "list", 2, DataArray.empty()));
 
-        await("refusal", () -> callbacks().size() == 1);
+        until("refusal", () -> callbacks().size() == 1);
         DataObject callback = FakeDiscord.body(callbacks().get(0));
         assertThat(callback.getInt("type")).isEqualTo(4);
         assertThat(callback.getObject("data").getString("content"))
@@ -410,7 +410,7 @@ class JdaDiscordTest {
 
         take(listener.replies).replyEphemeral("3 players online");
 
-        await("reply", () -> callbacks().size() == 1);
+        until("reply", () -> callbacks().size() == 1);
         DataObject callback = FakeDiscord.body(callbacks().get(0));
         assertThat(callback.getInt("type")).isEqualTo(4);
         assertThat(callback.getObject("data").getString("content")).isEqualTo("3 players online");
@@ -426,12 +426,12 @@ class JdaDiscordTest {
 
         discord.dispatch("INTERACTION_CREATE", discord.command(GUILD_ID, "whitelist", 2, options));
 
-        await("deferral", () -> callbacks().size() == 1);
+        until("deferral", () -> callbacks().size() == 1);
         assertThat(FakeDiscord.body(callbacks().get(0)).getInt("type")).isEqualTo(5);
 
         take(listener.replies).reply("Added Steve");
 
-        await("edited reply", () -> originalEdits().size() == 1);
+        until("edited reply", () -> originalEdits().size() == 1);
         DataObject edit = FakeDiscord.body(originalEdits().get(0));
         assertThat(edit.getString("content")).isEqualTo("Added Steve");
         assertThat(edit.getObject("allowed_mentions").getArray("parse").length())
@@ -459,7 +459,7 @@ class JdaDiscordTest {
                 .toList();
         take(listener.autocompleteReplies).respond(choices);
 
-        await("choices", () -> callbacks().size() == 1);
+        until("choices", () -> callbacks().size() == 1);
         DataObject callback = FakeDiscord.body(callbacks().get(0));
         assertThat(callback.getInt("type")).isEqualTo(8);
         assertThat(callback.getObject("data").getArray("choices").length()).isEqualTo(25);
@@ -474,7 +474,7 @@ class JdaDiscordTest {
         take(listener.replies).reply("@here");
         discord.dispatch("INTERACTION_CREATE", discord.command(GUILD_ID, "whitelist", 2, DataArray.empty()));
         take(listener.replies).reply("@everyone");
-        await(
+        until(
                 "all messages",
                 () -> executions().size() == 1
                         && callbacks().size() == 2
@@ -503,7 +503,7 @@ class JdaDiscordTest {
     void sendsTheFinalMessageBeforeDisconnecting() {
         bridge = startReady();
         bridge.send(OutboundMessage.of(CHANNEL_ID, STEVE, "bye"));
-        await("first message", () -> executions().size() == 1);
+        until("first message", () -> executions().size() == 1);
 
         bridge.shutdown(List.of(OutboundMessage.of(CHANNEL_ID, SERVER, "Server stopped")));
 
@@ -518,10 +518,10 @@ class JdaDiscordTest {
     void finishesShutdownWithinThreeSecondsWhenDiscordStopsAnswering() {
         bridge = startReady();
         bridge.send(OutboundMessage.of(CHANNEL_ID, STEVE, "warm up"));
-        await("webhook ready", () -> executions().size() == 1);
+        until("webhook ready", () -> executions().size() == 1);
         discord.stallMessages = true;
         bridge.send(OutboundMessage.of(CHANNEL_ID, STEVE, "stuck"));
-        await("stuck request", () -> executions().size() == 2);
+        until("stuck request", () -> executions().size() == 2);
         bridge.send(OutboundMessage.of(CHANNEL_ID, STEVE, "queued"));
 
         long started = System.nanoTime();
@@ -535,7 +535,7 @@ class JdaDiscordTest {
     void finishesShutdownWithinThreeSecondsWhileLoginHangs() {
         discord.stallLogin = true;
         bridge = start(TestSupport.settings(List.of()));
-        await("login attempt", () -> discord.timeline.contains("GET users/@me"));
+        until("login attempt", () -> discord.timeline.contains("GET users/@me"));
 
         long started = System.nanoTime();
         bridge.shutdown(List.of(OutboundMessage.of(CHANNEL_ID, SERVER, "Server stopped")));
@@ -550,7 +550,7 @@ class JdaDiscordTest {
         bridge = startReady();
 
         bridge.updatePresence("3 players online");
-        await("presence", () -> discord.presences.size() == 1);
+        until("presence", () -> discord.presences.size() == 1);
         bridge.updatePresence("3 players online");
         Thread.sleep(200);
 
@@ -564,7 +564,7 @@ class JdaDiscordTest {
         bridge = startReady();
 
         bridge.updateTopic(CHANNEL_ID, "3/20 players online");
-        await("topic", () -> topicEdits().size() == 1);
+        until("topic", () -> topicEdits().size() == 1);
         bridge.updateTopic(CHANNEL_ID, "3/20 players online");
         bridge.updateTopic(CHANNEL_ID, "4/20 players online");
         Thread.sleep(200);
@@ -584,7 +584,7 @@ class JdaDiscordTest {
 
         bridge.start();
 
-        await("topic", () -> topicEdits().size() == 1);
+        until("topic", () -> topicEdits().size() == 1);
         assertThat(FakeDiscord.body(topicEdits().get(0)).getString("topic")).isEqualTo("3/20 players online");
     }
 
@@ -622,7 +622,7 @@ class JdaDiscordTest {
     void registersCommandsInEveryServerItIsInUntilAChannelIsChosen() {
         bridge = start(unbound(Set.of(), List.of(LIST)));
         awaitState(State.READY);
-        await("registration", () -> registrations().size() == 1);
+        until("registration", () -> registrations().size() == 1);
 
         discord.dispatch("INTERACTION_CREATE", discord.command(GUILD_ID, "list", 2, DataArray.empty()));
 
@@ -633,13 +633,13 @@ class JdaDiscordTest {
     void findsTheServerThroughTheConfiguredChannel() {
         bridge = start(unbound(Set.of(CHANNEL_ID), List.of(LIST)));
         awaitState(State.READY);
-        await("registration", () -> registrations().size() == 1);
+        until("registration", () -> registrations().size() == 1);
 
         discord.dispatch("INTERACTION_CREATE", discord.command(OTHER_GUILD_ID, "list", 2, DataArray.empty()));
         discord.sendMessage(discord.message(PLAYER_ID, "hello"));
 
         assertThat(take(listener.messages).content()).isEqualTo("hello");
-        await("refusal", () -> callbacks().size() == 1);
+        until("refusal", () -> callbacks().size() == 1);
         assertThat(listener.commands).isEmpty();
     }
 
@@ -697,7 +697,7 @@ class JdaDiscordTest {
         bridge.send(new OutboundMessage(
                 CHANNEL_ID, SERVER, "<@&" + ROLE_ID + "> Server started", Set.of(), Set.of(ROLE_ID)));
 
-        await("message", () -> executions().size() == 1);
+        until("message", () -> executions().size() == 1);
         DataObject mentions = FakeDiscord.body(executions().get(0)).getObject("allowed_mentions");
         assertThat(mentions.getArray("parse").length()).isZero();
         assertThat(mentions.getArray("roles").length()).isEqualTo(1);
@@ -710,7 +710,7 @@ class JdaDiscordTest {
 
         bridge.send(OutboundMessage.of(CHANNEL_ID, Author.server(), "Server started"));
 
-        await("message", () -> executions().size() == 1);
+        until("message", () -> executions().size() == 1);
         DataObject body = FakeDiscord.body(executions().get(0));
         assertThat(body.getString("username")).isEqualTo("Bridge");
         assertThat(body.getString("avatar_url")).startsWith("https://cdn.discordapp.com/embed/avatars/");
@@ -805,7 +805,7 @@ class JdaDiscordTest {
 
     private JdaDiscord startReady() {
         JdaDiscord started = start(TestSupport.settings(List.of()));
-        await("ready", () -> started.status().state() == State.READY);
+        until("ready", () -> started.status().state() == State.READY);
         return started;
     }
 
@@ -816,7 +816,7 @@ class JdaDiscordTest {
     }
 
     private void awaitState(State state) {
-        await(state.name(), () -> bridge.status().state() == state);
+        until(state.name(), () -> bridge.status().state() == state);
     }
 
     private static DiscordSettings withAutoEnable(boolean autoEnable) {
