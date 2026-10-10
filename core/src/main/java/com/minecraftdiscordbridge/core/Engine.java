@@ -244,8 +244,9 @@ final class Engine {
         BridgeConfig config = loaded.config();
         lang = Lang.of(config.language());
         Channels channels = Channels.resolve(config.discord(), ready.bindings().current());
-        OptionalLong console =
-                config.console().mirror() ? Ids.parse(config.discord().consoleChannel()) : OptionalLong.empty();
+        OptionalLong console = config.console().mirror() && loaded.secrets().hasDiscordToken()
+                ? Ids.parse(config.discord().consoleChannel())
+                : OptionalLong.empty();
         synchronized (lock) {
             if (closed) {
                 return Outcome.APPLIED;

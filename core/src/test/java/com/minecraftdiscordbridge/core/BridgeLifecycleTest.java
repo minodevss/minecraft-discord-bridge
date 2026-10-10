@@ -18,6 +18,8 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -133,6 +135,30 @@ class BridgeLifecycleTest {
     }
 
     @Test
+    void mirrorsTheConsoleOnlyWhileABotTokenIsSet() throws IOException {
+        String mirrored = """
+                config-version: 1
+                discord:
+                  chat-channel: "222222222222222222"
+                  console-channel: "444444444444444444"
+                console:
+                  mirror: true
+                """;
+        Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"" + TOKEN + "\"\n");
+        try (Harness harness = Harness.create(directory, mirrored, Map.of())) {
+            harness.bridge.start();
+            harness.discord();
+            assertThat(consoleMirrorAttached()).isTrue();
+
+            Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"\"\n");
+            assertThat(harness.run(RecordingSource.console(), "reload").nextPlain())
+                    .contains("no bot token is set");
+
+            assertThat(consoleMirrorAttached()).isFalse();
+        }
+    }
+
+    @Test
     void reportsRecoveryFromAnUncleanShutdownAndClearsTheMarkerOnStop() throws IOException {
         Path marker = directory.resolve("data").resolve("running");
         Files.createDirectories(marker.getParent());
@@ -219,6 +245,11 @@ class BridgeLifecycleTest {
                     harness.bridge.command(RecordingSource.console(), List.of("status"));
                 })
                 .doesNotThrowAnyException();
+    }
+
+    private static boolean consoleMirrorAttached() {
+        LoggerContext context = (LoggerContext) LogManager.getContext(false);
+        return context.getConfiguration().getRootLogger().getAppenders().containsKey("MinecraftDiscordBridgeConsole");
     }
 
     private static List<String> commandNames(DiscordSettings settings) {
