@@ -78,6 +78,17 @@ class RoleSyncTest {
     }
 
     @Test
+    void reusesTheMemberLookupOfTheJoinCheck() {
+        context.memory().remember(new MemberLookup.Member(USER, Set.of(VIP)), clock.instant());
+        RoleSync sync = ready(VIP_TO_GROUP);
+
+        sync.playerJoined(STEVE);
+
+        assertThat(groups.changes).containsExactly("+vip " + STEVE.id());
+        assertThat(discord.lookups).isEmpty();
+    }
+
+    @Test
     void takesTheGroupWhenADiscordRoleUpdateRemovesTheRole() {
         groups.members.put(STEVE.id(), Set.of("vip"));
         RoleSync sync = ready(VIP_TO_GROUP);

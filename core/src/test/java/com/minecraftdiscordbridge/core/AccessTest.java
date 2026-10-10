@@ -87,7 +87,7 @@ class AccessTest {
     }
 
     @Test
-    void givesTheSyncedGroupWhenALinkedMemberJoins() throws Exception {
+    void syncsTheGroupOnLinkJoinAndDiscordRoleChanges() throws Exception {
         try (Harness harness = Harness.create(directory, CHANNELS + """
                 role-sync:
                   rules:
@@ -100,13 +100,18 @@ class AccessTest {
             RecordingDiscord discord = harness.discord();
             discord.roles.put(ROLE, new RoleInfo(ROLE, "VIP", Set.of(), true));
             discord.statusChanged();
-            linkSteve(harness);
             discord.members =
                     userId -> CompletableFuture.completedFuture(new MemberLookup.Member(userId, Set.of(ROLE)));
+            String given = "+vip " + STEVE.id();
+
+            linkSteve(harness);
+            Waits.until("the group to be given on link", () -> harness.groups.changes.contains(given));
+            harness.groups.members.remove(STEVE.id());
+            harness.groups.changes.clear();
 
             harness.publish(new GameEvent.PlayerJoined(STEVE, false));
+            Waits.until("the group to be given on join", () -> harness.groups.changes.contains(given));
 
-            Waits.until("the group to be given", () -> harness.groups.changes.contains("+vip " + STEVE.id()));
             discord.memberUpdated(new MemberLookup.Member(MEMBER, Set.of()));
             Waits.until("the group to be taken", () -> harness.groups.changes.contains("-vip " + STEVE.id()));
         }

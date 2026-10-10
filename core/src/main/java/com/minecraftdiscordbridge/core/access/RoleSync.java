@@ -122,8 +122,11 @@ public final class RoleSync {
             return;
         }
         long userId = Long.parseUnsignedLong(link.discordId());
-        CompletableFuture<MemberLookup> member = known != null
-                ? CompletableFuture.completedFuture(known)
+        MemberLookup recent = known != null
+                ? known
+                : context.memory().freshMember(userId, context.now()).orElse(null);
+        CompletableFuture<MemberLookup> member = recent != null
+                ? CompletableFuture.completedFuture(recent)
                 : context.discord()
                         .member(userId)
                         .exceptionally(failure -> new MemberLookup.Unavailable(String.valueOf(failure.getMessage())));
