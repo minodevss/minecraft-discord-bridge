@@ -183,6 +183,23 @@ class BridgeLifecycleTest {
     }
 
     @Test
+    void connectsAgainOnlyAfterTheOldConnectionHasStopped() throws IOException {
+        Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"first\"\n");
+        try (Harness harness = Harness.create(directory, CHANNELS, Map.of())) {
+            harness.bridge.start();
+            RecordingDiscord first = harness.discord(1);
+            first.shutdownTime = Duration.ofMillis(500);
+            Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"second\"\n");
+
+            harness.run(RecordingSource.console(), "reload");
+            harness.run(RecordingSource.console(), "reload");
+
+            harness.discord(2);
+            assertThat(first.shutDown).isTrue();
+        }
+    }
+
+    @Test
     void reconnectsOnReloadWhenTheTokenChanges() throws IOException {
         Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"first\"\n");
         try (Harness harness = Harness.create(directory, CHANNELS, Map.of())) {

@@ -358,10 +358,6 @@ final class Engine {
     private void connect(DiscordSettings next) {
         int target = ++generation;
         Discord previous = shared.discord().swap(OfflineDiscord.connecting(OfflineDiscord.CONNECTING));
-        if (previous instanceof OfflineDiscord) {
-            create(target, next);
-            return;
-        }
         try {
             lifecycle.execute(() -> {
                 previous.shutdown(List.of());
