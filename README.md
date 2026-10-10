@@ -99,9 +99,9 @@ Until the bridge has a channel, Discord shows only `/setup`. `/link` and `/unlin
 
 The bridge folder holds three things:
 
-- `config.yml`: every setting, each with a comment. Run `/discord reload` after you edit it. If the file has an error, the bridge keeps the old settings and the log says what to fix.
-- `secrets.yml`: the bot token. The bridge creates it readable by the server's user only.
-- `data/`: what the bridge saves by itself, such as the channels from `/setup` and the linked accounts.
+- `config.yml`: every setting, with comments. Run `/discord reload` after you edit it. If the file has an error, the bridge keeps the old settings and the log says what to fix.
+- `secrets.yml`: the bot token. On Linux and macOS, the bridge creates it readable by the server's user only.
+- `data/`: what the bridge saves by itself: the channels from `/setup`, linked accounts, player preferences and webhooks. `webhooks.json` holds webhook URLs, so keep it as private as `secrets.yml`. `backups/` keeps the three previous versions of the channels and links. `cache/` holds files the bridge can rebuild, such as Minecraft's Korean language file for `language: ko`.
 
 | Section | What it controls |
 | --- | --- |
