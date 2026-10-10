@@ -17,9 +17,9 @@ public record DiscordStatus(
     }
 
     public record ChannelStatus(int queued, int inFlight, long dropped, long rateLimited) {
-        static final ChannelStatus IDLE = new ChannelStatus(0, 0, 0, 0);
+        public static final ChannelStatus IDLE = new ChannelStatus(0, 0, 0, 0);
 
-        ChannelStatus withRateLimited(long count) {
+        public ChannelStatus withRateLimited(long count) {
             return new ChannelStatus(queued, inFlight, dropped, count);
         }
     }
