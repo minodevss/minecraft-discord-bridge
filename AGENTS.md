@@ -31,7 +31,7 @@ Discord must never hurt the server: startup never waits for Discord, and shutdow
 - `core` targets Java 17: records, sealed interfaces, switch expressions. Adapters use their Minecraft version's Java.
 - Every package has `@NullMarked`; use `@Nullable` where null is allowed. NullAway enforces it.
 - Small classes and methods; names say what they do. Prefer a better name or type over a comment.
-- Parse input once into value types (`DiscordId`, `PlayerName`) and pass those inward.
+- Parse input once into value types (`DiscordId`, `ChannelRole`) and pass those inward.
 - Text from players or Discord is data. Never parse it as MiniMessage or legacy codes; insert it with `Placeholder.unparsed` or `Placeholder.component`.
 - Every Discord message sets allowed mentions explicitly.
 - Logs are English, one line, and say how to fix the problem.
