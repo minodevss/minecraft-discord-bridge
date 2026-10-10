@@ -1,6 +1,6 @@
 package com.minecraftdiscordbridge.core.vanilla;
 
-import com.minecraftdiscordbridge.core.config.Language;
+import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.text.Translations;
 import java.util.Map;

@@ -1,5 +1,7 @@
 package com.minecraftdiscordbridge.core.config;
 
+import com.minecraftdiscordbridge.core.i18n.Language;
+
 public record BridgeConfig(
         Language language,
         DiscordConfig discord,

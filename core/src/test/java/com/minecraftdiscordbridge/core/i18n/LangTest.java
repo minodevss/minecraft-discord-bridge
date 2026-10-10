@@ -3,7 +3,6 @@ package com.minecraftdiscordbridge.core.i18n;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
-import com.minecraftdiscordbridge.core.config.Language;
 import com.minecraftdiscordbridge.core.text.Format;
 import com.minecraftdiscordbridge.core.text.TextRenderer;
 import java.util.ArrayList;

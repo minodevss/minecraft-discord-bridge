@@ -2,12 +2,12 @@ package com.minecraftdiscordbridge.core.console;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.minecraftdiscordbridge.core.config.Language;
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.Discord;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.i18n.Lang;
+import com.minecraftdiscordbridge.core.i18n.Language;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;

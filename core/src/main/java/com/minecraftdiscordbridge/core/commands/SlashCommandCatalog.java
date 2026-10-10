@@ -2,13 +2,13 @@ package com.minecraftdiscordbridge.core.commands;
 
 import com.minecraftdiscordbridge.core.actions.Actions;
 import com.minecraftdiscordbridge.core.config.BridgeConfig;
-import com.minecraftdiscordbridge.core.config.Language;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import com.minecraftdiscordbridge.core.discord.CommandSpec.Localized;
 import com.minecraftdiscordbridge.core.discord.CommandSpec.Option;
 import com.minecraftdiscordbridge.core.discord.CommandSpec.OptionType;
 import com.minecraftdiscordbridge.core.discord.CommandSpec.Subcommand;
 import com.minecraftdiscordbridge.core.i18n.Lang;
+import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.linking.Linking;
 import com.minecraftdiscordbridge.core.setup.ChannelSetup;
 import java.util.ArrayList;

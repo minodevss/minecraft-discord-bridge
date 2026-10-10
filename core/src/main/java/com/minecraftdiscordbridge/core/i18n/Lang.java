@@ -1,6 +1,5 @@
 package com.minecraftdiscordbridge.core.i18n;
 
-import com.minecraftdiscordbridge.core.config.Language;
 import com.minecraftdiscordbridge.core.text.Format;
 import java.io.IOException;
 import java.io.InputStream;

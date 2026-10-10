@@ -7,6 +7,7 @@ import static com.minecraftdiscordbridge.core.config.ConfigFiles.warnings;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.discord.DiscordId;
+import com.minecraftdiscordbridge.core.i18n.Language;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

@@ -4,13 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.minecraftdiscordbridge.core.FakePlatform;
 import com.minecraftdiscordbridge.core.config.ConsoleConfig;
-import com.minecraftdiscordbridge.core.config.Language;
 import com.minecraftdiscordbridge.core.discord.Discord;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.i18n.Lang;
+import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.platform.ActionOutcome;
 import com.minecraftdiscordbridge.core.platform.GameAction;
 import java.nio.file.Path;

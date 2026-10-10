@@ -1,6 +1,7 @@
 package com.minecraftdiscordbridge.core.config;
 
 import com.minecraftdiscordbridge.core.discord.DiscordId;
+import com.minecraftdiscordbridge.core.i18n.Language;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
