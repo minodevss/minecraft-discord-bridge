@@ -89,7 +89,7 @@ class ActionsTest {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             RecordingReply reply = harness.discord().command(whitelist("add", "Steve"));
 
-            assertThat(reply.next().text()).isEqualTo("This action is turned off in config.yml.");
+            assertThat(reply.next().text()).isEqualTo("This command is turned off in config.yml.");
             assertThat(harness.platform.actions).isEmpty();
         }
     }
@@ -141,7 +141,7 @@ class ActionsTest {
             assertThat(harness.platform.actions)
                     .containsExactly(
                             new GameAction.Kick("Steve", "spam"),
-                            new GameAction.Kick("Steve", "Kicked from Discord by Alex"));
+                            new GameAction.Kick("Steve", "Kicked by Alex on Discord"));
         }
     }
 
@@ -173,7 +173,7 @@ class ActionsTest {
                             .command(whitelist("add", "Steve"))
                             .next()
                             .text())
-                    .isEqualTo("That did not work for **Steve**: the server did not answer in time");
+                    .isEqualTo("That did not work for **Steve**: the Minecraft server did not answer in time");
         }
     }
 

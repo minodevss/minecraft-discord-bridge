@@ -175,9 +175,9 @@ class LinkingTest {
                     .doesNotContain("link");
             assertThat(harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.LINK)
                             .nextPlain())
-                    .isEqualTo("Account linking is turned off on this server.");
+                    .isEqualTo("Account linking is off on this server.");
             assertThat(link(harness, MEMBER, "ABCDEFGH").next().text())
-                    .isEqualTo("Account linking is turned off on this server.");
+                    .isEqualTo("Account linking is off on this Minecraft server.");
         }
     }
 
@@ -188,12 +188,12 @@ class LinkingTest {
         try (Harness harness = Harness.started(directory, CHANNELS + "linking:\n  enabled: false\n")) {
             assertThat(harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.UNLINK)
                             .nextPlain())
-                    .isEqualTo("Account linking is turned off on this server.");
+                    .isEqualTo("Account linking is off on this server.");
             assertThat(harness.discord()
                             .command(Harness.request("unlink", null, Map.of(), MEMBER, CHAT))
                             .next()
                             .text())
-                    .isEqualTo("Account linking is turned off on this server.");
+                    .isEqualTo("Account linking is off on this Minecraft server.");
             assertThat(LinkStore.open(directory).all()).hasSize(1);
         }
     }

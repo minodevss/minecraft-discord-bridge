@@ -135,7 +135,7 @@ class ConsoleInputTest {
         input(ADMIN_ONLY, platform).onMessage(message(CONSOLE, ADMIN, false, false, "save-all"));
 
         assertThat(discord.awaitTexts(2).get(1))
-                .isEqualTo("The command did not run: the server did not answer in time");
+                .isEqualTo("The command did not run: the Minecraft server did not answer in time");
     }
 
     private ConsoleInput input(ConsoleConfig config, FakePlatform platform) {
