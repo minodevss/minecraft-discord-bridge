@@ -26,6 +26,7 @@ import com.minecraftdiscordbridge.core.platform.JoinDecision;
 import com.minecraftdiscordbridge.core.platform.Permission;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.minecraftdiscordbridge.core.setup.Channels;
+import com.minecraftdiscordbridge.core.setup.SetupGuide;
 import com.minecraftdiscordbridge.core.storage.Link;
 import com.minecraftdiscordbridge.core.storage.LinkChange;
 import com.minecraftdiscordbridge.core.text.Format.Slot;

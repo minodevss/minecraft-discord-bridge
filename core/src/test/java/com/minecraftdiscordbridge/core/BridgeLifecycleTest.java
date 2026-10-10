@@ -13,6 +13,7 @@ import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
+import com.minecraftdiscordbridge.core.setup.SetupGuide;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
