@@ -81,6 +81,7 @@ class JdaCommandsTest extends JdaTestBase {
         assertThat(request.locale()).isEqualTo("ko");
         assertThat(request.guildId()).isEqualTo(GUILD);
         assertThat(request.channelId()).isEqualTo(CHANNEL);
+        assertThat(request.channelName()).isEqualTo("minecraft");
         assertThat(callbacks()).isEmpty();
 
         take(listener.replies).replyEphemeral("3 players online");

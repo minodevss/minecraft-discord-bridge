@@ -127,7 +127,7 @@ final class WebhookSender implements MessageSender {
         if (!channel.getGuild().getSelfMember().hasPermission(channel, Permission.MANAGE_WEBHOOKS)) {
             return botOnly(
                     channelId,
-                    "The bot needs the Manage Webhooks permission in #" + channel.getName()
+                    "The bot needs the Manage Webhooks permission in " + ChannelLabels.of(channel)
                             + " to post with player names and skins; posting as the bot until then");
         }
         try {
@@ -136,13 +136,13 @@ final class WebhookSender implements MessageSender {
                     .thenCompose(webhooks -> useOrCreate(api, channel, webhooks))
                     .exceptionallyCompose(failure -> botOnly(
                             channelId,
-                            "Could not set up a webhook in #" + channel.getName() + " (" + Failures.describe(failure)
-                                    + "); posting as the bot instead"));
+                            "Could not set up a webhook in " + ChannelLabels.of(channel) + ": "
+                                    + Failures.describe(failure) + ". Posting as the bot instead"));
         } catch (RuntimeException failure) {
             return botOnly(
                     channelId,
-                    "Could not set up a webhook in #" + channel.getName() + " (" + Failures.describe(failure)
-                            + "); posting as the bot instead");
+                    "Could not set up a webhook in " + ChannelLabels.of(channel) + ": " + Failures.describe(failure)
+                            + ". Posting as the bot instead");
         }
     }
 
@@ -157,7 +157,7 @@ final class WebhookSender implements MessageSender {
         if (webhooks.size() >= CHANNEL_WEBHOOK_LIMIT) {
             return botOnly(
                     channelId,
-                    "#" + channel.getName() + " already has " + CHANNEL_WEBHOOK_LIMIT
+                    ChannelLabels.of(channel) + " already has " + CHANNEL_WEBHOOK_LIMIT
                             + " webhooks; delete one so the bridge can add its own. Posting as the bot until then");
         }
         return channel.createWebhook(WEBHOOK_NAME)
@@ -224,8 +224,8 @@ final class WebhookSender implements MessageSender {
         remember(channelId, credentials);
         var unused = repository.save(channelId, credentials).exceptionally(failure -> {
             LOGGER.warn(
-                    "Could not save the webhook for channel {}: {}. Check that the data folder is writable",
-                    channelId,
+                    "Could not save the webhook for {}: {}. Check that the data folder is writable",
+                    ChannelLabels.of(webhook.getChannel()),
                     Failures.describe(failure));
             return null;
         });

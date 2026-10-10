@@ -85,7 +85,11 @@ public final class JdaDiscord implements Discord {
         this.guild = new JdaGuild(this::currentGuild);
         this.webhooks = new WebhookSender(connection::jda, webhookRepository, rateLimits, System::nanoTime);
         this.outbox = new Outbox(
-                settings.serverAuthor(), webhooks, loop, skipped -> lang.get().count("discord.skipped", skipped));
+                settings.serverAuthor(),
+                webhooks,
+                loop,
+                skipped -> lang.get().count("discord.skipped", skipped),
+                channelId -> ChannelLabels.of(connection.jda(), channelId));
         this.commands = new CommandRegistrar(settings.commands(), commandHashes);
         this.events = new JdaEvents(settings, scope, loop, listener, webhooks, lang);
         this.appearance = new Appearance(connection::jda, System::nanoTime, loop);

@@ -156,12 +156,22 @@ final class Harness implements AutoCloseable {
             DiscordId user,
             DiscordId channel) {
         return new CommandRequest(
-                command, Optional.ofNullable(subcommand), options, GUILD, channel, user, "Alex", false, "en-US");
+                command,
+                Optional.ofNullable(subcommand),
+                options,
+                GUILD,
+                channel,
+                "minecraft",
+                user,
+                "Alex",
+                false,
+                "en-US");
     }
 
     static CommandRequest managerRequest(
             String command, Map<String, String> options, DiscordId user, DiscordId channel) {
-        return new CommandRequest(command, Optional.empty(), options, GUILD, channel, user, "Alex", true, "en-US");
+        return new CommandRequest(
+                command, Optional.empty(), options, GUILD, channel, "minecraft", user, "Alex", true, "en-US");
     }
 
     static DiscordMessage message(DiscordId channel, String content) {

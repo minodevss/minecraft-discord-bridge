@@ -11,6 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.fakes.RecordingDiscord;
+import com.minecraftdiscordbridge.core.fakes.RecordingLogs;
 import com.minecraftdiscordbridge.core.fakes.RecordingReply;
 import com.minecraftdiscordbridge.core.fakes.RecordingSource;
 import com.minecraftdiscordbridge.core.platform.GameCommand;
@@ -24,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.event.Level;
 
 class SetupTest {
     private static final String UNBOUND = "config-version: 1\n";
@@ -72,6 +74,21 @@ class SetupTest {
             assertThat(as.choices()).extracting(CommandSpec.Choice::value).containsExactly("chat", "events");
             assertThat(as.choices())
                     .allSatisfy(choice -> assertThat(choice.koreanName()).isPresent());
+        }
+    }
+
+    @Test
+    void logsTheChosenChannelByNameAndId() throws IOException {
+        try (RecordingLogs.Capture logs = RecordingLogs.capture();
+                Harness harness = Harness.started(directory, UNBOUND)) {
+            harness.discord().owners = Set.of(OWNER);
+
+            harness.discord()
+                    .command(Harness.request("setup", null, Map.of(), OWNER, CHAT))
+                    .next();
+
+            assertThat(logs.lines(Level.INFO))
+                    .contains("Discord user " + OWNER + " set #minecraft (" + CHAT + ") as the chat channel");
         }
     }
 

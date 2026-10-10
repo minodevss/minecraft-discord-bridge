@@ -97,6 +97,7 @@ final class JdaEvents {
                 options,
                 new DiscordId(guild.getIdLong()),
                 new DiscordId(event.getChannelIdLong()),
+                event.getChannel().getName(),
                 new DiscordId(event.getUser().getIdLong()),
                 displayName(member, event.getUser().getEffectiveName()),
                 member != null && member.hasPermission(Permission.MANAGE_SERVER),

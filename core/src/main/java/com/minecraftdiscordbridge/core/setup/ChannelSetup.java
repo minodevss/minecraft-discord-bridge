@@ -107,8 +107,9 @@ public final class ChannelSetup {
                 () -> bindings.save(next),
                 () -> {
                     LOGGER.info(
-                            "Discord user {} chose channel {} for {}",
+                            "Discord user {} set #{} ({}) as the {} channel",
                             request.userId(),
+                            request.channelName(),
                             request.channelId(),
                             role.id());
                     reply.replyEphemeral(confirmation(userLang, role));

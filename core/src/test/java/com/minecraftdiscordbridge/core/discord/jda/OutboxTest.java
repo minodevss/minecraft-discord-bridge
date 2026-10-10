@@ -25,7 +25,7 @@ class OutboxTest {
     private static final Author ALEX = Author.player("2", "Alex", Optional.empty());
 
     private final FakeSender sender = new FakeSender();
-    private final Outbox outbox = new Outbox(SERVER, sender, Runnable::run, OutboxTest::skipped);
+    private final Outbox outbox = new Outbox(SERVER, sender, Runnable::run, OutboxTest::skipped, DiscordId::toString);
 
     @BeforeEach
     void openTheOutbox() {
@@ -34,7 +34,7 @@ class OutboxTest {
 
     @Test
     void holdsMessagesUntilDiscordIsReady() {
-        Outbox waiting = new Outbox(SERVER, sender, Runnable::run, OutboxTest::skipped);
+        Outbox waiting = new Outbox(SERVER, sender, Runnable::run, OutboxTest::skipped, DiscordId::toString);
         waiting.enqueue(OutboundMessage.of(CHANNEL, SERVER, "Server started"));
 
         assertThat(sender.sent).isEmpty();
@@ -191,7 +191,8 @@ class OutboxTest {
                     throw new IllegalStateException("boom");
                 },
                 Runnable::run,
-                OutboxTest::skipped);
+                OutboxTest::skipped,
+                DiscordId::toString);
         throwing.open();
 
         throwing.enqueue(OutboundMessage.of(CHANNEL, STEVE, "lost"));

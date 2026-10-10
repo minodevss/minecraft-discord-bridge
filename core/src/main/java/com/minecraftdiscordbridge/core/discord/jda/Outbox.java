@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 import java.util.function.LongFunction;
 import org.jspecify.annotations.Nullable;
 
@@ -24,16 +25,23 @@ final class Outbox {
     private final MessageSender sender;
     private final Executor serial;
     private final LongFunction<String> skippedText;
+    private final Function<DiscordId, String> channelLabel;
     private final Map<DiscordId, Channel> channels = new HashMap<>();
     private volatile Map<DiscordId, ChannelStatus> snapshot = Map.of();
     private volatile boolean closed;
     private boolean open;
 
-    Outbox(Author server, MessageSender sender, Executor serial, LongFunction<String> skippedText) {
+    Outbox(
+            Author server,
+            MessageSender sender,
+            Executor serial,
+            LongFunction<String> skippedText,
+            Function<DiscordId, String> channelLabel) {
         this.server = server;
         this.sender = sender;
         this.serial = serial;
         this.skippedText = skippedText;
+        this.channelLabel = channelLabel;
     }
 
     void enqueue(OutboundMessage message) {
@@ -83,7 +91,7 @@ final class Outbox {
         channel.inFlight = false;
         if (failure == null) {
             if (channel.failing) {
-                LOGGER.info("Sending to Discord channel {} works again", channelId);
+                LOGGER.info("Sending to Discord channel {} works again", channelLabel.apply(channelId));
             }
             channel.failing = false;
         } else {
@@ -91,7 +99,7 @@ final class Outbox {
             if (!channel.failing) {
                 LOGGER.warn(
                         "Could not send to Discord channel {}: {}. Check that the bot can see the channel and post in it",
-                        channelId,
+                        channelLabel.apply(channelId),
                         Failures.describe(failure));
             }
             channel.failing = true;
