@@ -80,7 +80,7 @@ In Minecraft or the server console:
 | `minecraftdiscordbridge.command.setup` | operators |
 | `minecraftdiscordbridge.gate.bypass` | operators |
 
-On Fabric, a permissions mod such as LuckPerms can grant these nodes.
+On Fabric, NeoForge and Forge, a permissions mod such as LuckPerms can grant these nodes.
 
 In Discord:
 
