@@ -14,33 +14,34 @@ plugins {
 
 rootProject.name = "minecraft-discord-bridge"
 
-include("api", "core", "paper", "velocity")
+include("core", "paper", "velocity")
 
-val allNodes = listOf(
-    "26.1.2" to "fabric",
-    "1.21.11" to "fabric",
-    "1.21.1" to "fabric",
-    "1.20.1" to "fabric",
-    "26.2" to "neoforge",
-    "1.21.1" to "neoforge",
-    "1.20.1" to "forge",
-)
+data class ModNode(val minecraft: String, val loader: String, val gameVersions: List<String>) {
+    val name = "$minecraft-$loader"
+}
+
+val allNodes = file("modded/stonecutter.properties.toml").readText().split("\n[").drop(1).map { table ->
+    val (loader, minecraft) = Regex("""^(\w+)\."(.+)"]""").find(table)!!.destructured
+    val gameVersions = Regex("""^mod\.game_versions = \[(.*)]$""", RegexOption.MULTILINE).find(table)
+        ?: error("Set mod.game_versions for $minecraft-$loader in modded/stonecutter.properties.toml.")
+    ModNode(minecraft, loader, Regex(""""([^"]+)"""").findAll(gameVersions.groupValues[1]).map { it.groupValues[1] }.toList())
+}
+gradle.extra["modNodes"] = allNodes.map { Triple(it.minecraft, it.loader, it.gameVersions) }
 
 val requestedNodes = providers.gradleProperty("nodes").orNull
-val ci = providers.environmentVariable("CI").orNull == "true"
 val activeNodes = when {
-    ci || requestedNodes == "all" -> allNodes
-    requestedNodes != null -> allNodes.filterIndexed { index, (version, loader) ->
-        index == 0 || requestedNodes.split(',').map(String::trim).any { it == version || it == loader || it == "$version-$loader" }
+    requestedNodes == "all" -> allNodes
+    requestedNodes != null -> allNodes.filterIndexed { index, node ->
+        index == 0 || requestedNodes.split(',').map(String::trim).any { it == node.minecraft || it == node.loader || it == node.name }
     }
     else -> allNodes.take(1)
 }
 
 stonecutter {
     create("modded") {
-        for ((version, loader) in activeNodes) {
-            version("$version-$loader", version).buildscript("build.$loader.gradle.kts")
+        for (node in activeNodes) {
+            version(node.name, node.minecraft).buildscript("build.${node.loader}.gradle.kts")
         }
-        vcsVersion = "26.1.2-fabric"
+        vcsVersion = allNodes.first().name
     }
 }

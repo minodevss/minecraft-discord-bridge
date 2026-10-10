@@ -51,7 +51,6 @@ jobs:
             modded/versions/*/build/libs/minecraft-discord-bridge-*.jar
             !**/*-slim.jar
             !**/*-dev-shadow.jar
-            !**/*-sources.jar
           if-no-files-found: error
 
   smoke:
@@ -63,23 +62,23 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: paper 1.21, image: SERVER_JAVA21, type: PAPER, version: "1.21", mount: /plugins, jar: "minecraft-discord-bridge-paper-*.jar" }
-          - { name: paper 1.21.11, image: SERVER_JAVA21, type: PAPER, version: "1.21.11", mount: /plugins, jar: "minecraft-discord-bridge-paper-*.jar" }
-          - { name: paper 26.3, image: SERVER_JAVA25, type: PAPER, version: "26.3", mount: /plugins, jar: "minecraft-discord-bridge-paper-*.jar" }
-          - { name: folia 26.2, image: SERVER_JAVA25, type: FOLIA, version: "26.2", mount: /plugins, jar: "minecraft-discord-bridge-paper-*.jar" }
-          - { name: purpur 26.3, image: SERVER_JAVA25, type: PURPUR, version: "26.3", mount: /plugins, jar: "minecraft-discord-bridge-paper-*.jar" }
-          - { name: leaf 26.2, image: SERVER_JAVA25, type: LEAF, version: "26.2", mount: /plugins, jar: "minecraft-discord-bridge-paper-*.jar" }
-          - { name: fabric 26.1.2, image: SERVER_JAVA25, type: FABRIC, version: "26.1.2", mount: /mods, jar: "minecraft-discord-bridge-fabric-*+26.1.2.jar", env: "MODRINTH_PROJECTS=fabric-api" }
-          - { name: fabric 26.3 with the 26.1.2 jar, image: SERVER_JAVA25, type: FABRIC, version: "26.3", mount: /mods, jar: "minecraft-discord-bridge-fabric-*+26.1.2.jar", env: "MODRINTH_PROJECTS=fabric-api" }
-          - { name: fabric 1.21.11, image: SERVER_JAVA21, type: FABRIC, version: "1.21.11", mount: /mods, jar: "minecraft-discord-bridge-fabric-*+1.21.11.jar", env: "MODRINTH_PROJECTS=fabric-api" }
-          - { name: fabric 1.21.1, image: SERVER_JAVA21, type: FABRIC, version: "1.21.1", mount: /mods, jar: "minecraft-discord-bridge-fabric-*+1.21.1.jar", env: "MODRINTH_PROJECTS=fabric-api" }
-          - { name: fabric 1.20.1, image: SERVER_JAVA17, type: FABRIC, version: "1.20.1", mount: /mods, jar: "minecraft-discord-bridge-fabric-*+1.20.1.jar", env: "MODRINTH_PROJECTS=fabric-api" }
-          - { name: neoforge 26.2, image: SERVER_JAVA25, type: NEOFORGE, version: "26.2", mount: /mods, jar: "minecraft-discord-bridge-neoforge-*+26.2.jar" }
-          - { name: neoforge 26.3 beta with the 26.2 jar, image: SERVER_JAVA25, type: NEOFORGE, version: "26.3", mount: /mods, jar: "minecraft-discord-bridge-neoforge-*+26.2.jar", env: "NEOFORGE_VERSION=beta" }
-          - { name: neoforge 1.21.1, image: SERVER_JAVA21, type: NEOFORGE, version: "1.21.1", mount: /mods, jar: "minecraft-discord-bridge-neoforge-*+1.21.1.jar" }
-          - { name: forge 1.20.1, image: SERVER_JAVA17, type: FORGE, version: "1.20.1", mount: /mods, jar: "minecraft-discord-bridge-forge-*+1.20.1.jar" }
-          - { name: velocity 3.4.0, image: PROXY_JAVA21, type: VELOCITY, mount: /plugins, jar: "minecraft-discord-bridge-velocity-*.jar", env: "VELOCITY_VERSION=3.4.0" }
-          - { name: velocity 4.2.0, image: PROXY_JAVA25, type: VELOCITY, mount: /plugins, jar: "minecraft-discord-bridge-velocity-*.jar", env: "VELOCITY_VERSION=4.2.0" }
+          - { name: paper 1.21, image: SERVER_JAVA21, type: PAPER, version: "1.21" }
+          - { name: paper 1.21.11, image: SERVER_JAVA21, type: PAPER, version: "1.21.11" }
+          - { name: paper 26.3, image: SERVER_JAVA25, type: PAPER, version: "26.3" }
+          - { name: folia 26.2, image: SERVER_JAVA25, type: FOLIA, version: "26.2" }
+          - { name: purpur 26.3, image: SERVER_JAVA25, type: PURPUR, version: "26.3" }
+          - { name: leaf 26.2, image: SERVER_JAVA25, type: LEAF, version: "26.2" }
+          - { name: fabric 26.1.2, image: SERVER_JAVA25, type: FABRIC, version: "26.1.2", env: "MODRINTH_PROJECTS=fabric-api" }
+          - { name: fabric 26.3 with the 26.1.2 jar, image: SERVER_JAVA25, type: FABRIC, version: "26.3", jar: "26.1.2", env: "MODRINTH_PROJECTS=fabric-api" }
+          - { name: fabric 1.21.11, image: SERVER_JAVA21, type: FABRIC, version: "1.21.11", env: "MODRINTH_PROJECTS=fabric-api" }
+          - { name: fabric 1.21.1, image: SERVER_JAVA21, type: FABRIC, version: "1.21.1", env: "MODRINTH_PROJECTS=fabric-api" }
+          - { name: fabric 1.20.1, image: SERVER_JAVA17, type: FABRIC, version: "1.20.1", env: "MODRINTH_PROJECTS=fabric-api" }
+          - { name: neoforge 26.2, image: SERVER_JAVA25, type: NEOFORGE, version: "26.2" }
+          - { name: neoforge 26.3 beta with the 26.2 jar, image: SERVER_JAVA25, type: NEOFORGE, version: "26.3", jar: "26.2", env: "NEOFORGE_VERSION=beta" }
+          - { name: neoforge 1.21.1, image: SERVER_JAVA21, type: NEOFORGE, version: "1.21.1" }
+          - { name: forge 1.20.1, image: SERVER_JAVA17, type: FORGE, version: "1.20.1" }
+          - { name: velocity 3.4.0, image: PROXY_JAVA21, type: VELOCITY, env: "VELOCITY_VERSION=3.4.0" }
+          - { name: velocity 4.2.0, image: PROXY_JAVA25, type: VELOCITY, env: "VELOCITY_VERSION=4.2.0" }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -94,12 +93,11 @@ jobs:
           IMAGE: ${{ env[matrix.image] }}
           TYPE: ${{ matrix.type }}
           VERSION: ${{ matrix.version }}
-          MOUNT: ${{ matrix.mount }}
-          JAR: ${{ matrix.jar }}
+          JAR_MINECRAFT: ${{ matrix.jar }}
           SERVER_ENV: ${{ matrix.env }}
       - if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: smoke-log-${{ strategy.job-index }}
+          name: server log (${{ matrix.name }})
           path: server.log
           if-no-files-found: ignore

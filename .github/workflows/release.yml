@@ -61,18 +61,10 @@ jobs:
           mkdir dist
           cp "paper/build/libs/minecraft-discord-bridge-paper-$version.jar" \
             "velocity/build/libs/minecraft-discord-bridge-velocity-$version.jar" dist/
-          for jar in modded/versions/*/build/libs/minecraft-discord-bridge-*-"$version"+*.jar; do
-            case "$jar" in
-              *-slim.jar | *-dev-shadow.jar | *-sources.jar) ;;
-              *) cp "$jar" dist/ ;;
-            esac
+          for node in modded/versions/*/; do
+            name=$(basename "$node")
+            cp "${node}build/libs/minecraft-discord-bridge-${name##*-}-$version+${name%-*}.jar" dist/
           done
-          count=$(find dist -name '*.jar' | wc -l)
-          if [[ "$count" -ne 9 ]]; then
-            echo "::error::Expected 9 jars, found $count."
-            ls dist
-            exit 1
-          fi
           (cd dist && sha256sum -- *.jar > SHA256SUMS)
           cat dist/SHA256SUMS
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -142,10 +134,7 @@ jobs:
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
-          java-version: |
-            17
-            21
-            25
+          java-version: 25
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           cache-disabled: true
@@ -160,11 +149,9 @@ jobs:
         run: gh release view "$TAG" --json body --jq .body > dist/notes.md
       - name: Publish to Modrinth, CurseForge and Hangar
         env:
-          # settings.gradle.kts configures every modded node when CI is true; publishing uploads the built jars and needs none.
-          CI: "false"
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
           CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
           HANGAR_TOKEN: ${{ secrets.HANGAR_TOKEN }}
         run: >-
           ./gradlew :publishMods :publishAllPublicationsToHangar
-          -Ppublish.dist=dist -Ppublish.changelog=dist/notes.md --no-configuration-cache
+          -Ppublish.changelog=dist/notes.md --no-configuration-cache

@@ -1,11 +1,11 @@
 import me.modmuss50.mpp.ReleaseType
 
 plugins {
-    id("net.fabricmc.fabric-loom") version "1.18.3" apply false
-    id("net.neoforged.moddev") version "2.0.148" apply false
-    id("net.neoforged.moddev.legacyforge") version "2.0.148" apply false
-    id("me.modmuss50.mod-publish-plugin") version "2.2.1"
-    id("io.papermc.hangar-publish-plugin") version "0.1.4"
+    alias(libs.plugins.loom) apply false
+    alias(libs.plugins.moddev) apply false
+    alias(libs.plugins.moddev.legacyforge) apply false
+    alias(libs.plugins.mod.publish)
+    alias(libs.plugins.hangar.publish)
 }
 
 class ModJar(val minecraft: String, val loader: String, val gameVersions: List<String>) {
@@ -16,15 +16,9 @@ class ModJar(val minecraft: String, val loader: String, val gameVersions: List<S
     fun fileName(version: String) = "minecraft-discord-bridge-$loader-$version+$minecraft.jar"
 }
 
-val modJars = listOf(
-    ModJar("26.1.2", "fabric", listOf("26.1.2", "26.2", "26.3")),
-    ModJar("1.21.11", "fabric", listOf("1.21.11")),
-    ModJar("1.21.1", "fabric", listOf("1.21", "1.21.1")),
-    ModJar("1.20.1", "fabric", listOf("1.20.1")),
-    ModJar("26.2", "neoforge", listOf("26.2", "26.3")),
-    ModJar("1.21.1", "neoforge", listOf("1.21", "1.21.1")),
-    ModJar("1.20.1", "forge", listOf("1.20.1")),
-)
+@Suppress("UNCHECKED_CAST")
+val modJars = (gradle.extra["modNodes"] as List<Triple<String, String, List<String>>>)
+    .map { (minecraft, loader, gameVersions) -> ModJar(minecraft, loader, gameVersions) }
 val pluginGameVersions = listOf(
     "1.21", "1.21.1", "1.21.2", "1.21.3", "1.21.4", "1.21.5", "1.21.6", "1.21.7", "1.21.8", "1.21.9", "1.21.10", "1.21.11",
     "26.1", "26.1.1", "26.1.2", "26.2", "26.3",
@@ -35,8 +29,8 @@ val hangarVelocityVersions = listOf("3.4-4.2.0")
 val bridgeVersion = version.toString()
 val paperJar = "minecraft-discord-bridge-paper-$bridgeVersion.jar"
 val velocityJar = "minecraft-discord-bridge-velocity-$bridgeVersion.jar"
-val dist = layout.projectDirectory.dir(providers.gradleProperty("publish.dist").orElse("dist"))
-val dryRunOnly = providers.gradleProperty("publish.dryRun").isPresent
+val dist = layout.projectDirectory.dir("dist")
+val dryRunOnly = providers.gradleProperty("publish.dryRun").map { it != "false" }.getOrElse(false)
 val releaseType = when {
     "alpha" in bridgeVersion -> ReleaseType.ALPHA
     '-' in bridgeVersion -> ReleaseType.BETA
@@ -52,7 +46,7 @@ fun projectId(property: String, site: String) = providers.gradleProperty(propert
     it.ifBlank { throw GradleException("Set $property in gradle.properties to the $site project ID, or remove the token.") }
 }
 
-fun distFile(name: String) = dist.map { it.file(name) }
+fun distFile(name: String) = dist.file(name)
 
 val modrinthToken = secret("MODRINTH_TOKEN")
 val curseforgeToken = secret("CURSEFORGE_TOKEN")
@@ -120,7 +114,7 @@ publishMods {
 }
 
 hangarPublish {
-    if (hangarToken.isPresent) {
+    if (!dryRunOnly && hangarToken.isPresent) {
         publications.register("plugin") {
             id = projectId("hangar.id", "Hangar")
             version = bridgeVersion

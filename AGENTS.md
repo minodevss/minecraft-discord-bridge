@@ -4,7 +4,7 @@ Connects one Minecraft server (or one Velocity network) to one Discord server: c
 Runs inside the server as a Paper or Velocity plugin, or a Fabric, NeoForge or Forge mod. Every owner runs their own bot.
 
 ## Commands
-- `./gradlew build` builds api, core, paper, velocity and the active modded node.
+- `./gradlew build` builds core, paper, velocity and the active modded node.
 - `./gradlew build -Pnodes=all` builds every modded node. Run it before finishing any change under `modded/` or `core/`.
 - `./gradlew :core:test` while working on core.
 - `./gradlew spotlessApply` before committing.
@@ -12,10 +12,10 @@ Runs inside the server as a Paper or Velocity plugin, or a Fabric, NeoForge or F
 
 ## Architecture
 The Gradle project graph is the architecture. Do not add edges.
-- `api`: the public API for other plugins and mods. Own types only; never JDA, Adventure or Minecraft types.
 - `core`: everything that does not need the game: Discord, config, storage, text, features. No `net.minecraft`, Bukkit, Paper, Velocity, Fabric or Forge imports. Ships with its libraries relocated as `core-all`.
 - `paper`, `velocity`, `modded`: thin adapters. They implement core's platform interfaces and publish game events. No feature logic.
 - `modded` is one Stonecutter tree. Loader code lives in `modded/fabric`, `modded/neoforge`, `modded/forge`; version differences use Stonecutter comments, never copies.
+- Each table in `modded/stonecutter.properties.toml` is one modded node. The build and publishing read the node list from there.
 
 Threads:
 - Game threads only hand events to core. Never block them and never do I/O on them.
@@ -26,7 +26,7 @@ Threads:
 Discord must never hurt the server: startup never waits for Discord, and shutdown finishes within 3 seconds.
 
 ## Code
-- `api` and `core` target Java 17: records, sealed interfaces, switch expressions. Adapters use their Minecraft version's Java.
+- `core` targets Java 17: records, sealed interfaces, switch expressions. Adapters use their Minecraft version's Java.
 - Every package has `@NullMarked`; use `@Nullable` where null is allowed. NullAway enforces it.
 - Small classes and methods; names say what they do. Prefer a better name or type over a comment.
 - Parse input once into value types (`DiscordId`, `PlayerName`) and pass those inward.
@@ -39,7 +39,6 @@ Discord must never hurt the server: startup never waits for Discord, and shutdow
 Default to none. Add one only for what code cannot say: a platform quirk, an outside constraint, a hidden invariant, or why the obvious way is wrong. One line, two at most.
 - Good: `// NeoForge skips ServerStoppingEvent after a crash; ServerStoppedEvent always fires.`
 - Bad: `// send the message` above `channel.send(message)`
-- Javadoc only in `api`.
 - No commented-out code. Never mention the chat, prompt or agent.
 
 ## Tests

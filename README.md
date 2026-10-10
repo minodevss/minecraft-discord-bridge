@@ -80,7 +80,7 @@ In Minecraft or the server console:
 | `minecraftdiscordbridge.command.setup` | operators |
 | `minecraftdiscordbridge.gate.bypass` | operators |
 
-On Fabric, a permissions mod such as LuckPerms can grant these nodes.
+On Fabric, NeoForge and Forge, a permissions mod such as LuckPerms can grant these nodes.
 
 In Discord:
 
@@ -126,7 +126,7 @@ The bridge connects one server or network to one Discord server, and each owner 
 ## Build
 
 ```sh
-./gradlew build                # api, core, paper, velocity and the Fabric 26.1.2 jar
+./gradlew build                # core, paper, velocity and the Fabric 26.1.2 jar
 ./gradlew build -Pnodes=all    # every Fabric, NeoForge and Forge jar
 ```
 

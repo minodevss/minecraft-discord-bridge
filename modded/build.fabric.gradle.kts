@@ -3,7 +3,7 @@ import net.fabricmc.loom.api.LoomGradleExtensionAPI
 import net.fabricmc.loom.task.RemapJarTask
 
 plugins {
-    id("bridge.bundle")
+    id("bridge.adapter")
 }
 
 val minecraft = sc.current.version
@@ -35,8 +35,6 @@ dependencies {
     modConfiguration(permissionsApi)
     "include"(permissionsApi)
     "compileOnly"(libs.jspecify)
-    "implementation"(project(":core", "shadowRuntimeElements"))
-    "bundle"(project(":core", "shadowRuntimeElements"))
 }
 
 sourceSets.named("main") {

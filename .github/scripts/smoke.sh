@@ -1,22 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${IMAGE:?}" "${TYPE:?}" "${JAR:?}" "${MOUNT:?}"
+: "${IMAGE:?}" "${TYPE:?}"
 container=bridge-smoke
 log=server.log
 startup_line='No Discord bot token is set'
 bridge_name='minecraft[ -]?discord[ -]?bridge'
 
-jar=$(find jars -type f -name "$JAR" -print -quit)
+case "$TYPE" in
+  PAPER | FOLIA | PURPUR | LEAF) mount=/plugins pattern="minecraft-discord-bridge-paper-*.jar" ;;
+  VELOCITY) mount=/plugins pattern="minecraft-discord-bridge-velocity-*.jar" ;;
+  *) mount=/mods pattern="minecraft-discord-bridge-${TYPE,,}-*+${JAR_MINECRAFT:-$VERSION}.jar" ;;
+esac
+
+jar=$(find jars -type f -name "$pattern" -print -quit)
 if [[ -z "$jar" ]]; then
-  echo "::error::No jar in the build matches $JAR"
+  echo "::error::No jar in the build matches $pattern"
   exit 1
 fi
 mkdir -p addons
 cp "$jar" addons/
 echo "Testing $(basename "$jar") on $TYPE ${VERSION:-latest} with $IMAGE"
 
-args=(--name "$container" -e EULA=TRUE -e TYPE="$TYPE" -e MEMORY=2G -v "$PWD/addons:$MOUNT:ro")
+args=(--name "$container" -e EULA=TRUE -e TYPE="$TYPE" -e MEMORY=2G -v "$PWD/addons:$mount:ro")
 if [[ -n "${VERSION:-}" ]]; then
   args+=(-e VERSION="$VERSION")
 fi

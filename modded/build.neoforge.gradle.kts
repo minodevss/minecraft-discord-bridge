@@ -1,7 +1,7 @@
 plugins {
     id("net.neoforged.moddev")
-    id("bridge.bundle")
-    id("bridge.neoforge-mutex")
+    id("bridge.adapter")
+    id("bridge.moddev-mutex")
 }
 
 val minecraft = sc.current.version
@@ -19,8 +19,6 @@ neoForge {
 }
 
 dependencies {
-    implementation(project(":core", "shadowRuntimeElements"))
-    "bundle"(project(":core", "shadowRuntimeElements"))
     if (sc.current.parsed < "26.1") compileOnly(libs.jspecify)
 }
 

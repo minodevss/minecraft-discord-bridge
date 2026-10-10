@@ -1,12 +1,11 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-    id("bridge.java-conventions")
+    id("bridge.java")
     id("com.gradleup.shadow")
 }
 
 dependencies {
-    api(project(":api"))
     implementation(libs.jda) {
         exclude(group = "club.minnced", module = "opus-java")
         exclude(group = "com.google.crypto.tink", module = "tink")

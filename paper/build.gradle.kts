@@ -1,6 +1,6 @@
 plugins {
-    id("bridge.java-conventions")
-    id("bridge.bundle")
+    id("bridge.java")
+    id("bridge.adapter")
 }
 
 base.archivesName = "minecraft-discord-bridge-paper"
@@ -11,8 +11,6 @@ repositories {
 
 dependencies {
     compileOnly(libs.paper.api)
-    implementation(project(":core", "shadowRuntimeElements"))
-    "bundle"(project(":core", "shadowRuntimeElements"))
 }
 
 tasks.withType<JavaCompile>().configureEach {
