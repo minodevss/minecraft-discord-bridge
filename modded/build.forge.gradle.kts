@@ -2,8 +2,8 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     id("net.neoforged.moddev.legacyforge")
-    id("bridge.bundle")
-    id("bridge.neoforge-mutex")
+    id("bridge.adapter")
+    id("bridge.moddev-mutex")
 }
 
 val minecraft = sc.current.version

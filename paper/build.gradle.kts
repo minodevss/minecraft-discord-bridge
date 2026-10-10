@@ -1,6 +1,6 @@
 plugins {
-    id("bridge.java-conventions")
-    id("bridge.bundle")
+    id("bridge.java")
+    id("bridge.adapter")
 }
 
 base.archivesName = "minecraft-discord-bridge-paper"

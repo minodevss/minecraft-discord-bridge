@@ -3,7 +3,7 @@ import net.fabricmc.loom.api.LoomGradleExtensionAPI
 import net.fabricmc.loom.task.RemapJarTask
 
 plugins {
-    id("bridge.bundle")
+    id("bridge.adapter")
 }
 
 val minecraft = sc.current.version

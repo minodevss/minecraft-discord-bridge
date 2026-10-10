@@ -1,7 +1,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-    id("bridge.java-conventions")
+    id("bridge.java")
     id("com.gradleup.shadow")
 }
 
