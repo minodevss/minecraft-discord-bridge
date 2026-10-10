@@ -35,19 +35,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.BooleanSupplier;
 import org.jspecify.annotations.Nullable;
 
-final class Engine implements BridgeCommand.Callbacks {
+final class Activator implements BridgeCommand.Callbacks {
     static final Duration REBIND_DELAY = Duration.ofSeconds(2);
 
     private record Boot(Stores stores, ConfigResult config, boolean recovered) {}
 
     private final Services services;
     private final DiscordConnection connection;
+    private final JoinQueue joins;
     private final ConfigLoader loader;
     private final ShutdownMarker marker;
     private final BooleanSupplier stopping;
     private final Object lock = new Object();
-
-    private final JoinQueue joins;
     private volatile @Nullable Features features;
     private volatile boolean closed;
     private @Nullable Stores stores;
@@ -58,7 +57,7 @@ final class Engine implements BridgeCommand.Callbacks {
     private boolean startAnnounced;
     private long droppedEvents;
 
-    Engine(
+    Activator(
             Services services,
             ExecutorService lifecycle,
             DiscordConnection.Factory factory,
@@ -68,12 +67,12 @@ final class Engine implements BridgeCommand.Callbacks {
         this.services = services;
         this.connection =
                 new DiscordConnection(services, lifecycle, factory, () -> Optional.ofNullable(features), () -> lang);
-        this.loader = loader;
-        this.marker = marker;
-        this.stopping = stopping;
         this.joins = new JoinQueue(
                 () -> Optional.ofNullable(features).map(Features::gate),
                 services.platform().info().dataVersion());
+        this.loader = loader;
+        this.marker = marker;
+        this.stopping = stopping;
     }
 
     void boot() {

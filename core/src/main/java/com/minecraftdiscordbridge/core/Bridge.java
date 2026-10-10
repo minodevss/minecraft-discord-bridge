@@ -56,7 +56,7 @@ public final class Bridge {
     private final IoExecutor io;
     private final IoExecutor downloads;
     private final ExecutorService lifecycle;
-    private final Engine engine;
+    private final Activator activator;
     private final AtomicBoolean started = new AtomicBoolean();
     private final AtomicBoolean stopped = new AtomicBoolean();
     private volatile boolean stopping;
@@ -93,7 +93,7 @@ public final class Bridge {
                         platform.info().minecraftVersion()),
                 groups,
                 new AccessMemory());
-        this.engine = new Engine(
+        this.activator = new Activator(
                 services,
                 lifecycle,
                 discordFactory,
@@ -116,7 +116,7 @@ public final class Bridge {
 
     public void start() {
         if (started.compareAndSet(false, true) && !stopped.get()) {
-            engine.boot();
+            activator.boot();
         }
     }
 
@@ -127,7 +127,7 @@ public final class Bridge {
             crashed = !stopping;
             stopping = true;
         } else {
-            loop.content(() -> engine.onGameEvent(event));
+            loop.content(() -> activator.onGameEvent(event));
         }
     }
 
@@ -139,17 +139,18 @@ public final class Bridge {
             }
         }
         List<String> copy = List.copyOf(arguments);
-        loop.control(() -> engine.command(source, granted, copy));
+        loop.control(() -> activator.command(source, granted, copy));
     }
 
     public CompletableFuture<JoinDecision> checkJoin(PlayerProfile player, boolean bypass) {
         if (stopped.get()) {
-            return CompletableFuture.completedFuture(engine.joins().fallback(player, bypass));
+            return CompletableFuture.completedFuture(activator.joins().fallback(player, bypass));
         }
         CompletableFuture<JoinDecision> decision = new CompletableFuture<>();
-        loop.control(() -> engine.joins().check(player, bypass, decision));
+        loop.control(() -> activator.joins().check(player, bypass, decision));
         return decision.orTimeout(JoinGate.BUDGET.toMillis(), TimeUnit.MILLISECONDS)
-                .handle((done, failure) -> done != null ? done : engine.joins().fallback(player, bypass));
+                .handle((done, failure) ->
+                        done != null ? done : activator.joins().fallback(player, bypass));
     }
 
     public void stop() {
@@ -157,9 +158,9 @@ public final class Bridge {
             return;
         }
         Deadline deadline = Deadline.after(STOP_BUDGET);
-        List<OutboundMessage> farewell = engine.farewell(crashed);
-        CompletableFuture<Void> markerCleared = io.completeOnIo(engine::clearMarker);
-        Discord discord = engine.close();
+        List<OutboundMessage> farewell = activator.farewell(crashed);
+        CompletableFuture<Void> markerCleared = io.completeOnIo(activator::clearMarker);
+        Discord discord = activator.close();
         stopDiscord(discord, farewell, deadline.minus(AFTER_DISCORD));
         loop.close();
         awaitMarker(markerCleared, deadline);
