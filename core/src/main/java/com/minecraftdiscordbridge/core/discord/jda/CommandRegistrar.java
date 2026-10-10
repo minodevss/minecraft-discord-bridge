@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.interactions.DiscordLocale;
 import net.dv8tion.jda.api.interactions.IntegrationType;
@@ -79,8 +80,7 @@ final class CommandRegistrar {
         SlashCommandData command = Commands.slash(spec.name(), spec.description())
                 .setContexts(InteractionContextType.GUILD)
                 .setIntegrationTypes(IntegrationType.GUILD_INSTALL)
-                .setDefaultPermissions(
-                        spec.adminOnly() ? DefaultMemberPermissions.DISABLED : DefaultMemberPermissions.ENABLED);
+                .setDefaultPermissions(defaultPermissions(spec.access()));
         spec.koreanDescription().ifPresent(korean -> command.setDescriptionLocalization(DiscordLocale.KOREAN, korean));
         return command.addOptions(
                         spec.options().stream().map(CommandRegistrar::toData).toList())
@@ -102,6 +102,14 @@ final class CommandRegistrar {
                 type(spec.type()), spec.name(), spec.description(), spec.required(), spec.autocomplete());
         spec.koreanDescription().ifPresent(korean -> option.setDescriptionLocalization(DiscordLocale.KOREAN, korean));
         return option;
+    }
+
+    private static DefaultMemberPermissions defaultPermissions(CommandSpec.Access access) {
+        return switch (access) {
+            case EVERYONE -> DefaultMemberPermissions.ENABLED;
+            case MANAGE_SERVER -> DefaultMemberPermissions.enabledFor(Permission.MANAGE_SERVER);
+            case ADMINS -> DefaultMemberPermissions.DISABLED;
+        };
     }
 
     private static OptionType type(CommandSpec.OptionType type) {

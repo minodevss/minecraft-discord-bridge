@@ -7,6 +7,7 @@ import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
 import com.minecraftdiscordbridge.core.discord.CommandReply;
 import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
+import com.minecraftdiscordbridge.core.discord.CommandSpec.Access;
 import com.minecraftdiscordbridge.core.discord.CommandSpec.Option;
 import com.minecraftdiscordbridge.core.discord.CommandSpec.OptionType;
 import com.minecraftdiscordbridge.core.discord.CommandSpec.Subcommand;
@@ -71,15 +72,15 @@ public final class DiscordCommands {
     public static List<CommandSpec> forConfig(BridgeConfig config) {
         List<CommandSpec> commands = new ArrayList<>();
         commands.add(setupCommand());
-        commands.add(command(LIST, List.of(), false, false, false));
+        commands.add(command(LIST, List.of(), Access.EVERYONE, false, false));
         if (config.linking().enabled()) {
             commands.add(command(
                     LINK,
                     List.of(option(OptionType.STRING, Linking.CODE_OPTION, "command.link.code", true, false)),
-                    false,
+                    Access.EVERYONE,
                     true,
                     true));
-            commands.add(command(UNLINK, List.of(), false, true, true));
+            commands.add(command(UNLINK, List.of(), Access.EVERYONE, true, true));
         }
         if (config.actions().whitelist()) {
             commands.add(new CommandSpec(
@@ -88,7 +89,7 @@ public final class DiscordCommands {
                     korean("command.whitelist"),
                     List.of(),
                     List.of(whitelistChange(Actions.ADD), whitelistChange(Actions.REMOVE)),
-                    true,
+                    Access.ADMINS,
                     true,
                     false));
         }
@@ -98,7 +99,7 @@ public final class DiscordCommands {
                     List.of(
                             option(OptionType.STRING, Actions.PLAYER_OPTION, "command.player", true, true),
                             option(OptionType.STRING, Actions.REASON_OPTION, "command.kick.reason", false, false)),
-                    true,
+                    Access.ADMINS,
                     true,
                     false));
         }
@@ -140,7 +141,7 @@ public final class DiscordCommands {
                 List.of(
                         option(OptionType.STRING, ChannelSetup.ROLE_OPTION, "command.setup.as", false, true),
                         option(OptionType.STRING, ChannelSetup.CODE_OPTION, "command.setup.code", false, false)),
-                false,
+                Access.MANAGE_SERVER,
                 true,
                 true);
     }
@@ -155,9 +156,9 @@ public final class DiscordCommands {
     }
 
     private static CommandSpec command(
-            String name, List<Option> options, boolean adminOnly, boolean slow, boolean ephemeral) {
+            String name, List<Option> options, Access access, boolean slow, boolean ephemeral) {
         String key = "command." + name;
-        return new CommandSpec(name, english(key), korean(key), options, adminOnly, slow, ephemeral);
+        return new CommandSpec(name, english(key), korean(key), options, access, slow, ephemeral);
     }
 
     private static Option option(OptionType type, String name, String key, boolean required, boolean autocomplete) {

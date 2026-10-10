@@ -9,7 +9,7 @@ public record CommandSpec(
         Optional<String> koreanDescription,
         List<Option> options,
         List<Subcommand> subcommands,
-        boolean adminOnly,
+        Access access,
         boolean slow,
         boolean ephemeral) {
     public CommandSpec {
@@ -25,10 +25,10 @@ public record CommandSpec(
             String description,
             Optional<String> koreanDescription,
             List<Option> options,
-            boolean adminOnly,
+            Access access,
             boolean slow,
             boolean ephemeral) {
-        this(name, description, koreanDescription, options, List.of(), adminOnly, slow, ephemeral);
+        this(name, description, koreanDescription, options, List.of(), access, slow, ephemeral);
     }
 
     public record Option(
@@ -44,6 +44,12 @@ public record CommandSpec(
         public Subcommand {
             options = List.copyOf(options);
         }
+    }
+
+    public enum Access {
+        EVERYONE,
+        MANAGE_SERVER,
+        ADMINS
     }
 
     public enum OptionType {

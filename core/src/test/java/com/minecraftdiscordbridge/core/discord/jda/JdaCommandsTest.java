@@ -165,7 +165,7 @@ class JdaCommandsTest extends JdaTestBase {
                         Optional.empty(),
                         List.of(new CommandSpec.Option(
                                 CommandSpec.OptionType.STRING, "player", "Player", Optional.empty(), true, false)))),
-                true,
+                CommandSpec.Access.ADMINS,
                 false,
                 false);
         bridge = start(TestSupport.settings(List.of(whitelist)));

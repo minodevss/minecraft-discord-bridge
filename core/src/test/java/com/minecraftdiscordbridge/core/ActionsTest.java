@@ -47,7 +47,7 @@ class ActionsTest {
         try (Harness on = Harness.started(directory.resolve("on"), ACTIONS_ON)) {
             List<CommandSpec> commands = on.discord().settings.commands();
             assertThat(commands)
-                    .filteredOn(CommandSpec::adminOnly)
+                    .filteredOn(command -> command.access() == CommandSpec.Access.ADMINS)
                     .extracting(CommandSpec::name)
                     .containsExactly("whitelist", "kick");
             CommandSpec whitelist = commands.stream()

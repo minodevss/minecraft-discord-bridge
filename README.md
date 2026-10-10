@@ -51,7 +51,7 @@ Setup takes about two minutes.
 3. Run `/discord reload` in the server console. The bridge connects and logs an invite link with the permissions it needs. Open the link and add the bot to your Discord server.
 4. In the Discord channel for the chat, run `/setup`.
 
-Only the bot's owner, the account that owns the application in the Developer Portal, can run `/setup` directly. Anyone else needs the **Manage Server** permission and a one-time code: run `/discord setup` in the server console, then run `/setup code:<code>` in Discord within 10 minutes. To post events in a different channel, run `/setup as:events` there.
+By default, Discord shows `/setup` only to members with the **Manage Server** permission. The bot's owner, the account that owns the application in the Developer Portal, can run it directly. Anyone else also needs a one-time code: run `/discord setup` in the server console, then run `/setup code:<code>` in Discord within 10 minutes. To post events in a different channel, run `/setup as:events` there.
 
 The bridge folder is `plugins/MinecraftDiscordBridge` on Paper, `plugins/minecraftdiscordbridge` on Velocity, and `config/minecraftdiscordbridge` on Fabric, NeoForge and Forge.
 

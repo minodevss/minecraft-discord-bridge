@@ -46,7 +46,7 @@ abstract class JdaTestBase {
             Optional.of("접속 중인 플레이어"),
             List.of(new CommandSpec.Option(
                     CommandSpec.OptionType.INTEGER, "page", "Page", Optional.empty(), false, false)),
-            false,
+            CommandSpec.Access.EVERYONE,
             false,
             false);
     static final CommandSpec WHITELIST = new CommandSpec(
@@ -55,7 +55,7 @@ abstract class JdaTestBase {
             Optional.empty(),
             List.of(new CommandSpec.Option(
                     CommandSpec.OptionType.STRING, "player", "Player name", Optional.of("플레이어 이름"), true, true)),
-            true,
+            CommandSpec.Access.ADMINS,
             true,
             false);
 

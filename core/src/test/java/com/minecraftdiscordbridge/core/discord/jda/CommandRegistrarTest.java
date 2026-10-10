@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.minecraftdiscordbridge.core.discord.CommandSpec;
 import java.util.List;
 import java.util.Optional;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.utils.data.DataObject;
 import org.junit.jupiter.api.Test;
 
@@ -15,11 +16,11 @@ class CommandRegistrarTest {
             Optional.of("플레이어를 추방합니다"),
             List.of(new CommandSpec.Option(
                     CommandSpec.OptionType.STRING, "player", "Player name", Optional.of("플레이어 이름"), true, true)),
-            true,
+            CommandSpec.Access.ADMINS,
             false,
             true);
-    private static final CommandSpec LINK =
-            new CommandSpec("link", "Link your account", Optional.empty(), List.of(), false, false, true);
+    private static final CommandSpec LINK = new CommandSpec(
+            "link", "Link your account", Optional.empty(), List.of(), CommandSpec.Access.EVERYONE, false, true);
 
     @Test
     void limitsAdminCommandsToAdministratorsByDefault() {
@@ -28,6 +29,15 @@ class CommandRegistrarTest {
 
         assertThat(kick.getString("default_member_permissions")).isEqualTo("0");
         assertThat(link.isNull("default_member_permissions")).isTrue();
+    }
+
+    @Test
+    void limitsManageServerCommandsToThatPermissionByDefault() {
+        CommandSpec setup = new CommandSpec(
+                "setup", "Set up", Optional.empty(), List.of(), CommandSpec.Access.MANAGE_SERVER, true, true);
+
+        assertThat(CommandRegistrar.toData(setup).toData().getString("default_member_permissions"))
+                .isEqualTo(Long.toString(Permission.MANAGE_SERVER.getRawValue()));
     }
 
     @Test
@@ -70,7 +80,7 @@ class CommandRegistrarTest {
                                 Optional.empty(),
                                 true,
                                 false)))),
-                true,
+                CommandSpec.Access.ADMINS,
                 true,
                 false);
 

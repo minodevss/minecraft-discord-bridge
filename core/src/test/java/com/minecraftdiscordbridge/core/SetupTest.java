@@ -52,6 +52,16 @@ class SetupTest {
     }
 
     @Test
+    void offersSetupToMembersWhoCanManageTheServer() throws IOException {
+        try (Harness harness = Harness.started(directory, UNBOUND)) {
+            assertThat(harness.discord().settings.commands())
+                    .singleElement()
+                    .extracting(CommandSpec::access)
+                    .isEqualTo(CommandSpec.Access.MANAGE_SERVER);
+        }
+    }
+
+    @Test
     void addsAnEventsChannelToTheExistingChoice() throws IOException {
         try (Harness harness = Harness.started(directory, UNBOUND)) {
             harness.discord().owners = Set.of(OWNER);
