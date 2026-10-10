@@ -5,4 +5,20 @@ api-version: '1.21'
 folia-supported: true
 description: Minecraft ↔ Discord bridge
 website: https://github.com/minodevss/minecraft-discord-bridge
-softdepend: [LuckPerms, PlaceholderAPI]
+softdepend: [LuckPerms, PlaceholderAPI, floodgate]
+permissions:
+  minecraftdiscordbridge.command.link:
+    description: Link a Discord account with /discord link
+    default: true
+  minecraftdiscordbridge.command.toggle:
+    description: Hide or show Discord messages for yourself
+    default: true
+  minecraftdiscordbridge.command.status:
+    description: Show the bridge status
+    default: op
+  minecraftdiscordbridge.command.reload:
+    description: Reload the bridge configuration
+    default: op
+  minecraftdiscordbridge.command.setup:
+    description: Set up the Discord bot and channels
+    default: op
