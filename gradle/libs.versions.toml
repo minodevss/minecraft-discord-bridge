@@ -14,6 +14,7 @@ velocity-api = "3.4.0"
 gson = "2.11.0"
 slf4j = "2.0.17"
 log4j = "2.24.3"
+luckperms-api = "5.4"
 
 [libraries]
 jda = { module = "net.dv8tion:JDA", version.ref = "jda" }
@@ -27,6 +28,7 @@ jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j" }
+luckperms-api = { module = "net.luckperms:api", version.ref = "luckperms-api" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-launcher = { module = "org.junit.platform:junit-platform-launcher" }

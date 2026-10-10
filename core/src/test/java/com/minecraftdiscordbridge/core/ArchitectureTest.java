@@ -75,6 +75,17 @@ class ArchitectureTest {
     }
 
     @Test
+    void onlyTheLuckPermsAdapterTouchesLuckPerms() {
+        noClasses()
+                .that()
+                .doNotHaveFullyQualifiedName(CORE + ".access.LuckPermsGroups")
+                .should()
+                .dependOnClassesThat()
+                .resideInAPackage("net.luckperms..")
+                .check(PRODUCTION);
+    }
+
+    @Test
     void featurePackagesHaveNoCycles() {
         slices().matching(CORE + ".(*)..").should().beFreeOfCycles().check(PRODUCTION);
     }

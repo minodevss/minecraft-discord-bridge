@@ -2,7 +2,10 @@ package com.minecraftdiscordbridge.modded.forge;
 
 import com.minecraftdiscordbridge.modded.common.DiscordCommand;
 import com.minecraftdiscordbridge.modded.common.ModdedBridge;
+import net.minecraft.network.Connection;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.ServerLoginPacketListenerImpl;
 import net.minecraft.world.entity.Entity;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -10,6 +13,7 @@ import net.minecraftforge.event.ServerChatEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.player.AdvancementEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.entity.player.PlayerNegotiationEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
@@ -44,6 +48,11 @@ public final class ForgeEntrypoint {
                 false,
                 ServerChatEvent.class,
                 event -> bridge.playerChatted(event.getPlayer(), event.getRawText()));
+        bus.addListener(EventPriority.NORMAL, false, PlayerNegotiationEvent.class, event -> {
+            Connection connection = event.getConnection();
+            event.enqueueWork(bridge.checkJoin(event.getProfile())
+                    .thenAccept(kick -> kick.ifPresent(message -> disconnect(connection, message))));
+        });
         bus.addListener(EventPriority.NORMAL, false, PlayerEvent.PlayerLoggedInEvent.class, event -> {
             if (event.getEntity() instanceof ServerPlayer player) {
                 bridge.playerJoined(player);
@@ -65,5 +74,13 @@ public final class ForgeEntrypoint {
                 bridge.advancementEarned(player, event.getAdvancement());
             }
         });
+    }
+
+    private static void disconnect(Connection connection, Component message) {
+        if (connection.getPacketListener() instanceof ServerLoginPacketListenerImpl login) {
+            login.disconnect(message);
+        } else {
+            connection.disconnect(message);
+        }
     }
 }

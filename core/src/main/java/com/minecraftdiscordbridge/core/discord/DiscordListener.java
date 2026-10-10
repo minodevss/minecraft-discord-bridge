@@ -8,4 +8,8 @@ public interface DiscordListener {
     void onCommand(InteractionRequest request, InteractionReply reply);
 
     void onAutocomplete(AutocompleteRequest request, AutocompleteReply reply);
+
+    default void onMemberUpdated(MemberLookup.Member member) {}
+
+    default void onMemberLeft(long userId) {}
 }

@@ -1,5 +1,8 @@
 package com.minecraftdiscordbridge.core;
 
+import com.minecraftdiscordbridge.core.access.AccessMemory;
+import com.minecraftdiscordbridge.core.access.JoinGate;
+import com.minecraftdiscordbridge.core.access.PermissionGroups;
 import com.minecraftdiscordbridge.core.actions.Actions;
 import com.minecraftdiscordbridge.core.config.ConfigLoader;
 import com.minecraftdiscordbridge.core.discord.Discord;
@@ -13,8 +16,10 @@ import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.loop.Threads;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
+import com.minecraftdiscordbridge.core.platform.JoinDecision;
 import com.minecraftdiscordbridge.core.platform.Permission;
 import com.minecraftdiscordbridge.core.platform.Platform;
+import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.minecraftdiscordbridge.core.setup.SetupCodes;
 import com.minecraftdiscordbridge.core.status.Roster;
 import com.minecraftdiscordbridge.core.vanilla.Fetcher;
@@ -57,7 +62,8 @@ public final class Bridge {
             InstantSource clock,
             Codes codes,
             Duration actionTimeout,
-            Fetcher fetcher) {
+            Fetcher fetcher,
+            PermissionGroups groups) {
         this.loop = new CoreLoop();
         this.io = IoExecutor.forLoop(loop);
         this.lifecycle = Executors.newSingleThreadExecutor(Threads.named("Reconnect"));
@@ -75,7 +81,9 @@ public final class Bridge {
                 new VanillaTranslations(
                         new LanguageFiles(platform.dataDirectory(), fetcher),
                         io,
-                        platform.info().minecraftVersion()));
+                        platform.info().minecraftVersion()),
+                groups,
+                new AccessMemory());
         this.engine = new Engine(
                 shared,
                 lifecycle,
@@ -93,7 +101,8 @@ public final class Bridge {
                 InstantSource.system(),
                 Codes.secure(),
                 Actions.TIMEOUT,
-                new HttpFetcher());
+                new HttpFetcher(),
+                PermissionGroups.detect());
     }
 
     public void start() {
@@ -122,6 +131,16 @@ public final class Bridge {
         }
         List<String> copy = List.copyOf(arguments);
         loop.control(() -> engine.command(source, granted, copy));
+    }
+
+    public CompletableFuture<JoinDecision> checkJoin(PlayerProfile player, boolean bypass) {
+        if (stopped.get()) {
+            return CompletableFuture.completedFuture(engine.joinFallback(player, bypass));
+        }
+        CompletableFuture<JoinDecision> decision = new CompletableFuture<>();
+        loop.control(() -> engine.checkJoin(player, bypass, decision));
+        return decision.orTimeout(JoinGate.BUDGET.toMillis(), TimeUnit.MILLISECONDS)
+                .handle((done, failure) -> done != null ? done : engine.joinFallback(player, bypass));
     }
 
     public void stop() {

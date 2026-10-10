@@ -8,15 +8,20 @@ import com.minecraftdiscordbridge.core.discord.DiscordMessage;
 import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.discord.InteractionRequest;
+import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
+import com.minecraftdiscordbridge.core.discord.RoleInfo;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.LongFunction;
 
 public final class RecordingDiscord implements Discord {
     public final DiscordSettings settings;
@@ -28,6 +33,11 @@ public final class RecordingDiscord implements Discord {
     public volatile Duration shutdownTime = Duration.ZERO;
     public volatile boolean started;
     public volatile boolean shutDown;
+    public volatile LongFunction<CompletableFuture<MemberLookup>> members =
+            userId -> CompletableFuture.completedFuture(new MemberLookup.NotMember(userId));
+    public final Map<Long, RoleInfo> roles = new ConcurrentHashMap<>();
+    public final List<String> roleChanges = new CopyOnWriteArrayList<>();
+    public final List<Long> memberLookups = new CopyOnWriteArrayList<>();
     private final CoreLoop loop;
     private final DiscordListener listener;
 
@@ -49,6 +59,14 @@ public final class RecordingDiscord implements Discord {
 
     public void autocomplete(AutocompleteRequest request, AutocompleteReply reply) {
         loop.control(() -> listener.onAutocomplete(request, reply));
+    }
+
+    public void memberUpdated(MemberLookup.Member member) {
+        loop.control(() -> listener.onMemberUpdated(member));
+    }
+
+    public void statusChanged() {
+        loop.control(() -> listener.onStatusChanged(status()));
     }
 
     public OutboundMessage nextSent() {
@@ -84,6 +102,29 @@ public final class RecordingDiscord implements Discord {
     @Override
     public boolean isApplicationOwner(long userId) {
         return owners.contains(userId);
+    }
+
+    @Override
+    public CompletableFuture<MemberLookup> member(long userId) {
+        memberLookups.add(userId);
+        return members.apply(userId);
+    }
+
+    @Override
+    public Map<Long, RoleInfo> roles() {
+        return Map.copyOf(roles);
+    }
+
+    @Override
+    public CompletableFuture<Void> addRole(long userId, long roleId) {
+        roleChanges.add("+" + roleId + " " + userId);
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public CompletableFuture<Void> removeRole(long userId, long roleId) {
+        roleChanges.add("-" + roleId + " " + userId);
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override

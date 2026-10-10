@@ -4,6 +4,7 @@ import com.minecraftdiscordbridge.core.loop.CoreLoop;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import net.dv8tion.jda.api.JDA;
@@ -11,6 +12,9 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -109,6 +113,25 @@ final class JdaEvents {
                 event.getUser().getIdLong(),
                 event.getUserLocale().getLocale());
         loop.control(() -> listener.onAutocomplete(request, reply));
+    }
+
+    void onMemberUpdate(GuildMemberUpdateEvent event) {
+        if (scope.accepts(event.getGuild().getIdLong())) {
+            MemberLookup.Member member = member(event.getMember());
+            loop.control(() -> listener.onMemberUpdated(member));
+        }
+    }
+
+    void onMemberRemove(GuildMemberRemoveEvent event) {
+        if (scope.accepts(event.getGuild().getIdLong())) {
+            long userId = event.getUser().getIdLong();
+            loop.control(() -> listener.onMemberLeft(userId));
+        }
+    }
+
+    static MemberLookup.Member member(Member member) {
+        Set<Long> roles = member.getRoles().stream().map(Role::getIdLong).collect(Collectors.toUnmodifiableSet());
+        return new MemberLookup.Member(member.getIdLong(), roles);
     }
 
     private Origin origin(Message message) {

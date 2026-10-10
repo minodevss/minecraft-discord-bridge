@@ -1,5 +1,8 @@
 package com.minecraftdiscordbridge.core;
 
+import com.minecraftdiscordbridge.core.access.AccessContext;
+import com.minecraftdiscordbridge.core.access.JoinGate;
+import com.minecraftdiscordbridge.core.access.RoleSync;
 import com.minecraftdiscordbridge.core.actions.Actions;
 import com.minecraftdiscordbridge.core.chat.ChatToggle;
 import com.minecraftdiscordbridge.core.chat.DiscordChat;
@@ -9,6 +12,7 @@ import com.minecraftdiscordbridge.core.commands.SlashRouter;
 import com.minecraftdiscordbridge.core.config.BridgeConfig;
 import com.minecraftdiscordbridge.core.config.Channels;
 import com.minecraftdiscordbridge.core.config.ConfigSnapshot;
+import com.minecraftdiscordbridge.core.console.ConsoleInput;
 import com.minecraftdiscordbridge.core.console.ConsoleMirror;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.events.EventPosts;
@@ -68,6 +72,7 @@ final class Sessions {
                 () -> hasGuild && connected(shared.discord().status()));
         Actions actions =
                 new Actions(config.actions(), shared.platform(), shared.loop()::control, lang, shared.actionTimeout());
+        AccessContext access = shared.accessContext(stores);
         return new Session(
                 replies,
                 new MinecraftChat(config.chat(), chat, shared.discord(), stores.links()::all),
@@ -89,6 +94,17 @@ final class Sessions {
                         shared.discord(),
                         lang,
                         shared.loop(),
+                        () -> secrets(shared, snapshot)),
+                JoinGate.create(config.linking(), shared.platform().info(), access, replies),
+                RoleSync.create(config.roleSync(), shared.platform().info(), access),
+                new ConsoleInput(
+                        config.console(),
+                        Ids.parse(config.discord().consoleChannel()),
+                        shared.platform(),
+                        shared.discord(),
+                        shared.loop()::control,
+                        lang,
+                        shared.actionTimeout(),
                         () -> secrets(shared, snapshot)));
     }
 

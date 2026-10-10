@@ -2,11 +2,15 @@ package com.minecraftdiscordbridge.paper;
 
 import com.minecraftdiscordbridge.core.platform.ActionOutcome;
 import com.minecraftdiscordbridge.core.platform.GameAction;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.jspecify.annotations.Nullable;
@@ -25,6 +29,7 @@ final class PaperActions {
                 case GameAction.WhitelistAdd add -> whitelist(outcome, add.playerName(), true);
                 case GameAction.WhitelistRemove remove -> whitelist(outcome, remove.playerName(), false);
                 case GameAction.Kick kick -> kick(outcome, kick.playerName(), kick.reason());
+                case GameAction.RunConsoleCommand run -> runConsoleCommand(outcome, run.command());
             }
         });
         return outcome;
@@ -84,6 +89,22 @@ final class PaperActions {
             player.kick(Component.text(reason));
             outcome.complete(new ActionOutcome.Done());
         });
+    }
+
+    private void runConsoleCommand(CompletableFuture<ActionOutcome> outcome, String command) {
+        Bukkit.getGlobalRegionScheduler()
+                .execute(plugin, () -> attempt(outcome, () -> outcome.complete(dispatch(command))));
+    }
+
+    private static ActionOutcome dispatch(String command) {
+        List<String> feedback = new CopyOnWriteArrayList<>();
+        CommandSender sender = Bukkit.createCommandSender(
+                message -> feedback.add(PlainTextComponentSerializer.plainText().serialize(message)));
+        boolean known = Bukkit.dispatchCommand(sender, command);
+        if (!known && feedback.isEmpty()) {
+            return new ActionOutcome.Failed("Unknown command");
+        }
+        return new ActionOutcome.Output(String.join("\n", feedback));
     }
 
     private static @Nullable Player onlinePlayer(String name) {

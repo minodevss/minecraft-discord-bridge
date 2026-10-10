@@ -8,4 +8,6 @@ public sealed interface ActionOutcome {
     record Unchanged() implements ActionOutcome {}
 
     record Failed(String reason) implements ActionOutcome {}
+
+    record Output(String text) implements ActionOutcome {}
 }

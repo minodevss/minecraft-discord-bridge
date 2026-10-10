@@ -22,6 +22,7 @@ final class DiscordPlan {
         Ids.parse(channels.chat()).ifPresent(channelIds::add);
         Ids.parse(channels.events()).ifPresent(channelIds::add);
         console.ifPresent(channelIds::add);
+        consoleInput(config).ifPresent(channelIds::add);
         List<CommandSpec> commands =
                 channelIds.isEmpty() ? SlashCommandCatalog.setupOnly() : SlashCommandCatalog.forConfig(config);
         return new DiscordSettings(
@@ -39,6 +40,12 @@ final class DiscordPlan {
     static boolean needsMembers(BridgeConfig config) {
         return !config.roleSync().rules().isEmpty()
                 || config.linking().requiredRole().isPresent();
+    }
+
+    static OptionalLong consoleInput(BridgeConfig config) {
+        return config.console().inputUsers().isEmpty()
+                ? OptionalLong.empty()
+                : Ids.parse(config.discord().consoleChannel());
     }
 
     private static long guild(DiscordConfig config, Channels channels) {

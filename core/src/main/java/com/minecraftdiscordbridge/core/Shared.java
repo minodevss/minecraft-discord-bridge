@@ -1,5 +1,8 @@
 package com.minecraftdiscordbridge.core;
 
+import com.minecraftdiscordbridge.core.access.AccessContext;
+import com.minecraftdiscordbridge.core.access.AccessMemory;
+import com.minecraftdiscordbridge.core.access.PermissionGroups;
 import com.minecraftdiscordbridge.core.linking.Attempts;
 import com.minecraftdiscordbridge.core.linking.PendingLinks;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
@@ -22,4 +25,10 @@ record Shared(
         SetupCodes setupCodes,
         Attempts attempts,
         Duration actionTimeout,
-        VanillaTranslations vanilla) {}
+        VanillaTranslations vanilla,
+        PermissionGroups groups,
+        AccessMemory access) {
+    AccessContext accessContext(Stores stores) {
+        return new AccessContext(stores.links(), pendingLinks, discord, groups, access, clock, loop::control);
+    }
+}

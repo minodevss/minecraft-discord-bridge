@@ -17,20 +17,28 @@ import com.minecraftdiscordbridge.core.discord.DiscordSettings;
 import com.minecraftdiscordbridge.core.discord.DiscordStatus;
 import com.minecraftdiscordbridge.core.discord.InteractionReply;
 import com.minecraftdiscordbridge.core.discord.InteractionRequest;
+import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Replies;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
+import com.minecraftdiscordbridge.core.platform.JoinDecision;
 import com.minecraftdiscordbridge.core.platform.Permission;
+import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.minecraftdiscordbridge.core.storage.ChannelBinding;
+import com.minecraftdiscordbridge.core.storage.Link;
+import com.minecraftdiscordbridge.core.storage.LinkChange;
 import com.minecraftdiscordbridge.core.text.Format.Slot;
+import com.minecraftdiscordbridge.core.text.TextRenderer;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.BooleanSupplier;
@@ -50,6 +58,8 @@ final class Engine {
 
     private record Boot(Stores stores, ConfigResult config, boolean recovered) {}
 
+    private record WaitingJoin(PlayerProfile player, boolean bypass, CompletableFuture<JoinDecision> result) {}
+
     private final Shared shared;
     private final ExecutorService lifecycle;
     private final DiscordFactory factory;
@@ -57,8 +67,10 @@ final class Engine {
     private final ShutdownMarker marker;
     private final BooleanSupplier stopping;
     private final Object lock = new Object();
+    private final List<WaitingJoin> waitingJoins = new ArrayList<>();
     private volatile @Nullable Session session;
     private volatile boolean closed;
+    private volatile boolean booting = true;
     private @Nullable Stores stores;
     private @Nullable ConfigSnapshot snapshot;
     private @Nullable DiscordSettings settings;
@@ -90,9 +102,12 @@ final class Engine {
                         () -> new Boot(
                                 Stores.open(shared.platform().dataDirectory()), loader.load(), marker.markRunning()),
                         this::booted,
-                        failure -> LOGGER.error(
-                                "The bridge could not start: {}. Fix the problem and restart the server",
-                                failure.toString()));
+                        failure -> {
+                            LOGGER.error(
+                                    "The bridge could not start: {}. Fix the problem and restart the server",
+                                    failure.toString());
+                            releaseWaitingJoins();
+                        });
     }
 
     void onGameEvent(GameEvent event) {
@@ -106,6 +121,7 @@ final class Engine {
             shared.roster().joined(joined.player(), joined.vanished());
             if (current != null) {
                 current.events().joined(joined);
+                current.roleSync().playerJoined(joined.player());
             }
             refreshStatus();
         } else if (event instanceof GameEvent.PlayerLeft left) {
@@ -152,6 +168,31 @@ final class Engine {
         }
     }
 
+    void checkJoin(PlayerProfile player, boolean bypass, CompletableFuture<JoinDecision> result) {
+        Session current = session;
+        if (current != null) {
+            current.gate().decide(player, bypass, result);
+        } else if (booting) {
+            waitingJoins.add(new WaitingJoin(player, bypass, result));
+        } else {
+            result.complete(new JoinDecision.Allow());
+        }
+    }
+
+    JoinDecision joinFallback(PlayerProfile player, boolean bypass) {
+        Session current = session;
+        if (current != null) {
+            return current.gate().fallback(player, bypass);
+        }
+        if (booting && !bypass) {
+            Lang english = Lang.of(Language.EN);
+            return new JoinDecision.Deny(TextRenderer.toJson(
+                    english.component("game.gate.starting"),
+                    shared.platform().info().dataVersion()));
+        }
+        return new JoinDecision.Allow();
+    }
+
     List<OutboundMessage> farewell(boolean crashed) {
         Session current = session;
         if (current == null) {
@@ -186,7 +227,26 @@ final class Engine {
     private void booted(Boot boot) {
         stores = boot.stores();
         recovered = boot.recovered();
+        boot.stores().links().onChange(change -> shared.loop().control(() -> linkChanged(change)));
         apply(boot.config(), null);
+    }
+
+    private void linkChanged(LinkChange change) {
+        if (change instanceof LinkChange.Unlinked) {
+            Link link = change.link();
+            shared.access().forget(link.minecraftId(), Long.parseUnsignedLong(link.discordId()));
+        }
+        Session current = session;
+        if (current != null) {
+            current.roleSync().linkChanged(change);
+        }
+    }
+
+    private void releaseWaitingJoins() {
+        booting = false;
+        List<WaitingJoin> waiting = List.copyOf(waitingJoins);
+        waitingJoins.clear();
+        waiting.forEach(join -> checkJoin(join.player(), join.bypass(), join.result()));
     }
 
     private void reload(CommandSource source, Replies replies) {
@@ -204,14 +264,17 @@ final class Engine {
 
     private void apply(ConfigResult result, @Nullable CommandSource source) {
         if (closed) {
+            releaseWaitingJoins();
             return;
         }
         result.warnings().forEach(warning -> LOGGER.warn("{}", warning));
         if (result instanceof ConfigResult.Failed failed) {
             rejected(failed.errors(), source);
+            releaseWaitingJoins();
             return;
         }
         Outcome outcome = activate(((ConfigResult.Loaded) result).snapshot());
+        releaseWaitingJoins();
         if (source != null) {
             replies()
                     .send(
@@ -275,7 +338,15 @@ final class Engine {
         }
         announceStart();
         refreshStatus();
+        Session current = session;
+        if (current != null && connected(shared.discord().status())) {
+            current.roleSync().discordReady();
+        }
         return outcome;
+    }
+
+    private static boolean connected(DiscordStatus status) {
+        return status.state() == DiscordStatus.State.READY || status.state() == DiscordStatus.State.DEGRADED;
     }
 
     private void rebound(ChannelBinding binding) {
@@ -389,6 +460,10 @@ final class Engine {
             if (target == generation && status.state() == DiscordStatus.State.READY) {
                 refreshStatus();
             }
+            Session current = session;
+            if (target == generation && current != null && connected(status)) {
+                current.roleSync().discordReady();
+            }
         }
 
         @Override
@@ -396,6 +471,32 @@ final class Engine {
             Session current = session;
             if (target == generation && current != null) {
                 current.discordChat().onMessage(message);
+                current.consoleInput().onMessage(message);
+            }
+        }
+
+        @Override
+        public void onMemberUpdated(MemberLookup.Member member) {
+            if (target != generation) {
+                return;
+            }
+            shared.access().remember(member, shared.clock().instant());
+            Session current = session;
+            if (current != null) {
+                current.roleSync().memberUpdated(member);
+            }
+        }
+
+        @Override
+        public void onMemberLeft(long userId) {
+            if (target != generation) {
+                return;
+            }
+            shared.access()
+                    .remember(new MemberLookup.NotMember(userId), shared.clock().instant());
+            Session current = session;
+            if (current != null) {
+                current.roleSync().memberLeft(userId);
             }
         }
 

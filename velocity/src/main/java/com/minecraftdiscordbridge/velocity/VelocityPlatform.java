@@ -48,12 +48,23 @@ final class VelocityPlatform implements Platform {
 
     @Override
     public CompletableFuture<ActionOutcome> perform(GameAction action) {
-        ActionOutcome outcome = switch (action) {
-            case GameAction.WhitelistAdd add -> new ActionOutcome.Failed(NO_WHITELIST);
-            case GameAction.WhitelistRemove remove -> new ActionOutcome.Failed(NO_WHITELIST);
-            case GameAction.Kick kick -> kick(kick.playerName(), kick.reason());
+        return switch (action) {
+            case GameAction.WhitelistAdd add ->
+                CompletableFuture.completedFuture(new ActionOutcome.Failed(NO_WHITELIST));
+            case GameAction.WhitelistRemove remove ->
+                CompletableFuture.completedFuture(new ActionOutcome.Failed(NO_WHITELIST));
+            case GameAction.Kick kick -> CompletableFuture.completedFuture(kick(kick.playerName(), kick.reason()));
+            case GameAction.RunConsoleCommand run -> runConsoleCommand(run.command());
         };
-        return CompletableFuture.completedFuture(outcome);
+    }
+
+    private CompletableFuture<ActionOutcome> runConsoleCommand(String command) {
+        FeedbackSource source = new FeedbackSource();
+        return proxy.getCommandManager()
+                .executeAsync(source, command)
+                .thenApply(known -> known || source.hasFeedback()
+                        ? new ActionOutcome.Output(source.feedback())
+                        : new ActionOutcome.Failed("Unknown command"));
     }
 
     private ActionOutcome kick(String name, String reason) {

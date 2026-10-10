@@ -6,4 +6,6 @@ public sealed interface GameAction {
     record WhitelistRemove(String playerName) implements GameAction {}
 
     record Kick(String playerName, String reason) implements GameAction {}
+
+    record RunConsoleCommand(String command) implements GameAction {}
 }
