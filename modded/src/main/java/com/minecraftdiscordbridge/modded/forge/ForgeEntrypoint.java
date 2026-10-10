@@ -39,7 +39,10 @@ public final class ForgeEntrypoint {
                 RegisterCommandsEvent.class,
                 event -> DiscordCommand.register(event.getDispatcher(), bridge));
         bus.addListener(
-                EventPriority.NORMAL, false, ServerStartedEvent.class, event -> bridge.serverStarted(event.getServer()));
+                EventPriority.NORMAL,
+                false,
+                ServerStartedEvent.class,
+                event -> bridge.serverStarted(event.getServer()));
         bus.addListener(EventPriority.NORMAL, false, ServerStoppingEvent.class, event -> bridge.serverStopping());
         // Forge skips ServerStoppingEvent after a crash; ServerStoppedEvent always fires.
         bus.addListener(EventPriority.NORMAL, false, ServerStoppedEvent.class, event -> bridge.serverStopped());

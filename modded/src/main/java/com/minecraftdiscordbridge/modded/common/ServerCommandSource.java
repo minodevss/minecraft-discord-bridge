@@ -13,8 +13,7 @@ record ServerCommandSource(@Nullable UUID playerId, String name, CommandSourceSt
 
     static ServerCommandSource of(CommandSourceStack stack, LoaderHooks loader) {
         ServerPlayer player = stack.getPlayer();
-        return new ServerCommandSource(
-                player == null ? null : player.getUUID(), stack.getTextName(), stack, loader);
+        return new ServerCommandSource(player == null ? null : player.getUUID(), stack.getTextName(), stack, loader);
     }
 
     @Override
@@ -25,6 +24,7 @@ record ServerCommandSource(@Nullable UUID playerId, String name, CommandSourceSt
     @Override
     public void reply(String json) {
         MinecraftServer server = stack.getServer();
-        ServerThread.run(server, () -> Texts.parse(json, server.registryAccess()).ifPresent(stack::sendSystemMessage));
+        ServerThread.run(
+                server, () -> Texts.parse(json, server.registryAccess()).ifPresent(stack::sendSystemMessage));
     }
 }

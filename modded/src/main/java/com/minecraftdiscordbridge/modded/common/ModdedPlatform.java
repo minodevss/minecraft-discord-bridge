@@ -41,8 +41,10 @@ final class ModdedPlatform implements Platform {
 
     @Override
     public void deliver(Delivery delivery) {
-        ServerThread.run(server, () -> Texts.parse(delivery.json(), server.registryAccess())
-                .ifPresent(message -> send(message, delivery.excluded())));
+        ServerThread.run(
+                server,
+                () -> Texts.parse(delivery.json(), server.registryAccess())
+                        .ifPresent(message -> send(message, delivery.excluded())));
     }
 
     @Override

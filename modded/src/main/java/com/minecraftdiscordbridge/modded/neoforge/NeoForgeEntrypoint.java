@@ -33,8 +33,7 @@ public final class NeoForgeEntrypoint {
         });
         IEventBus bus = NeoForge.EVENT_BUS;
         bus.addListener(PermissionGatherEvent.Nodes.class, hooks::registerNodes);
-        bus.addListener(
-                RegisterCommandsEvent.class, event -> DiscordCommand.register(event.getDispatcher(), bridge));
+        bus.addListener(RegisterCommandsEvent.class, event -> DiscordCommand.register(event.getDispatcher(), bridge));
         bus.addListener(ServerStartedEvent.class, event -> bridge.serverStarted(event.getServer()));
         bus.addListener(ServerStoppingEvent.class, event -> bridge.serverStopping());
         // NeoForge skips ServerStoppingEvent after a crash; ServerStoppedEvent always fires.

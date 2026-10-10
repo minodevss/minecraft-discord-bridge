@@ -52,31 +52,33 @@ final class GameActions {
     }
 
     private CompletableFuture<ActionOutcome> whitelistAdd(String playerName) {
-        return resolve(playerName).thenCompose(found -> ServerThread.supply(server, () -> {
-            if (found.isEmpty()) {
-                return new ActionOutcome.NoSuchPlayer(playerName);
-            }
-            UserWhiteList whitelist = server.getPlayerList().getWhiteList();
-            if (whitelist.isWhiteListed(found.get())) {
-                return new ActionOutcome.Unchanged();
-            }
-            whitelist.add(new UserWhiteListEntry(found.get()));
-            return new ActionOutcome.Done();
-        }));
+        return resolve(playerName)
+                .thenCompose(found -> ServerThread.supply(server, () -> {
+                    if (found.isEmpty()) {
+                        return new ActionOutcome.NoSuchPlayer(playerName);
+                    }
+                    UserWhiteList whitelist = server.getPlayerList().getWhiteList();
+                    if (whitelist.isWhiteListed(found.get())) {
+                        return new ActionOutcome.Unchanged();
+                    }
+                    whitelist.add(new UserWhiteListEntry(found.get()));
+                    return new ActionOutcome.Done();
+                }));
     }
 
     private CompletableFuture<ActionOutcome> whitelistRemove(String playerName) {
-        return resolve(playerName).thenCompose(found -> ServerThread.supply(server, () -> {
-            if (found.isEmpty()) {
-                return new ActionOutcome.NoSuchPlayer(playerName);
-            }
-            UserWhiteList whitelist = server.getPlayerList().getWhiteList();
-            if (!whitelist.isWhiteListed(found.get())) {
-                return new ActionOutcome.Unchanged();
-            }
-            whitelist.remove(found.get());
-            return new ActionOutcome.Done();
-        }));
+        return resolve(playerName)
+                .thenCompose(found -> ServerThread.supply(server, () -> {
+                    if (found.isEmpty()) {
+                        return new ActionOutcome.NoSuchPlayer(playerName);
+                    }
+                    UserWhiteList whitelist = server.getPlayerList().getWhiteList();
+                    if (!whitelist.isWhiteListed(found.get())) {
+                        return new ActionOutcome.Unchanged();
+                    }
+                    whitelist.remove(found.get());
+                    return new ActionOutcome.Done();
+                }));
     }
 
     private CompletableFuture<ActionOutcome> kick(String playerName, String reason) {
@@ -93,7 +95,8 @@ final class GameActions {
     private CompletableFuture<ActionOutcome> runConsoleCommand(String command) {
         return ServerThread.supply(server, () -> {
             CommandFeedback feedback = new CommandFeedback();
-            server.getCommands().performPrefixedCommand(server.createCommandSourceStack().withSource(feedback), command);
+            server.getCommands()
+                    .performPrefixedCommand(server.createCommandSourceStack().withSource(feedback), command);
             return new ActionOutcome.Output(feedback.text());
         });
     }
@@ -115,6 +118,7 @@ final class GameActions {
     private static ActionOutcome failed(GameAction action, Throwable error) {
         Throwable cause = error instanceof CompletionException && error.getCause() != null ? error.getCause() : error;
         LOGGER.warn("Could not {}; check that the server can reach the Mojang API", action.describe(), cause);
-        return new ActionOutcome.Failed(Objects.toString(cause.getMessage(), cause.getClass().getSimpleName()));
+        return new ActionOutcome.Failed(
+                Objects.toString(cause.getMessage(), cause.getClass().getSimpleName()));
     }
 }

@@ -70,10 +70,14 @@ public final class ModdedBridge {
     }
 
     public void playerDied(ServerPlayer player) {
-        publish("death", player, (profile, registries) -> VanillaRules.showDeathMessages(player)
-                ? new GameEvent.PlayerDied(
-                        profile, Texts.richText(player.getCombatTracker().getDeathMessage(), registries))
-                : null);
+        publish(
+                "death",
+                player,
+                (profile, registries) -> VanillaRules.showDeathMessages(player)
+                        ? new GameEvent.PlayerDied(
+                                profile,
+                                Texts.richText(player.getCombatTracker().getDeathMessage(), registries))
+                        : null);
     }
 
     //? if >=1.21 {
@@ -127,11 +131,14 @@ public final class ModdedBridge {
     }
 
     private void advancementEarned(ServerPlayer player, Supplier<Optional<Advancements.Announcement>> announcement) {
-        publish("advancement", player, (profile, registries) -> announcement
-                .get()
-                .map(earned -> new GameEvent.AdvancementEarned(
-                        profile, Texts.richText(earned.title(), registries), earned.frame()))
-                .orElse(null));
+        publish(
+                "advancement",
+                player,
+                (profile, registries) -> announcement
+                        .get()
+                        .map(earned -> new GameEvent.AdvancementEarned(
+                                profile, Texts.richText(earned.title(), registries), earned.frame()))
+                        .orElse(null));
     }
 
     private void stop(GameEvent event) {
@@ -150,7 +157,8 @@ public final class ModdedBridge {
             return;
         }
         guard(event, () -> {
-            GameEvent created = factory.create(Profiles.of(player), current.server().registryAccess());
+            GameEvent created =
+                    factory.create(Profiles.of(player), current.server().registryAccess());
             if (created != null) {
                 current.bridge().publish(created);
             }
@@ -169,7 +177,8 @@ public final class ModdedBridge {
             task.run();
         } catch (RuntimeException | LinkageError error) {
             failures.warn(
-                    "Could not hand a " + event + " event to Minecraft Discord Bridge; report this bug with the error below",
+                    "Could not hand a " + event
+                            + " event to Minecraft Discord Bridge; report this bug with the error below",
                     error);
         }
     }

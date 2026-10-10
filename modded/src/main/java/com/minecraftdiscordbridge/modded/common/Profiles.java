@@ -44,8 +44,8 @@ final class Profiles {
 
     private static @Nullable String textureId(String encoded) {
         try {
-            JsonElement decoded = JsonParser.parseString(
-                    new String(Base64.getDecoder().decode(encoded), StandardCharsets.UTF_8));
+            JsonElement decoded =
+                    JsonParser.parseString(new String(Base64.getDecoder().decode(encoded), StandardCharsets.UTF_8));
             JsonObject textures = decoded.getAsJsonObject().getAsJsonObject(TEXTURES);
             JsonObject skin = textures == null ? null : textures.getAsJsonObject("SKIN");
             JsonElement url = skin == null ? null : skin.get("url");
