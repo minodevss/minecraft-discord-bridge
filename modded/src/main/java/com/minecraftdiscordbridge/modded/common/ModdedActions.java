@@ -2,17 +2,13 @@ package com.minecraftdiscordbridge.modded.common;
 
 import com.minecraftdiscordbridge.core.platform.ActionOutcome;
 import com.minecraftdiscordbridge.core.platform.GameAction;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.UserWhiteList;
 import net.minecraft.server.players.UserWhiteListEntry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 //? if >=1.21.11 {
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.util.Util;
@@ -23,8 +19,6 @@ import net.minecraft.server.players.GameProfileCache;
 *///?}
 
 final class ModdedActions {
-    private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
-
     private final MinecraftServer server;
 
     ModdedActions(MinecraftServer server) {
@@ -32,10 +26,6 @@ final class ModdedActions {
     }
 
     CompletableFuture<ActionOutcome> perform(GameAction action) {
-        return start(action).exceptionally(error -> failed(action, error));
-    }
-
-    private CompletableFuture<ActionOutcome> start(GameAction action) {
         if (action instanceof GameAction.WhitelistAdd add) {
             return whitelistAdd(add.playerName());
         }
@@ -48,7 +38,7 @@ final class ModdedActions {
         if (action instanceof GameAction.RunConsoleCommand run) {
             return runConsoleCommand(run.command());
         }
-        return CompletableFuture.completedFuture(new ActionOutcome.Failed("Unsupported action"));
+        return CompletableFuture.completedFuture(new ActionOutcome.Unsupported());
     }
 
     private CompletableFuture<ActionOutcome> whitelistAdd(String playerName) {
@@ -114,11 +104,4 @@ final class ModdedActions {
         return CompletableFuture.supplyAsync(() -> cache.get(playerName), Util.ioPool());
     }
     *///?}
-
-    private static ActionOutcome failed(GameAction action, Throwable error) {
-        Throwable cause = error instanceof CompletionException && error.getCause() != null ? error.getCause() : error;
-        LOGGER.warn("Could not {}; check that the server can reach the Mojang API", action.describe(), cause);
-        return new ActionOutcome.Failed(
-                Objects.toString(cause.getMessage(), cause.getClass().getSimpleName()));
-    }
 }

@@ -10,7 +10,7 @@ import com.minecraftdiscordbridge.core.platform.GameAction;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -41,6 +41,20 @@ class GameActionsTest {
         assertThat(run(new ActionOutcome.Failed("locked"), ENGLISH)).isEqualTo(new ActionOutcome.Failed("locked"));
     }
 
+    @Test
+    void describesAFailedActionByItsCause() {
+        assertThat(run(CompletableFuture.failedFuture(new IllegalStateException("the whitelist is locked")), ENGLISH))
+                .isEqualTo(new ActionOutcome.Failed("the whitelist is locked"));
+        assertThat(run(CompletableFuture.failedFuture(new IllegalStateException()), ENGLISH))
+                .isEqualTo(new ActionOutcome.Failed("IllegalStateException"));
+    }
+
+    @Test
+    void saysWhenThePlatformDoesNotAnswerInTime() {
+        assertThat(run(new CompletableFuture<>(), ENGLISH))
+                .isEqualTo(new ActionOutcome.Failed("the Minecraft server did not answer in time"));
+    }
+
     private ActionOutcome run(ActionOutcome given, Lang lang) {
         return run(CompletableFuture.completedFuture(given), lang);
     }
@@ -48,11 +62,10 @@ class GameActionsTest {
     private ActionOutcome run(CompletableFuture<ActionOutcome> given, Lang lang) {
         FakePlatform platform = new FakePlatform(directory);
         platform.outcomes = action -> given;
-        AtomicReference<ActionOutcome> answer = new AtomicReference<>();
+        CompletableFuture<ActionOutcome> answer = new CompletableFuture<>();
 
-        new GameActions(platform, Runnable::run, Duration.ofSeconds(5)).run(KICK, lang, answer::set);
+        new GameActions(platform, Runnable::run, Duration.ofMillis(200)).run(KICK, lang, answer::complete);
 
-        assertThat(answer.get()).isNotNull();
-        return answer.get();
+        return answer.orTimeout(5, TimeUnit.SECONDS).join();
     }
 }

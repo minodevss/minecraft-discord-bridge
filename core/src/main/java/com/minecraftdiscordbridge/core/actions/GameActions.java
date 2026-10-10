@@ -1,12 +1,12 @@
 package com.minecraftdiscordbridge.core.actions;
 
 import com.minecraftdiscordbridge.core.i18n.Lang;
+import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.platform.ActionOutcome;
 import com.minecraftdiscordbridge.core.platform.GameAction;
 import com.minecraftdiscordbridge.core.platform.Platform;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -56,11 +56,12 @@ public final class GameActions {
     }
 
     private static String describe(@Nullable Throwable failure, Lang userLang) {
-        Throwable cause =
-                failure instanceof CompletionException && failure.getCause() != null ? failure.getCause() : failure;
-        if (cause instanceof TimeoutException) {
+        if (failure == null) {
+            return "";
+        }
+        if (Failures.unwrap(failure) instanceof TimeoutException) {
             return userLang.text("discord.action.timeout");
         }
-        return cause == null ? "" : String.valueOf(cause.getMessage());
+        return Failures.describe(failure);
     }
 }
