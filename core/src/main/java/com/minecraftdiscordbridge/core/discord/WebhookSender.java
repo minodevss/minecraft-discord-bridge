@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 final class WebhookSender implements MessageSender {
-    static final String WEBHOOK_NAME = "Minecraft Discord Bridge";
+    static final String WEBHOOK_NAME = "Minecraft Bridge";
     static final int CHANNEL_WEBHOOK_LIMIT = 15;
     private static final Duration FALLBACK_RETRY = Duration.ofMinutes(10);
     private static final Logger LOGGER = LoggerFactory.getLogger("MinecraftDiscordBridge");
@@ -132,13 +132,12 @@ final class WebhookSender implements MessageSender {
                     .exceptionallyCompose(failure -> botOnly(
                             channelId,
                             "Could not set up a webhook in #" + channel.getName() + " (" + Failures.describe(failure)
-                                    + "); posting as the bot until it works. Check that the bot has Manage Webhooks"
-                                    + " there"));
+                                    + "); posting as the bot instead"));
         } catch (RuntimeException failure) {
             return botOnly(
                     channelId,
                     "Could not set up a webhook in #" + channel.getName() + " (" + failure.getMessage()
-                            + "); posting as the bot until it works. Check that the bot has Manage Webhooks there");
+                            + "); posting as the bot instead");
         }
     }
 

@@ -281,7 +281,7 @@ class JdaDiscordTest {
 
         List<RecordedRequest> creations = discord.requests("POST", "channels/" + CHANNEL_ID + "/webhooks");
         assertThat(creations).hasSize(1);
-        assertThat(FakeDiscord.body(creations.get(0)).getString("name")).isEqualTo("Minecraft Discord Bridge");
+        assertThat(FakeDiscord.body(creations.get(0)).getString("name")).isEqualTo("Minecraft Bridge");
         DataObject first = FakeDiscord.body(executions().get(0));
         assertThat(first.getString("content")).isEqualTo("hello <@" + FRIEND_ID + ">");
         assertThat(first.getString("username")).isEqualTo("Steve");

@@ -6,6 +6,11 @@ import org.junit.jupiter.api.Test;
 
 class WebhookNamesTest {
     @Test
+    void webhookNameIsAcceptedByDiscord() {
+        assertThat(WebhookNames.sanitize(WebhookSender.WEBHOOK_NAME)).isEqualTo(WebhookSender.WEBHOOK_NAME);
+    }
+
+    @Test
     void keepsOrdinaryNames() {
         assertThat(WebhookNames.sanitize("Steve_99")).isEqualTo("Steve_99");
     }
