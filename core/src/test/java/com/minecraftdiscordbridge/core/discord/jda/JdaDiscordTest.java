@@ -1,16 +1,16 @@
 package com.minecraftdiscordbridge.core.discord.jda;
 
-import static com.minecraftdiscordbridge.core.discord.jda.FakeDiscord.APPLICATION_ID;
-import static com.minecraftdiscordbridge.core.discord.jda.FakeDiscord.BOT_ID;
-import static com.minecraftdiscordbridge.core.discord.jda.FakeDiscord.CHANNEL_ID;
-import static com.minecraftdiscordbridge.core.discord.jda.FakeDiscord.FOREIGN_WEBHOOK_ID;
-import static com.minecraftdiscordbridge.core.discord.jda.FakeDiscord.FRIEND_ID;
-import static com.minecraftdiscordbridge.core.discord.jda.FakeDiscord.GUILD_ID;
-import static com.minecraftdiscordbridge.core.discord.jda.FakeDiscord.MESSAGE_CONTENT_INTENT;
-import static com.minecraftdiscordbridge.core.discord.jda.FakeDiscord.OTHER_BOT_ID;
-import static com.minecraftdiscordbridge.core.discord.jda.FakeDiscord.OTHER_GUILD_ID;
-import static com.minecraftdiscordbridge.core.discord.jda.FakeDiscord.PLAYER_ID;
-import static com.minecraftdiscordbridge.core.discord.jda.FakeDiscord.ROLE_ID;
+import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.APPLICATION_ID;
+import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.BOT_ID;
+import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.CHANNEL_ID;
+import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.FOREIGN_WEBHOOK_ID;
+import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.FRIEND_ID;
+import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.GUILD_ID;
+import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.MESSAGE_CONTENT_INTENT;
+import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.OTHER_BOT_ID;
+import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.OTHER_GUILD_ID;
+import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.PLAYER_ID;
+import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.ROLE_ID;
 import static com.minecraftdiscordbridge.core.fakes.Waits.take;
 import static com.minecraftdiscordbridge.core.fakes.Waits.until;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -91,7 +91,7 @@ class JdaDiscordTest {
             true,
             false);
 
-    private FakeDiscord discord;
+    private FakeDiscordServer discord;
     private CoreLoop loop;
     private RecordingListener listener;
     private MemoryWebhooks webhooks;
@@ -100,7 +100,7 @@ class JdaDiscordTest {
 
     @BeforeEach
     void startFakeDiscord() throws Exception {
-        discord = new FakeDiscord();
+        discord = new FakeDiscordServer();
         loop = new CoreLoop();
         listener = new RecordingListener();
         webhooks = new MemoryWebhooks();
@@ -147,7 +147,7 @@ class JdaDiscordTest {
 
         awaitState(State.READY);
         RecordedRequest patch = discord.requests("PATCH", "applications/@me").get(0);
-        assertThat(FakeDiscord.body(patch).getLong("flags"))
+        assertThat(DiscordPayloads.body(patch).getLong("flags"))
                 .isEqualTo(otherFlags | ApplicationInfo.GATEWAY_MESSAGE_CONTENT_LIMITED);
         assertThat(discord.timeline.indexOf("PATCH applications/@me"))
                 .isLessThan(discord.timeline.indexOf("GET users/@me"))
@@ -214,11 +214,11 @@ class JdaDiscordTest {
     @Test
     void relaysMessagesFromTheBoundChannelWithResolvedDetails() {
         bridge = startReady();
-        DataObject friend = DataObject.fromJson(FakeDiscord.user(FRIEND_ID, "Friend", false))
-                .put("member", FakeDiscord.member("Bestie"));
+        DataObject friend = DataObject.fromJson(DiscordPayloads.user(FRIEND_ID, "Friend", false))
+                .put("member", DiscordPayloads.member("Bestie"));
         DataObject message = discord.message(
                         PLAYER_ID, "hi <@" + FRIEND_ID + "> <@&" + ROLE_ID + "> <#" + CHANNEL_ID + ">")
-                .put("member", FakeDiscord.member("Alex"))
+                .put("member", DiscordPayloads.member("Alex"))
                 .put("mentions", DataArray.empty().add(friend))
                 .put("mention_roles", DataArray.empty().add(Long.toString(ROLE_ID)))
                 .put("attachments", DataArray.empty().add(attachment()))
@@ -271,7 +271,7 @@ class JdaDiscordTest {
         bridge = startReady();
 
         discord.sendMessage(discord.message(OTHER_BOT_ID, "beep")
-                .put("author", DataObject.fromJson(FakeDiscord.user(OTHER_BOT_ID, "Other", true))));
+                .put("author", DataObject.fromJson(DiscordPayloads.user(OTHER_BOT_ID, "Other", true))));
         discord.sendMessage(
                 discord.message(FOREIGN_WEBHOOK_ID, "hook").put("webhook_id", Long.toString(FOREIGN_WEBHOOK_ID)));
         discord.sendMessage(discord.message(FOREIGN_WEBHOOK_ID + 1, "ours")
@@ -292,7 +292,8 @@ class JdaDiscordTest {
 
         awaitState(State.READY);
         until("queued message", () -> executions().size() == 1);
-        assertThat(FakeDiscord.body(executions().get(0)).getString("content")).isEqualTo("Server started");
+        assertThat(DiscordPayloads.body(executions().get(0)).getString("content"))
+                .isEqualTo("Server started");
         assertThat(discord.requests("POST", "channels/" + CHANNEL_ID + "/webhooks"))
                 .hasSize(1);
     }
@@ -308,8 +309,8 @@ class JdaDiscordTest {
 
         List<RecordedRequest> creations = discord.requests("POST", "channels/" + CHANNEL_ID + "/webhooks");
         assertThat(creations).hasSize(1);
-        assertThat(FakeDiscord.body(creations.get(0)).getString("name")).isEqualTo("Minecraft Bridge");
-        DataObject first = FakeDiscord.body(executions().get(0));
+        assertThat(DiscordPayloads.body(creations.get(0)).getString("name")).isEqualTo("Minecraft Bridge");
+        DataObject first = DiscordPayloads.body(executions().get(0));
         assertThat(first.getString("content")).isEqualTo("hello <@" + FRIEND_ID + ">");
         assertThat(first.getString("username")).isEqualTo("Steve");
         assertThat(first.getString("avatar_url")).isEqualTo("https://mc-heads.net/avatar/Steve");
@@ -337,13 +338,13 @@ class JdaDiscordTest {
 
     @Test
     void postsAsTheBotWhenItCannotManageWebhooks() {
-        discord.everyonePermissions = FakeDiscord.NO_WEBHOOKS;
+        discord.everyonePermissions = DiscordPayloads.NO_WEBHOOKS;
         bridge = startReady();
 
         bridge.send(OutboundMessage.of(CHANNEL, STEVE, "hi"));
 
         until("bot message", () -> botMessages().size() == 1);
-        DataObject body = FakeDiscord.body(botMessages().get(0));
+        DataObject body = DiscordPayloads.body(botMessages().get(0));
         assertThat(body.getString("content")).isEqualTo("**Steve**: hi");
         assertThat(body.getObject("allowed_mentions").getArray("parse").length())
                 .isZero();
@@ -397,7 +398,7 @@ class JdaDiscordTest {
         discord.dispatch("INTERACTION_CREATE", discord.command(OTHER_GUILD_ID, "list", 2, DataArray.empty()));
 
         until("refusal", () -> callbacks().size() == 1);
-        DataObject callback = FakeDiscord.body(callbacks().get(0));
+        DataObject callback = DiscordPayloads.body(callbacks().get(0));
         assertThat(callback.getInt("type")).isEqualTo(4);
         assertThat(callback.getObject("data").getString("content"))
                 .isEqualTo("This bot is not set up for this server.");
@@ -427,7 +428,7 @@ class JdaDiscordTest {
         take(listener.replies).replyEphemeral("3 players online");
 
         until("reply", () -> callbacks().size() == 1);
-        DataObject callback = FakeDiscord.body(callbacks().get(0));
+        DataObject callback = DiscordPayloads.body(callbacks().get(0));
         assertThat(callback.getInt("type")).isEqualTo(4);
         assertThat(callback.getObject("data").getString("content")).isEqualTo("3 players online");
         assertThat(callback.getObject("data").getInt("flags") & 64).isNotZero();
@@ -443,12 +444,12 @@ class JdaDiscordTest {
         discord.dispatch("INTERACTION_CREATE", discord.command(GUILD_ID, "whitelist", 2, options));
 
         until("deferral", () -> callbacks().size() == 1);
-        assertThat(FakeDiscord.body(callbacks().get(0)).getInt("type")).isEqualTo(5);
+        assertThat(DiscordPayloads.body(callbacks().get(0)).getInt("type")).isEqualTo(5);
 
         take(listener.replies).reply("Added Steve");
 
         until("edited reply", () -> originalEdits().size() == 1);
-        DataObject edit = FakeDiscord.body(originalEdits().get(0));
+        DataObject edit = DiscordPayloads.body(originalEdits().get(0));
         assertThat(edit.getString("content")).isEqualTo("Added Steve");
         assertThat(edit.getObject("allowed_mentions").getArray("parse").length())
                 .isZero();
@@ -476,7 +477,7 @@ class JdaDiscordTest {
         take(listener.autocompleteReplies).respond(choices);
 
         until("choices", () -> callbacks().size() == 1);
-        DataObject callback = FakeDiscord.body(callbacks().get(0));
+        DataObject callback = DiscordPayloads.body(callbacks().get(0));
         assertThat(callback.getInt("type")).isEqualTo(8);
         assertThat(callback.getObject("data").getArray("choices").length()).isEqualTo(25);
     }
@@ -501,10 +502,10 @@ class JdaDiscordTest {
         bridge = null;
 
         List<DataObject> messages = new ArrayList<>();
-        executions().forEach(request -> messages.add(FakeDiscord.body(request)));
-        originalEdits().forEach(request -> messages.add(FakeDiscord.body(request)));
+        executions().forEach(request -> messages.add(DiscordPayloads.body(request)));
+        originalEdits().forEach(request -> messages.add(DiscordPayloads.body(request)));
         callbacks().stream()
-                .map(FakeDiscord::body)
+                .map(DiscordPayloads::body)
                 .filter(callback -> callback.getInt("type") == 4)
                 .forEach(callback -> messages.add(callback.getObject("data")));
         assertThat(messages).hasSize(4);
@@ -527,7 +528,7 @@ class JdaDiscordTest {
                 List.of(OutboundMessage.of(CHANNEL, SERVER, "Server stopped")), Deadline.after(SHUTDOWN_BUDGET));
 
         assertThat(executions()).hasSize(2);
-        DataObject last = FakeDiscord.body(executions().get(1));
+        DataObject last = DiscordPayloads.body(executions().get(1));
         assertThat(last.getString("content")).isEqualTo("Server stopped");
         assertThat(last.getString("username")).isEqualTo("Survival");
         assertThat(bridge.status().state()).isEqualTo(State.STOPPED);
@@ -591,7 +592,7 @@ class JdaDiscordTest {
         Thread.sleep(200);
 
         assertThat(topicEdits()).hasSize(1);
-        assertThat(FakeDiscord.body(topicEdits().get(0)).getString("topic")).isEqualTo("3/20 players online");
+        assertThat(DiscordPayloads.body(topicEdits().get(0)).getString("topic")).isEqualTo("3/20 players online");
     }
 
     @Test
@@ -606,12 +607,12 @@ class JdaDiscordTest {
         bridge.start();
 
         until("topic", () -> topicEdits().size() == 1);
-        assertThat(FakeDiscord.body(topicEdits().get(0)).getString("topic")).isEqualTo("3/20 players online");
+        assertThat(DiscordPayloads.body(topicEdits().get(0)).getString("topic")).isEqualTo("3/20 players online");
     }
 
     @Test
     void warnsOnceWhileTheBotCannotChangeTheTopic() {
-        discord.everyonePermissions = FakeDiscord.NO_WEBHOOKS;
+        discord.everyonePermissions = DiscordPayloads.NO_WEBHOOKS;
         bridge = startReady();
         AtomicLong now = new AtomicLong();
         Appearance appearance = new Appearance(bridge::currentJda, now::get, (delay, task) -> {});
@@ -719,7 +720,7 @@ class JdaDiscordTest {
         bridge.send(new OutboundMessage(CHANNEL, SERVER, "<@&" + ROLE + "> Server started", Set.of(), Set.of(ROLE)));
 
         until("message", () -> executions().size() == 1);
-        DataObject mentions = FakeDiscord.body(executions().get(0)).getObject("allowed_mentions");
+        DataObject mentions = DiscordPayloads.body(executions().get(0)).getObject("allowed_mentions");
         assertThat(mentions.getArray("parse").length()).isZero();
         assertThat(mentions.getArray("roles").length()).isEqualTo(1);
         assertThat(mentions.getArray("roles").getString(0)).isEqualTo(Long.toString(ROLE_ID));
@@ -732,7 +733,7 @@ class JdaDiscordTest {
         bridge.send(OutboundMessage.of(CHANNEL, Author.server(), "Server started"));
 
         until("message", () -> executions().size() == 1);
-        DataObject body = FakeDiscord.body(executions().get(0));
+        DataObject body = DiscordPayloads.body(executions().get(0));
         assertThat(body.getString("username")).isEqualTo("Bridge");
         assertThat(body.getString("avatar_url")).startsWith("https://cdn.discordapp.com/embed/avatars/");
     }
@@ -811,14 +812,14 @@ class JdaDiscordTest {
 
         discord.dispatch(
                 "GUILD_MEMBER_UPDATE",
-                FakeDiscord.member("Alex")
+                DiscordPayloads.member("Alex")
                         .put("guild_id", Long.toString(GUILD_ID))
-                        .put("user", DataObject.fromJson(FakeDiscord.user(PLAYER_ID, "Alex", false))));
+                        .put("user", DataObject.fromJson(DiscordPayloads.user(PLAYER_ID, "Alex", false))));
         discord.dispatch(
                 "GUILD_MEMBER_REMOVE",
                 DataObject.empty()
                         .put("guild_id", Long.toString(GUILD_ID))
-                        .put("user", DataObject.fromJson(FakeDiscord.user(FRIEND_ID, "Friend", false))));
+                        .put("user", DataObject.fromJson(DiscordPayloads.user(FRIEND_ID, "Friend", false))));
 
         assertThat(take(listener.memberUpdates)).isEqualTo(new MemberLookup.Member(PLAYER, Set.of(ROLE)));
         assertThat(take(listener.membersLeft)).isEqualTo(FRIEND);

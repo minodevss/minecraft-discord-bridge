@@ -30,9 +30,9 @@ final class TestSupport {
 
     static DiscordSettings settings(List<CommandSpec> commands) {
         return new DiscordSettings(
-                FakeDiscord.TOKEN,
-                Optional.of(new DiscordId(FakeDiscord.GUILD_ID)),
-                Set.of(new DiscordId(FakeDiscord.CHANNEL_ID)),
+                DiscordPayloads.TOKEN,
+                Optional.of(new DiscordId(DiscordPayloads.GUILD_ID)),
+                Set.of(new DiscordId(DiscordPayloads.CHANNEL_ID)),
                 Author.server("Survival", Optional.of("https://example.com/server.png")),
                 true,
                 false,
