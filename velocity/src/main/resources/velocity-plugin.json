@@ -1,0 +1,10 @@
+{
+  "id": "minecraftdiscordbridge",
+  "name": "Minecraft Discord Bridge",
+  "version": "${version}",
+  "description": "Minecraft ↔ Discord bridge",
+  "url": "https://github.com/minodevss/minecraft-discord-bridge",
+  "authors": ["minodevss"],
+  "dependencies": [],
+  "main": "com.minecraftdiscordbridge.velocity.VelocityPlugin"
+}

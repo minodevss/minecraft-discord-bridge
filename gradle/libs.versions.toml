@@ -10,6 +10,7 @@ archunit = "1.5.1"
 mockwebserver = "5.5.0"
 jazzer = "0.30.0"
 paper-api = "1.21.1-R0.1-SNAPSHOT"
+velocity-api = "3.4.0"
 gson = "2.11.0"
 slf4j = "2.0.17"
 log4j = "2.24.3"
@@ -36,3 +37,4 @@ archunit = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "arc
 mockwebserver = { module = "com.squareup.okhttp3:mockwebserver3", version.ref = "mockwebserver" }
 jazzer-junit = { module = "com.code-intelligence:jazzer-junit", version.ref = "jazzer" }
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper-api" }
+velocity-api = { module = "com.velocitypowered:velocity-api", version.ref = "velocity-api" }
