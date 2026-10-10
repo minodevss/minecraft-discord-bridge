@@ -22,7 +22,6 @@ dependencies {
     modConfiguration("net.fabricmc.fabric-api:fabric-api:${sc.properties.get<String>("deps.fabric_api")}")
     modConfiguration(permissionsApi)
     "include"(permissionsApi)
-    "compileOnly"(libs.jspecify)
 }
 
 loom.serverOnlyMinecraftJar()

@@ -19,6 +19,13 @@ repositories {
     mavenCentral()
 }
 
+val jspecify = versionCatalogs.named("libs").findLibrary("jspecify").get().get()
+
+dependencies {
+    // NeoForge 26 pins jspecify strictly; a preferred version lets that pin win.
+    compileOnly("${jspecify.module}") { version { prefer(jspecify.versionConstraint.requiredVersion) } }
+}
+
 java {
     toolchain { languageVersion = JavaLanguageVersion.of(javaRelease) }
 }

@@ -8,7 +8,3 @@ neoForge {
     version = sc.properties.get<String>("deps.neoforge")
 }
 
-dependencies {
-    if (sc.current.parsed < "26.1") compileOnly(libs.jspecify)
-}
-

@@ -10,10 +10,6 @@ legacyForge {
     version = sc.properties.get<String>("deps.forge")
 }
 
-dependencies {
-    compileOnly(libs.jspecify)
-}
-
 val shadowJar = tasks.named<ShadowJar>("shadowJar") {
     archiveClassifier = "dev-shadow"
 }
