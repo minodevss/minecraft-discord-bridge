@@ -133,11 +133,12 @@ final class Activator implements BridgeCommand.Callbacks {
             closed = true;
             current = features;
         }
+        connection.stopConnecting();
         if (current != null) {
             current.close();
         }
         services.vanilla().close();
-        return connection.close();
+        return connection.disconnect();
     }
 
     void clearMarker() throws IOException {

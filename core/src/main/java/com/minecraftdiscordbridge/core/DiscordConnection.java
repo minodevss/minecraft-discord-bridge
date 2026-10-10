@@ -110,10 +110,13 @@ final class DiscordConnection {
         services.discord().swap(OfflineDiscord.stopped(OfflineDiscord.CONFIG_ERRORS));
     }
 
-    Discord close() {
+    void stopConnecting() {
         synchronized (lock) {
             closed = true;
         }
+    }
+
+    Discord disconnect() {
         return services.discord().swap(OfflineDiscord.stopped(OfflineDiscord.STOPPED));
     }
 
