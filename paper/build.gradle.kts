@@ -11,8 +11,6 @@ repositories {
 
 dependencies {
     compileOnly(libs.paper.api)
-    implementation(project(":core", "shadowRuntimeElements"))
-    "bundle"(project(":core", "shadowRuntimeElements"))
 }
 
 tasks.withType<JavaCompile>().configureEach {

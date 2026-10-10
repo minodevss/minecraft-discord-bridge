@@ -5,9 +5,17 @@ plugins {
     id("com.gradleup.shadow")
 }
 
-val bundle = configurations.create("bundle") {
-    isCanBeConsumed = false
-    isCanBeResolved = true
+val shadedCore = configurations.dependencyScope("shadedCore")
+val shadedCoreClasspath = configurations.resolvable("shadedCoreClasspath") {
+    extendsFrom(shadedCore.get())
+}
+
+configurations.named("implementation") {
+    extendsFrom(shadedCore.get())
+}
+
+dependencies {
+    shadedCore(project(":core", "shadowRuntimeElements"))
 }
 
 val legalFiles = isolated.rootProject.projectDirectory.let { root ->
@@ -15,7 +23,7 @@ val legalFiles = isolated.rootProject.projectDirectory.let { root ->
 }
 
 tasks.named<ShadowJar>("shadowJar") {
-    configurations = listOf(bundle)
+    configurations = listOf(shadedCoreClasspath.get())
     archiveClassifier = ""
     addMultiReleaseAttribute = false
     duplicatesStrategy = DuplicatesStrategy.INCLUDE

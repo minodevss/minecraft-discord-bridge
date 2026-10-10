@@ -19,8 +19,6 @@ neoForge {
 }
 
 dependencies {
-    implementation(project(":core", "shadowRuntimeElements"))
-    "bundle"(project(":core", "shadowRuntimeElements"))
     if (sc.current.parsed < "26.1") compileOnly(libs.jspecify)
 }
 
