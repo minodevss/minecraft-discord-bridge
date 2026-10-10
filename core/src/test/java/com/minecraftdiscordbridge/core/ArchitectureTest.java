@@ -15,6 +15,17 @@ class ArchitectureTest {
             .importPackages(CORE);
 
     @Test
+    void onlyTheConfigPackageReadsYaml() {
+        noClasses()
+                .that()
+                .resideOutsideOfPackage(CORE + ".config..")
+                .should()
+                .dependOnClassesThat()
+                .resideInAPackage("org.snakeyaml..")
+                .check(PRODUCTION);
+    }
+
+    @Test
     void onlyTheStoragePackageUsesJackson() {
         noClasses()
                 .that()

@@ -1,0 +1,118 @@
+# Minecraft Discord Bridge settings.
+# The bot token goes in secrets.yml, not here.
+# Changes take effect after a reload or a restart.
+
+# Used to upgrade this file. Do not change it.
+config-version: 1
+
+# Language of the bridge's own messages: en (English) or ko (Korean).
+language: "en"
+
+# To copy an ID, turn on Developer Mode in Discord (User Settings > Advanced),
+# then right-click the channel, role or user and copy its ID.
+discord:
+  # Channel for chat. Leave empty to choose it with /setup in Discord.
+  chat-channel: ""
+
+  # Channel for joins, leaves, deaths, advancements and server start and stop.
+  # Empty uses the chat channel.
+  events-channel: ""
+
+  # Channel that shows the server console. Empty turns it off.
+  console-channel: ""
+
+  # Try to turn on the bot's Message Content intent when it is off.
+  # The bridge needs it to read messages from Discord.
+  auto-enable-message-content: true
+
+chat:
+  # Send Minecraft chat to Discord.
+  minecraft-to-discord: true
+
+  # Send Discord chat to Minecraft.
+  discord-to-minecraft: true
+
+  # How Discord messages look in Minecraft, in MiniMessage format.
+  # <author> is the sender's name and <message> is the text.
+  format: "<gray>[Discord]</gray> <author>: <message>"
+
+  # Avatar for player messages on Discord. {texture} is the player's skin texture ID.
+  avatar-url: "https://crafthead.net/helm/{texture}"
+
+  # Avatar to use when the skin texture is not known. {uuid} is the player's UUID.
+  avatar-url-fallback: "https://crafthead.net/helm/{uuid}"
+
+  # Let @name in Minecraft chat ping that player's linked Discord account.
+  ping-linked-players: false
+
+  # Messages that match one of these regular expressions are not relayed.
+  # Example: blocked-words: ["(?i)badword"]
+  blocked-words: []
+
+# Messages posted to the events channel.
+events:
+  # Post when a player joins.
+  join: true
+
+  # Post when a player leaves.
+  leave: true
+
+  # Post when a player dies.
+  death: true
+
+  # Post when a player earns an advancement.
+  advancement: true
+
+  # Post when the server starts.
+  server-start: true
+
+  # Post when the server stops.
+  server-stop: true
+
+  # Role to ping when the server starts. Empty pings nobody.
+  server-start-ping-role: ""
+
+status:
+  # Show the player count as the bot's status.
+  presence: true
+
+  # Show the player count in the chat channel's topic.
+  topic: false
+
+linking:
+  # Let players link their Minecraft and Discord accounts.
+  enabled: true
+
+  # Only players who linked their account can join.
+  require-for-join: false
+
+  # Discord role a linked player must have to join. Empty means no role is needed.
+  required-role: ""
+
+  # When linking is required and Discord cannot be reached: deny or allow joins.
+  when-discord-unreachable: "deny"
+
+# Keeps Discord roles and permission groups in step.
+role-sync:
+  # Each rule pairs a Discord role with a permission group.
+  # direction is discord-to-minecraft or minecraft-to-discord. Example:
+  #   rules:
+  #     - discord-role: "123456789012345678"
+  #       group: "vip"
+  #       direction: "discord-to-minecraft"
+  rules: []
+
+actions:
+  # Allow Discord commands that add and remove players from the whitelist.
+  whitelist: false
+
+  # Allow a Discord command that kicks players.
+  kick: false
+
+console:
+  # Copy the server console to the console channel.
+  mirror: false
+
+  # Discord user IDs that can run console commands from the console channel.
+  # Empty means nobody. Example: input-users: ["123456789012345678"]
+  input-users: []
