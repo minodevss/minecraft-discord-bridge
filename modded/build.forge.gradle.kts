@@ -22,6 +22,7 @@ legacyForge {
 dependencies {
     implementation(project(":core", "shadowRuntimeElements"))
     "bundle"(project(":core", "shadowRuntimeElements"))
+    compileOnly(libs.jspecify)
 }
 
 sourceSets.main {
@@ -46,7 +47,7 @@ tasks.processResources {
     )
     inputs.properties(props)
     filesMatching("META-INF/mods.toml") { expand(props) }
-    exclude("fabric.mod.json", "META-INF/neoforge.mods.toml")
+    exclude("fabric.mod.json", "minecraftdiscordbridge.mixins.json", "META-INF/neoforge.mods.toml")
 }
 
 val shadowJar = tasks.named<ShadowJar>("shadowJar") {

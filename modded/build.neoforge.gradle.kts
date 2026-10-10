@@ -21,6 +21,7 @@ neoForge {
 dependencies {
     implementation(project(":core", "shadowRuntimeElements"))
     "bundle"(project(":core", "shadowRuntimeElements"))
+    if (sc.current.parsed < "26.1") compileOnly(libs.jspecify)
 }
 
 sourceSets.main {
@@ -45,5 +46,5 @@ tasks.processResources {
     )
     inputs.properties(props)
     filesMatching("META-INF/neoforge.mods.toml") { expand(props) }
-    exclude("fabric.mod.json", "META-INF/mods.toml")
+    exclude("fabric.mod.json", "minecraftdiscordbridge.mixins.json", "META-INF/mods.toml", "pack.mcmeta")
 }
