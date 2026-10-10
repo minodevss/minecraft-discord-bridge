@@ -1,0 +1,96 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:best-practices"],
+  "semanticCommits": "enabled",
+  "minimumReleaseAge": "3 days",
+  "packageRules": [
+    {
+      "description": "These APIs set the oldest supported server, so raise them on purpose only.",
+      "matchDepNames": ["io.papermc.paper:paper-api", "com.velocitypowered:velocity-api"],
+      "enabled": false
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions"
+    },
+    {
+      "description": "Fabric API builds carry their Minecraft version after the plus sign.",
+      "matchDepNames": ["net.fabricmc.fabric-api:fabric-api"],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)\\+(?<compatibility>.+)$"
+    },
+    {
+      "description": "NeoForge versions start with their Minecraft version.",
+      "matchDepNames": ["net.neoforged:neoforge"],
+      "versioning": "regex:^(?<compatibility>\\d+\\.\\d+)\\.(?<major>\\d+)(?:\\.(?<minor>\\d+))?(?:-(?<prerelease>.+))?$"
+    },
+    {
+      "description": "Forge versions start with their Minecraft version.",
+      "matchDepNames": ["net.minecraftforge:forge"],
+      "versioning": "regex:^(?<compatibility>[\\d.]+)-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+    },
+    {
+      "description": "Each fabric-permissions-api minor version targets different Minecraft versions.",
+      "matchDepNames": ["me.lucko:fabric-permissions-api"],
+      "matchUpdateTypes": ["major", "minor"],
+      "enabled": false
+    },
+    {
+      "description": "Keep each smoke test image on its Java version.",
+      "matchDepNames": ["itzg/minecraft-server", "itzg/mc-proxy"],
+      "versioning": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)-(?<compatibility>java\\d+)$"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Fabric Loader",
+      "managerFilePatterns": ["/^modded/stonecutter\\.properties\\.toml$/"],
+      "matchStrings": ["deps\\.fabric_loader = \"(?<currentValue>[^\"]+)\""],
+      "depNameTemplate": "net.fabricmc:fabric-loader",
+      "datasourceTemplate": "maven",
+      "registryUrlTemplate": "https://maven.fabricmc.net/"
+    },
+    {
+      "customType": "regex",
+      "description": "Fabric API for each Minecraft version",
+      "managerFilePatterns": ["/^modded/stonecutter\\.properties\\.toml$/"],
+      "matchStrings": ["deps\\.fabric_api = \"(?<currentValue>[^\"]+)\""],
+      "depNameTemplate": "net.fabricmc.fabric-api:fabric-api",
+      "datasourceTemplate": "maven",
+      "registryUrlTemplate": "https://maven.fabricmc.net/"
+    },
+    {
+      "customType": "regex",
+      "description": "fabric-permissions-api for each Minecraft version",
+      "managerFilePatterns": ["/^modded/stonecutter\\.properties\\.toml$/"],
+      "matchStrings": ["deps\\.fabric_permissions = \"(?<currentValue>[^\"]+)\""],
+      "depNameTemplate": "me.lucko:fabric-permissions-api",
+      "datasourceTemplate": "maven"
+    },
+    {
+      "customType": "regex",
+      "description": "NeoForge for each Minecraft version",
+      "managerFilePatterns": ["/^modded/stonecutter\\.properties\\.toml$/"],
+      "matchStrings": ["deps\\.neoforge = \"(?<currentValue>[^\"]+)\""],
+      "depNameTemplate": "net.neoforged:neoforge",
+      "datasourceTemplate": "maven",
+      "registryUrlTemplate": "https://maven.neoforged.net/releases"
+    },
+    {
+      "customType": "regex",
+      "description": "Forge for each Minecraft version",
+      "managerFilePatterns": ["/^modded/stonecutter\\.properties\\.toml$/"],
+      "matchStrings": ["deps\\.forge = \"(?<currentValue>[^\"]+)\""],
+      "depNameTemplate": "net.minecraftforge:forge",
+      "datasourceTemplate": "maven",
+      "registryUrlTemplate": "https://maven.minecraftforge.net/"
+    },
+    {
+      "customType": "regex",
+      "description": "Smoke test images",
+      "managerFilePatterns": ["/^\\.github/workflows/ci\\.yml$/"],
+      "matchStrings": ["(?<depName>itzg/(?:minecraft-server|mc-proxy)):(?<currentValue>[^@\\s]+)@(?<currentDigest>sha256:[a-f0-9]+)"],
+      "datasourceTemplate": "docker"
+    }
+  ]
+}
