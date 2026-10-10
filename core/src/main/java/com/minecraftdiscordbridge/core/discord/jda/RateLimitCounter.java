@@ -46,18 +46,10 @@ final class RateLimitCounter implements Interceptor {
         if (!resource.equals("channels") && !resource.equals("webhooks")) {
             return null;
         }
-        DiscordId snowflake = parse(id);
-        if (snowflake == null) {
-            return null;
+        DiscordId snowflake = DiscordId.parse(id).orElse(null);
+        if (snowflake == null || resource.equals("channels")) {
+            return snowflake;
         }
-        return resource.equals("channels") ? snowflake : webhookChannels.get(snowflake);
-    }
-
-    private static @Nullable DiscordId parse(String id) {
-        try {
-            return new DiscordId(Long.parseUnsignedLong(id));
-        } catch (NumberFormatException notASnowflake) {
-            return null;
-        }
+        return webhookChannels.get(snowflake);
     }
 }
