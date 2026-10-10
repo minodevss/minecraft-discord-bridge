@@ -17,6 +17,7 @@ import com.minecraftdiscordbridge.core.discord.jda.JdaDiscord;
 import com.minecraftdiscordbridge.core.linking.PendingLinks;
 import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
+import com.minecraftdiscordbridge.core.loop.Deadline;
 import com.minecraftdiscordbridge.core.loop.IoExecutor;
 import com.minecraftdiscordbridge.core.loop.Threads;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
@@ -48,7 +49,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class Bridge {
     static final Duration STOP_BUDGET = Duration.ofSeconds(3);
-    static final Duration DISCORD_STOP_BUDGET = Duration.ofMillis(2500);
+    private static final Duration AFTER_DISCORD = Duration.ofMillis(500);
+    static final Duration DISCORD_STOP_BUDGET = STOP_BUDGET.minus(AFTER_DISCORD);
 
     private final CoreLoop loop;
     private final IoExecutor io;
@@ -154,11 +156,11 @@ public final class Bridge {
         if (!stopped.compareAndSet(false, true)) {
             return;
         }
-        long deadline = System.nanoTime() + STOP_BUDGET.toNanos();
+        Deadline deadline = Deadline.after(STOP_BUDGET);
         List<OutboundMessage> farewell = engine.farewell(crashed);
         CompletableFuture<Void> markerCleared = io.completeOnIo(engine::clearMarker);
         Discord discord = engine.close();
-        stopDiscord(discord, farewell);
+        stopDiscord(discord, farewell, deadline.minus(AFTER_DISCORD));
         loop.close();
         awaitMarker(markerCleared, deadline);
         io.close();
@@ -166,17 +168,17 @@ public final class Bridge {
         lifecycle.shutdownNow();
     }
 
-    private static void stopDiscord(Discord discord, List<OutboundMessage> farewell) {
+    private static void stopDiscord(Discord discord, List<OutboundMessage> farewell, Deadline deadline) {
         Thread stopping = Threads.named("Shutdown").newThread(() -> {
             try {
-                discord.shutdown(farewell);
+                discord.shutdown(farewell, deadline);
             } catch (RuntimeException failure) {
                 LOGGER.warn("Discord did not stop cleanly: {}", Failures.describe(failure));
             }
         });
         stopping.start();
         try {
-            stopping.join(DISCORD_STOP_BUDGET.toMillis());
+            stopping.join(Math.max(1, deadline.remaining().toMillis()));
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
         }
@@ -187,10 +189,9 @@ public final class Bridge {
         }
     }
 
-    private static void awaitMarker(CompletableFuture<Void> cleared, long deadline) {
-        long remaining = Math.max(0, deadline - System.nanoTime());
+    private static void awaitMarker(CompletableFuture<Void> cleared, Deadline deadline) {
         try {
-            cleared.get(remaining, TimeUnit.NANOSECONDS);
+            cleared.get(deadline.remaining().toNanos(), TimeUnit.NANOSECONDS);
         } catch (ExecutionException failure) {
             LOGGER.warn(
                     "Could not delete data/running: {}. The next start will report an unclean shutdown; check that"

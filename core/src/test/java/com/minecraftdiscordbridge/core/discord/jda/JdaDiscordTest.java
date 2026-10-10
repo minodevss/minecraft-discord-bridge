@@ -33,6 +33,7 @@ import com.minecraftdiscordbridge.core.discord.jda.TestSupport.MemoryWebhooks;
 import com.minecraftdiscordbridge.core.discord.jda.TestSupport.RecordingListener;
 import com.minecraftdiscordbridge.core.fakes.RecordingLogs;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
+import com.minecraftdiscordbridge.core.loop.Deadline;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +55,8 @@ class JdaDiscordTest {
     private static final Author STEVE = Author.player("uuid-steve", "Steve", "https://mc-heads.net/avatar/Steve");
     private static final Author SERVER = Author.server("Survival", "https://example.com/server.png");
     private static final int GUILD_MEMBERS_INTENT = 1 << 1;
-    private static final Duration SHUTDOWN_LIMIT = JdaDiscord.SHUTDOWN_BUDGET.plusMillis(250);
+    private static final Duration SHUTDOWN_BUDGET = Duration.ofMillis(2300);
+    private static final Duration SHUTDOWN_LIMIT = SHUTDOWN_BUDGET.plusMillis(250);
     private static final CommandSpec LIST = new CommandSpec(
             "list",
             "Show who is online",
@@ -97,7 +99,7 @@ class JdaDiscordTest {
     @AfterEach
     void stopEverything() throws Exception {
         if (bridge != null) {
-            bridge.shutdown(List.of());
+            bridge.shutdown(List.of(), Deadline.after(SHUTDOWN_BUDGET));
         }
         loop.close();
         discord.close();
@@ -363,7 +365,7 @@ class JdaDiscordTest {
                 .isTrue();
         until("hash saved", () -> commandHashes.stored.containsKey(GUILD_ID));
 
-        bridge.shutdown(List.of());
+        bridge.shutdown(List.of(), Deadline.after(SHUTDOWN_BUDGET));
         bridge = start(TestSupport.settings(List.of(LIST, WHITELIST)));
         until(
                 "second ready",
@@ -479,7 +481,9 @@ class JdaDiscordTest {
                 () -> executions().size() == 1
                         && callbacks().size() == 2
                         && originalEdits().size() == 1);
-        bridge.shutdown(List.of(OutboundMessage.of(CHANNEL_ID, SERVER, "Server stopped @everyone")));
+        bridge.shutdown(
+                List.of(OutboundMessage.of(CHANNEL_ID, SERVER, "Server stopped @everyone")),
+                Deadline.after(SHUTDOWN_BUDGET));
         bridge = null;
 
         List<DataObject> messages = new ArrayList<>();
@@ -505,7 +509,8 @@ class JdaDiscordTest {
         bridge.send(OutboundMessage.of(CHANNEL_ID, STEVE, "bye"));
         until("first message", () -> executions().size() == 1);
 
-        bridge.shutdown(List.of(OutboundMessage.of(CHANNEL_ID, SERVER, "Server stopped")));
+        bridge.shutdown(
+                List.of(OutboundMessage.of(CHANNEL_ID, SERVER, "Server stopped")), Deadline.after(SHUTDOWN_BUDGET));
 
         assertThat(executions()).hasSize(2);
         DataObject last = FakeDiscord.body(executions().get(1));
@@ -525,7 +530,8 @@ class JdaDiscordTest {
         bridge.send(OutboundMessage.of(CHANNEL_ID, STEVE, "queued"));
 
         long started = System.nanoTime();
-        bridge.shutdown(List.of(OutboundMessage.of(CHANNEL_ID, SERVER, "Server stopped")));
+        bridge.shutdown(
+                List.of(OutboundMessage.of(CHANNEL_ID, SERVER, "Server stopped")), Deadline.after(SHUTDOWN_BUDGET));
 
         assertThat(Duration.ofNanos(System.nanoTime() - started)).isLessThan(SHUTDOWN_LIMIT);
         assertThat(bridge.status().state()).isEqualTo(State.STOPPED);
@@ -538,7 +544,8 @@ class JdaDiscordTest {
         until("login attempt", () -> discord.timeline.contains("GET users/@me"));
 
         long started = System.nanoTime();
-        bridge.shutdown(List.of(OutboundMessage.of(CHANNEL_ID, SERVER, "Server stopped")));
+        bridge.shutdown(
+                List.of(OutboundMessage.of(CHANNEL_ID, SERVER, "Server stopped")), Deadline.after(SHUTDOWN_BUDGET));
 
         assertThat(Duration.ofNanos(System.nanoTime() - started)).isLessThan(SHUTDOWN_LIMIT);
         assertThat(bridge.status().state()).isEqualTo(State.STOPPED);

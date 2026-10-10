@@ -12,6 +12,7 @@ import com.minecraftdiscordbridge.core.discord.MemberLookup;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.discord.RoleInfo;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
+import com.minecraftdiscordbridge.core.loop.Deadline;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -158,7 +159,7 @@ public final class RecordingDiscord implements Discord {
     }
 
     @Override
-    public void shutdown(List<OutboundMessage> finals) {
+    public void shutdown(List<OutboundMessage> finals, Deadline deadline) {
         finalMessages.addAll(finals);
         try {
             Thread.sleep(shutdownTime.toMillis());

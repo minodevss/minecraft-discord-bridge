@@ -15,6 +15,7 @@ import com.minecraftdiscordbridge.core.discord.RoleInfo;
 import com.minecraftdiscordbridge.core.discord.WebhookRepository;
 import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
+import com.minecraftdiscordbridge.core.loop.Deadline;
 import com.minecraftdiscordbridge.core.loop.Threads;
 import java.time.Duration;
 import java.util.EnumMap;
@@ -60,7 +61,6 @@ import okhttp3.OkHttpClient;
 import org.jspecify.annotations.Nullable;
 
 public final class JdaDiscord implements Discord {
-    static final Duration SHUTDOWN_BUDGET = Duration.ofMillis(2300);
     private static final Duration RELEASE_MARGIN = Duration.ofMillis(200);
     private static final Duration FIRST_RETRY = Duration.ofSeconds(5);
     private static final Duration MAX_RETRY = Duration.ofMinutes(5);
@@ -238,11 +238,11 @@ public final class JdaDiscord implements Discord {
     }
 
     @Override
-    public void shutdown(List<OutboundMessage> finalMessages) {
+    public void shutdown(List<OutboundMessage> finalMessages, Deadline deadline) {
         if (!stopped.compareAndSet(false, true)) {
             return;
         }
-        long deadline = System.nanoTime() + SHUTDOWN_BUDGET.toNanos();
+        long budgetMillis = deadline.remaining().toMillis();
         closing = true;
         outbox.close();
         List<OutboundMessage> farewell = List.copyOf(finalMessages);
@@ -253,7 +253,7 @@ public final class JdaDiscord implements Discord {
             }
             graceful.get(remaining(deadline), TimeUnit.NANOSECONDS);
         } catch (TimeoutException late) {
-            LOGGER.warn("Discord did not stop within {} ms; closing its connections now", SHUTDOWN_BUDGET.toMillis());
+            LOGGER.warn("Discord did not stop within {} ms; closing its connections now", budgetMillis);
         } catch (ExecutionException | RejectedExecutionException failure) {
             LOGGER.warn("Discord did not stop cleanly: {}", Failures.describe(failure));
         } catch (InterruptedException interrupted) {
@@ -544,7 +544,7 @@ public final class JdaDiscord implements Discord {
                 + (info == null ? PORTAL : info.botSettingsUrl()) + " and run /discord reload");
     }
 
-    private void stopGracefully(List<OutboundMessage> farewell, long deadline) {
+    private void stopGracefully(List<OutboundMessage> farewell, Deadline deadline) {
         Session active = session;
         if (active == null) {
             return;
@@ -651,7 +651,7 @@ public final class JdaDiscord implements Discord {
         }
     }
 
-    private static long remaining(long deadline) {
-        return Math.max(0, deadline - System.nanoTime() - RELEASE_MARGIN.toNanos());
+    private static long remaining(Deadline deadline) {
+        return Math.max(0, deadline.remaining().minus(RELEASE_MARGIN).toNanos());
     }
 }

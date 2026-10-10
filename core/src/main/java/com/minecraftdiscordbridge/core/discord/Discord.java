@@ -1,5 +1,6 @@
 package com.minecraftdiscordbridge.core.discord;
 
+import com.minecraftdiscordbridge.core.loop.Deadline;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -25,5 +26,5 @@ public interface Discord {
 
     CompletableFuture<Void> removeRole(long userId, long roleId);
 
-    void shutdown(List<OutboundMessage> finalMessages);
+    void shutdown(List<OutboundMessage> finalMessages, Deadline deadline);
 }

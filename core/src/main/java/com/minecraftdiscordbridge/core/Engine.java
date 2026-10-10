@@ -24,6 +24,7 @@ import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.i18n.Language;
 import com.minecraftdiscordbridge.core.i18n.Replies;
 import com.minecraftdiscordbridge.core.log.Failures;
+import com.minecraftdiscordbridge.core.loop.Deadline;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.JoinDecision;
@@ -363,7 +364,7 @@ final class Engine {
         Discord previous = shared.discord().swap(OfflineDiscord.connecting(OfflineDiscord.CONNECTING));
         try {
             lifecycle.execute(() -> {
-                previous.shutdown(List.of());
+                previous.shutdown(List.of(), Deadline.after(Bridge.DISCORD_STOP_BUDGET));
                 shared.loop().control(() -> create(target, next));
             });
         } catch (RejectedExecutionException stopped) {
@@ -378,7 +379,7 @@ final class Engine {
             return;
         }
         try {
-            lifecycle.execute(() -> previous.shutdown(List.of()));
+            lifecycle.execute(() -> previous.shutdown(List.of(), Deadline.after(Bridge.DISCORD_STOP_BUDGET)));
         } catch (RejectedExecutionException stopped) {
             LOGGER.debug("Discord is already shutting down");
         }
