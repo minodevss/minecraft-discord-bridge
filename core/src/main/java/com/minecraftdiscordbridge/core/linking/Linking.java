@@ -85,7 +85,7 @@ public final class Linking {
             replies.send(source, "game.players-only");
             return;
         }
-        io.call(
+        io.completeOnLoop(
                 () -> store.unlinkMinecraft(player),
                 removed -> replies.send(source, removed.isPresent() ? "game.unlink.done" : "game.unlink.none"),
                 failure -> {
@@ -118,7 +118,7 @@ public final class Linking {
         DiscordId discordId = new DiscordId(request.userId());
         Link link = new Link(
                 code.playerId(), discordId, code.playerName(), code.bedrock() ? Edition.BEDROCK : Edition.JAVA, now);
-        io.run(
+        io.completeOnLoop(
                 () -> store.link(link),
                 () -> {
                     LOGGER.info("Linked Minecraft account {} to Discord user {}", code.playerName(), discordId);
@@ -138,7 +138,7 @@ public final class Linking {
 
     public void unlink(InteractionRequest request, InteractionReply reply) {
         Lang reader = Lang.forDiscordLocale(request.locale(), replies.lang());
-        io.call(
+        io.completeOnLoop(
                 () -> store.unlinkDiscord(new DiscordId(request.userId())),
                 removed -> reply.replyEphemeral(removed.map(
                                 link -> reader.text("discord.unlink.done", DiscordEscaper.escape(link.minecraftName())))

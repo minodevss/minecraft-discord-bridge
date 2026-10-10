@@ -16,11 +16,11 @@ public final class StoredCommandHashes implements CommandHashRepository {
 
     @Override
     public CompletionStage<Optional<String>> find(long guildId) {
-        return io.submit(() -> store.hash(Long.toUnsignedString(guildId)));
+        return io.completeOnIo(() -> store.hash(Long.toUnsignedString(guildId)));
     }
 
     @Override
     public CompletionStage<Void> save(long guildId, String hash) {
-        return io.perform(() -> store.put(Long.toUnsignedString(guildId), hash)).thenAccept(done -> {});
+        return io.completeOnIo(() -> store.put(Long.toUnsignedString(guildId), hash));
     }
 }

@@ -27,7 +27,7 @@ public final class ChatToggle {
             return;
         }
         boolean hide = !preferences.hidingDiscord().contains(player);
-        io.run(
+        io.completeOnLoop(
                 () -> preferences.hideDiscord(player, hide),
                 () -> replies.send(source, hide ? "game.toggle.hidden" : "game.toggle.shown"),
                 failure -> {

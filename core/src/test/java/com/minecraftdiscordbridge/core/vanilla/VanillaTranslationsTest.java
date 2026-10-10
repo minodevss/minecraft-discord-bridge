@@ -47,7 +47,7 @@ class VanillaTranslationsTest {
         VanillaTranslations translations = translations();
 
         translations.use(Language.KO);
-        io.perform(() -> {}).join();
+        io.completeOnIo(() -> {}).join();
 
         assertThat(translations.pattern("death.attack.fall")).isNull();
         mojang.serve("1.21.1", "ko_kr", KOREAN);
@@ -62,7 +62,7 @@ class VanillaTranslationsTest {
 
         translations.use(Language.KO);
         translations.use(Language.KO);
-        io.perform(() -> {}).join();
+        io.completeOnIo(() -> {}).join();
 
         assertThat(mojang.requests).hasSize(4);
     }
@@ -72,7 +72,7 @@ class VanillaTranslationsTest {
         mojang.serve("1.21.1", "ko_kr", KOREAN);
         VanillaTranslations translations = translations();
         translations.use(Language.KO);
-        io.perform(() -> {}).join();
+        io.completeOnIo(() -> {}).join();
 
         translations.use(Language.EN);
 

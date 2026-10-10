@@ -41,7 +41,7 @@ public final class VanillaTranslations implements Translations {
         if (!locale.equals(requested)) {
             requested = locale;
             patterns = Map.of();
-            io.call(
+            io.completeOnLoop(
                     () -> files.load(minecraftVersion, locale),
                     loaded -> loaded(locale, loaded),
                     failure -> failed(locale, failure));

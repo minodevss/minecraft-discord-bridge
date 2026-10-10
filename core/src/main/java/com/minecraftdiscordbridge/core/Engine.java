@@ -103,7 +103,7 @@ final class Engine {
 
     void boot() {
         shared.io()
-                .call(
+                .completeOnLoop(
                         () -> new Boot(
                                 Stores.open(shared.platform().dataDirectory()), loader.load(), marker.markRunning()),
                         this::booted,
@@ -260,7 +260,7 @@ final class Engine {
             replies.send(source, "game.not-ready");
             return;
         }
-        shared.io().call(loader::load, result -> apply(result, source), failure -> {
+        shared.io().completeOnLoop(loader::load, result -> apply(result, source), failure -> {
             LOGGER.warn(
                     "Could not reload config.yml or secrets.yml: {}. Check that both files are readable and run"
                             + " /discord reload again",

@@ -10,47 +10,39 @@ import java.util.function.Consumer;
 
 public final class IoExecutor implements AutoCloseable {
     private final ExecutorService executor;
-    private final Executor callbacks;
+    private final Executor loop;
 
-    public IoExecutor(Executor callbacks) {
-        this(callbacks, "I/O");
+    public IoExecutor(Executor loop) {
+        this(loop, "I/O");
     }
 
-    private IoExecutor(Executor callbacks, String role) {
+    private IoExecutor(Executor loop, String role) {
         this.executor = Executors.newSingleThreadExecutor(Threads.named(role));
-        this.callbacks = callbacks;
+        this.loop = loop;
     }
 
     public static IoExecutor forLoop(CoreLoop loop, String role) {
         return new IoExecutor(loop::control, role);
     }
 
-    public <T> CompletableFuture<T> submit(Task<T> task) {
+    public <T> CompletableFuture<T> completeOnIo(Task<T> task) {
         CompletableFuture<T> result = new CompletableFuture<>();
-        try {
-            executor.execute(() -> {
-                try {
-                    result.complete(task.run());
-                } catch (IOException | RuntimeException failure) {
-                    result.completeExceptionally(failure);
-                }
-            });
-        } catch (RejectedExecutionException closed) {
-            result.completeExceptionally(closed);
-        }
+        start(result, () -> result.complete(task.run()));
         return result;
     }
 
-    public CompletableFuture<Boolean> perform(Action action) {
-        return submit(() -> {
+    public CompletableFuture<Void> completeOnIo(Action action) {
+        CompletableFuture<Void> result = new CompletableFuture<>();
+        start(result, () -> {
             action.run();
-            return true;
+            result.complete(null);
         });
+        return result;
     }
 
-    public <T> void call(Task<T> task, Consumer<T> done, Consumer<Throwable> failed) {
-        var unused = submit(task)
-                .whenComplete((value, failure) -> callbacks.execute(() -> {
+    public <T> void completeOnLoop(Task<T> task, Consumer<T> done, Consumer<Throwable> failed) {
+        var unused = completeOnIo(task)
+                .whenComplete((value, failure) -> loop.execute(() -> {
                     if (failure == null) {
                         done.accept(value);
                     } else {
@@ -59,14 +51,29 @@ public final class IoExecutor implements AutoCloseable {
                 }));
     }
 
-    public void run(Action action, Runnable done, Consumer<Throwable> failed) {
-        call(
-                () -> {
-                    action.run();
-                    return true;
-                },
-                ignored -> done.run(),
-                failed);
+    public void completeOnLoop(Action action, Runnable done, Consumer<Throwable> failed) {
+        var unused = completeOnIo(action)
+                .whenComplete((value, failure) -> loop.execute(() -> {
+                    if (failure == null) {
+                        done.run();
+                    } else {
+                        failed.accept(failure);
+                    }
+                }));
+    }
+
+    private void start(CompletableFuture<?> result, Action work) {
+        try {
+            executor.execute(() -> {
+                try {
+                    work.run();
+                } catch (IOException | RuntimeException failure) {
+                    result.completeExceptionally(failure);
+                }
+            });
+        } catch (RejectedExecutionException closed) {
+            result.completeExceptionally(closed);
+        }
     }
 
     @Override

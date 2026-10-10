@@ -156,7 +156,7 @@ public final class Bridge {
         }
         long deadline = System.nanoTime() + STOP_BUDGET.toNanos();
         List<OutboundMessage> farewell = engine.farewell(crashed);
-        CompletableFuture<Boolean> markerCleared = io.perform(engine::clearMarker);
+        CompletableFuture<Void> markerCleared = io.completeOnIo(engine::clearMarker);
         Discord discord = engine.close();
         stopDiscord(discord, farewell);
         loop.close();
@@ -187,7 +187,7 @@ public final class Bridge {
         }
     }
 
-    private static void awaitMarker(CompletableFuture<Boolean> cleared, long deadline) {
+    private static void awaitMarker(CompletableFuture<Void> cleared, long deadline) {
         long remaining = Math.max(0, deadline - System.nanoTime());
         try {
             cleared.get(remaining, TimeUnit.NANOSECONDS);

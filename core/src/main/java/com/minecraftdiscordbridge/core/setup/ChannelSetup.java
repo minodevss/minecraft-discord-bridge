@@ -116,7 +116,7 @@ public final class ChannelSetup {
 
     private void save(InteractionRequest request, InteractionReply reply, Lang reader, ChannelRole role) {
         ChannelBinding next = bind(bindings.current(), request.guildId(), role, request.channelId());
-        io.run(
+        io.completeOnLoop(
                 () -> bindings.save(next),
                 () -> {
                     LOGGER.info(
