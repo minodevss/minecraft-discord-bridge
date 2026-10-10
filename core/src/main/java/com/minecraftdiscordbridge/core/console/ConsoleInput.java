@@ -12,7 +12,6 @@ import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.platform.ActionOutcome;
 import com.minecraftdiscordbridge.core.platform.GameAction;
-import com.minecraftdiscordbridge.core.text.Graphemes;
 import com.minecraftdiscordbridge.core.text.SafeText;
 import com.minecraftdiscordbridge.core.text.markdown.DiscordEscaper;
 import java.util.Collection;
@@ -23,7 +22,6 @@ import java.util.function.Supplier;
 public final class ConsoleInput {
     public static final int MAX_COMMAND_LENGTH = 256;
     static final int MAX_OUTPUT_LENGTH = 1900;
-    private static final String FENCE = "```";
     private static final Author SERVER = Author.server();
 
     private final Optional<DiscordId> channel;
@@ -90,8 +88,7 @@ public final class ConsoleInput {
     }
 
     private String block(String output) {
-        String body = DiscordEscaper.escapeCodeBlock(ConsoleRedactor.redact(output.strip(), secrets.get()));
-        return FENCE + "\n" + Graphemes.fit(body, MAX_OUTPUT_LENGTH, Graphemes.ELLIPSIS) + "\n" + FENCE;
+        return ConsoleBlock.fence(ConsoleBlock.body(output.strip(), secrets.get(), MAX_OUTPUT_LENGTH));
     }
 
     private void post(String text) {

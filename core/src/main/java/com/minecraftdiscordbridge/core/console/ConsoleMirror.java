@@ -9,8 +9,6 @@ import com.minecraftdiscordbridge.core.discord.DiscordId;
 import com.minecraftdiscordbridge.core.discord.OutboundMessage;
 import com.minecraftdiscordbridge.core.i18n.Lang;
 import com.minecraftdiscordbridge.core.loop.CoreLoop;
-import com.minecraftdiscordbridge.core.text.Graphemes;
-import com.minecraftdiscordbridge.core.text.markdown.DiscordEscaper;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -26,8 +24,6 @@ import org.jspecify.annotations.Nullable;
 public final class ConsoleMirror implements AutoCloseable {
     public static final Duration INTERVAL = Duration.ofSeconds(2);
     static final int MAX_MESSAGES_PER_FLUSH = 5;
-    private static final String FENCE = "```";
-    private static final int BODY_LENGTH = OutboundMessage.MAX_LENGTH - 2 * FENCE.length() - 2;
     private static final Author SERVER = Author.server();
 
     private final ConsoleBuffer buffer;
@@ -115,8 +111,7 @@ public final class ConsoleMirror implements AutoCloseable {
                 .append("] ")
                 .append(line.message());
         line.thrown().ifPresent(thrown -> text.append('\n').append(thrown));
-        String redacted = DiscordEscaper.escapeCodeBlock(ConsoleRedactor.redact(text.toString(), hidden));
-        return Graphemes.fit(redacted, BODY_LENGTH, Graphemes.ELLIPSIS);
+        return ConsoleBlock.body(text.toString(), hidden, ConsoleBlock.MAX_BODY_LENGTH);
     }
 
     private static final class Blocks {
@@ -124,11 +119,11 @@ public final class ConsoleMirror implements AutoCloseable {
         private final StringBuilder body = new StringBuilder();
 
         boolean add(String line) {
-            if (body.length() > 0 && body.length() + 1 + line.length() > BODY_LENGTH) {
+            if (body.length() > 0 && body.length() + 1 + line.length() > ConsoleBlock.MAX_BODY_LENGTH) {
                 if (full.size() + 1 >= MAX_MESSAGES_PER_FLUSH) {
                     return false;
                 }
-                full.add(fence(body));
+                full.add(ConsoleBlock.fence(body));
                 body.setLength(0);
             }
             if (body.length() > 0) {
@@ -140,13 +135,9 @@ public final class ConsoleMirror implements AutoCloseable {
 
         List<String> finish() {
             if (body.length() > 0) {
-                full.add(fence(body));
+                full.add(ConsoleBlock.fence(body));
             }
             return full;
-        }
-
-        private static String fence(CharSequence body) {
-            return FENCE + "\n" + body + "\n" + FENCE;
         }
     }
 
