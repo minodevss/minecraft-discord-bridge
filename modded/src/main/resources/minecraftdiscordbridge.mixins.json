@@ -3,7 +3,7 @@
   "minVersion": "0.8",
   "package": "com.minecraftdiscordbridge.modded.fabric.mixin",
   "compatibilityLevel": "JAVA_${java}",
-  "mixins": ["PlayerAdvancementsMixin", "ServerPlayerMixin"],
+  "mixins": ["PlayerAdvancementsMixin", "ServerLoginPacketListenerAccessor", "ServerPlayerMixin"],
   "injectors": {
     "defaultRequire": 1
   }
