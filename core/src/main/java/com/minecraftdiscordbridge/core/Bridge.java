@@ -144,12 +144,12 @@ public final class Bridge {
 
     public CompletableFuture<JoinDecision> checkJoin(PlayerProfile player, boolean bypass) {
         if (stopped.get()) {
-            return CompletableFuture.completedFuture(engine.joinFallback(player, bypass));
+            return CompletableFuture.completedFuture(engine.joins().fallback(player, bypass));
         }
         CompletableFuture<JoinDecision> decision = new CompletableFuture<>();
-        loop.control(() -> engine.checkJoin(player, bypass, decision));
+        loop.control(() -> engine.joins().check(player, bypass, decision));
         return decision.orTimeout(JoinGate.BUDGET.toMillis(), TimeUnit.MILLISECONDS)
-                .handle((done, failure) -> done != null ? done : engine.joinFallback(player, bypass));
+                .handle((done, failure) -> done != null ? done : engine.joins().fallback(player, bypass));
     }
 
     public void stop() {

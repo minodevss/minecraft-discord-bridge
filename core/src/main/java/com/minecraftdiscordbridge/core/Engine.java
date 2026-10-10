@@ -28,9 +28,7 @@ import com.minecraftdiscordbridge.core.log.Failures;
 import com.minecraftdiscordbridge.core.loop.Deadline;
 import com.minecraftdiscordbridge.core.platform.CommandSource;
 import com.minecraftdiscordbridge.core.platform.GameEvent;
-import com.minecraftdiscordbridge.core.platform.JoinDecision;
 import com.minecraftdiscordbridge.core.platform.Permission;
-import com.minecraftdiscordbridge.core.platform.PlayerProfile;
 import com.minecraftdiscordbridge.core.setup.Channels;
 import com.minecraftdiscordbridge.core.setup.SetupGuide;
 import com.minecraftdiscordbridge.core.status.StatusReport;
@@ -41,13 +39,11 @@ import com.minecraftdiscordbridge.core.storage.StoredCommandHashes;
 import com.minecraftdiscordbridge.core.storage.StoredWebhooks;
 import com.minecraftdiscordbridge.core.storage.Stores;
 import com.minecraftdiscordbridge.core.text.Format.Slot;
-import com.minecraftdiscordbridge.core.text.TextRenderer;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.BooleanSupplier;
@@ -64,8 +60,6 @@ final class Engine implements BridgeCommand.Callbacks {
 
     private record Boot(Stores stores, ConfigResult config, boolean recovered) {}
 
-    private record WaitingJoin(PlayerProfile player, boolean bypass, CompletableFuture<JoinDecision> result) {}
-
     private final Services services;
     private final ExecutorService lifecycle;
     private final DiscordFactory factory;
@@ -74,10 +68,9 @@ final class Engine implements BridgeCommand.Callbacks {
     private final BooleanSupplier stopping;
     private final Object lock = new Object();
 
-    private final List<WaitingJoin> waitingJoins = new ArrayList<>();
+    private final JoinQueue joins;
     private volatile @Nullable Features features;
     private volatile boolean closed;
-    private volatile boolean booting = true;
     private @Nullable Stores stores;
     private @Nullable ConfigSnapshot snapshot;
     private @Nullable DiscordSettings settings;
@@ -101,6 +94,9 @@ final class Engine implements BridgeCommand.Callbacks {
         this.loader = loader;
         this.marker = marker;
         this.stopping = stopping;
+        this.joins = new JoinQueue(
+                () -> Optional.ofNullable(features).map(Features::gate),
+                services.platform().info().dataVersion());
     }
 
     void boot() {
@@ -114,7 +110,7 @@ final class Engine implements BridgeCommand.Callbacks {
                                     "The bridge could not start: {}. Check that the plugin data folder is readable and"
                                             + " writable, then restart the server",
                                     Failures.describe(failure));
-                            releaseWaitingJoins();
+                            joins.release();
                         });
     }
 
@@ -161,29 +157,8 @@ final class Engine implements BridgeCommand.Callbacks {
         command.run(source, granted, arguments);
     }
 
-    void checkJoin(PlayerProfile player, boolean bypass, CompletableFuture<JoinDecision> result) {
-        Features current = features;
-        if (current != null) {
-            current.gate().decide(player, bypass, result);
-        } else if (booting) {
-            waitingJoins.add(new WaitingJoin(player, bypass, result));
-        } else {
-            result.complete(new JoinDecision.Allow());
-        }
-    }
-
-    JoinDecision joinFallback(PlayerProfile player, boolean bypass) {
-        Features current = features;
-        if (current != null) {
-            return current.gate().fallback(player, bypass);
-        }
-        if (booting && !bypass) {
-            Lang english = Lang.of(Language.EN);
-            return new JoinDecision.Deny(TextRenderer.toJson(
-                    english.component("game.gate.starting"),
-                    services.platform().info().dataVersion()));
-        }
-        return new JoinDecision.Allow();
+    JoinQueue joins() {
+        return joins;
     }
 
     List<OutboundMessage> farewell(boolean crashed) {
@@ -235,13 +210,6 @@ final class Engine implements BridgeCommand.Callbacks {
         }
     }
 
-    private void releaseWaitingJoins() {
-        booting = false;
-        List<WaitingJoin> waiting = List.copyOf(waitingJoins);
-        waitingJoins.clear();
-        waiting.forEach(join -> checkJoin(join.player(), join.bypass(), join.result()));
-    }
-
     @Override
     public void reload(CommandSource source, Replies replies) {
         if (stores == null) {
@@ -259,17 +227,17 @@ final class Engine implements BridgeCommand.Callbacks {
 
     private void apply(ConfigResult result, @Nullable CommandSource source) {
         if (closed) {
-            releaseWaitingJoins();
+            joins.release();
             return;
         }
         result.warnings().forEach(warning -> LOGGER.warn("{}", warning));
         if (result instanceof ConfigResult.Failed failed) {
             rejected(failed.errors(), source);
-            releaseWaitingJoins();
+            joins.release();
             return;
         }
         Outcome outcome = activate(((ConfigResult.Loaded) result).snapshot());
-        releaseWaitingJoins();
+        joins.release();
         if (source != null) {
             replies()
                     .send(
