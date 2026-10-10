@@ -6,21 +6,11 @@ import org.junit.jupiter.api.Test;
 
 class OriginTest {
     @Test
-    void neverRelaysItsOwnMessages() {
-        assertThat(Origin.SELF.relayed(true, true)).isFalse();
-        assertThat(Origin.OWN_WEBHOOK.relayed(true, true)).isFalse();
-    }
-
-    @Test
-    void relaysBotsAndWebhooksOnlyWhenAskedTo() {
-        assertThat(Origin.BOT.relayed(false, true)).isFalse();
-        assertThat(Origin.BOT.relayed(true, false)).isTrue();
-        assertThat(Origin.WEBHOOK.relayed(true, false)).isFalse();
-        assertThat(Origin.WEBHOOK.relayed(false, true)).isTrue();
-    }
-
-    @Test
-    void alwaysRelaysPeople() {
-        assertThat(Origin.USER.relayed(false, false)).isTrue();
+    void relaysOnlyPeople() {
+        assertThat(Origin.USER.relayed()).isTrue();
+        assertThat(Origin.SELF.relayed()).isFalse();
+        assertThat(Origin.OWN_WEBHOOK.relayed()).isFalse();
+        assertThat(Origin.BOT.relayed()).isFalse();
+        assertThat(Origin.WEBHOOK.relayed()).isFalse();
     }
 }

@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Consumer;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +39,7 @@ public final class ChannelSetup {
     private final Attempts attempts;
     private final InstantSource clock;
     private final Replies replies;
-    private final Consumer<ChannelBinding> bound;
+    private final Runnable bound;
 
     public ChannelSetup(
             Discord discord,
@@ -51,7 +50,7 @@ public final class ChannelSetup {
             Attempts attempts,
             InstantSource clock,
             Replies replies,
-            Consumer<ChannelBinding> bound) {
+            Runnable bound) {
         this.discord = discord;
         this.bindings = bindings;
         this.config = config;
@@ -126,7 +125,7 @@ public final class ChannelSetup {
                             Long.toUnsignedString(request.channelId()),
                             id(role));
                     reply.replyEphemeral(confirmation(reader, role));
-                    bound.accept(next);
+                    bound.run();
                 },
                 failure -> {
                     LOGGER.warn(

@@ -22,13 +22,11 @@ import com.minecraftdiscordbridge.core.i18n.Replies;
 import com.minecraftdiscordbridge.core.linking.Linking;
 import com.minecraftdiscordbridge.core.setup.ChannelSetup;
 import com.minecraftdiscordbridge.core.status.StatusBoard;
-import com.minecraftdiscordbridge.core.storage.ChannelBinding;
 import com.minecraftdiscordbridge.core.text.Format;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,12 +35,7 @@ final class Sessions {
 
     private Sessions() {}
 
-    static Session build(
-            Shared shared,
-            Stores stores,
-            ConfigSnapshot snapshot,
-            Channels channels,
-            Consumer<ChannelBinding> rebound) {
+    static Session build(Shared shared, Stores stores, ConfigSnapshot snapshot, Channels channels, Runnable rebound) {
         BridgeConfig config = snapshot.config();
         Lang lang = Lang.of(config.language());
         Replies replies = new Replies(lang, shared.platform().info().dataVersion());

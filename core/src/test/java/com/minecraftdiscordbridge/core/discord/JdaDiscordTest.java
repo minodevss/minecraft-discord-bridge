@@ -211,8 +211,7 @@ class JdaDiscordTest {
                 .containsEntry(ROLE_ID, new DiscordMessage.MentionedRole("Builders", 0x3498db));
         assertThat(received.mentionedChannels()).containsEntry(CHANNEL_ID, "minecraft");
         assertThat(received.attachments())
-                .containsExactly(new DiscordMessage.Attachment(
-                        "cat.png", "https://cdn.example.com/cat.png", "image/png", true, false));
+                .containsExactly(new DiscordMessage.Attachment("cat.png", "https://cdn.example.com/cat.png", true));
         assertThat(received.stickers()).containsExactly("wave");
         assertThat(received.reply()).isNotNull();
         assertThat(received.reply().authorName()).isEqualTo("Author" + FRIEND_ID);
@@ -715,8 +714,6 @@ class JdaDiscordTest {
                 base.serverAuthor(),
                 base.autoEnableMessageContent(),
                 base.requestMembersIntent(),
-                base.relayBotMessages(),
-                base.relayWebhookMessages(),
                 base.commands());
     }
 
@@ -820,8 +817,6 @@ class JdaDiscordTest {
                 base.serverAuthor(),
                 autoEnable,
                 base.requestMembersIntent(),
-                base.relayBotMessages(),
-                base.relayWebhookMessages(),
                 base.commands());
     }
 

@@ -10,8 +10,6 @@ public record DiscordSettings(
         Author serverAuthor,
         boolean autoEnableMessageContent,
         boolean requestMembersIntent,
-        boolean relayBotMessages,
-        boolean relayWebhookMessages,
         List<CommandSpec> commands) {
     public static final long NO_GUILD = 0;
 

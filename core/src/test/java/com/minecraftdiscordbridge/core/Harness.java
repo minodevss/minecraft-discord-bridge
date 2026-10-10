@@ -128,17 +128,16 @@ final class Harness implements AutoCloseable {
 
     static InteractionRequest request(
             String command, @Nullable String subcommand, Map<String, String> options, long user, long channel) {
-        return new InteractionRequest(1, command, subcommand, options, GUILD, channel, user, "Alex", false, "en-US");
+        return new InteractionRequest(command, subcommand, options, GUILD, channel, user, "Alex", false, "en-US");
     }
 
     static InteractionRequest managerRequest(String command, Map<String, String> options, long user, long channel) {
-        return new InteractionRequest(1, command, null, options, GUILD, channel, user, "Alex", true, "en-US");
+        return new InteractionRequest(command, null, options, GUILD, channel, user, "Alex", true, "en-US");
     }
 
     static DiscordMessage message(long channel, String content) {
         return new DiscordMessage(
                 channel,
-                1,
                 new DiscordMessage.Sender(MEMBER, "Alex", null, false, false),
                 content,
                 Map.of(),

@@ -26,7 +26,6 @@ import com.minecraftdiscordbridge.core.platform.GameEvent;
 import com.minecraftdiscordbridge.core.platform.JoinDecision;
 import com.minecraftdiscordbridge.core.platform.Permission;
 import com.minecraftdiscordbridge.core.platform.PlayerProfile;
-import com.minecraftdiscordbridge.core.storage.ChannelBinding;
 import com.minecraftdiscordbridge.core.storage.Link;
 import com.minecraftdiscordbridge.core.storage.LinkChange;
 import com.minecraftdiscordbridge.core.text.Format.Slot;
@@ -347,7 +346,7 @@ final class Engine {
         return status.state() == DiscordStatus.State.READY || status.state() == DiscordStatus.State.DEGRADED;
     }
 
-    private void rebound(ChannelBinding binding) {
+    private void rebound() {
         var unused = shared.loop().schedule(REBIND_DELAY, () -> {
             ConfigSnapshot current = snapshot;
             if (current != null && !closed) {

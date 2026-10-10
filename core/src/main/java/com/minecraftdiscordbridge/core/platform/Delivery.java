@@ -7,8 +7,4 @@ public record Delivery(String json, Set<UUID> excluded) {
     public Delivery {
         excluded = Set.copyOf(excluded);
     }
-
-    public static Delivery toEveryone(String json) {
-        return new Delivery(json, Set.of());
-    }
 }

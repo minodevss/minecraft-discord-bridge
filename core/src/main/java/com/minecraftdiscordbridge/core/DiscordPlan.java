@@ -28,8 +28,6 @@ final class DiscordPlan {
                 Author.server(),
                 config.discord().autoEnableMessageContent(),
                 needsMembers(config),
-                false,
-                false,
                 commands);
     }
 

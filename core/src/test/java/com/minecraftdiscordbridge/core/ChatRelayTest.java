@@ -141,7 +141,6 @@ class ChatRelayTest {
             harness.discord()
                     .receive(new DiscordMessage(
                             CHAT,
-                            1,
                             new DiscordMessage.Sender(MEMBER, "Alex", null, false, false),
                             "**hello** <@" + MEMBER + ">",
                             Map.of(MEMBER, "Alex"),
@@ -181,13 +180,8 @@ class ChatRelayTest {
                     "look",
                     List.of(
                             new DiscordMessage.Attachment(
-                                    "cat.png",
-                                    "https://cdn.discordapp.com/attachments/1/2/cat.png",
-                                    "image/png",
-                                    true,
-                                    false),
-                            new DiscordMessage.Attachment(
-                                    "notes.txt", "https://evil.example/notes.txt", "text/plain", false, false)),
+                                    "cat.png", "https://cdn.discordapp.com/attachments/1/2/cat.png", true),
+                            new DiscordMessage.Attachment("notes.txt", "https://evil.example/notes.txt", false)),
                     null,
                     List.of("wave"),
                     true);
@@ -221,7 +215,6 @@ class ChatRelayTest {
             harness.discord()
                     .receive(new DiscordMessage(
                             CHAT,
-                            1,
                             new DiscordMessage.Sender(MEMBER, "Alex", 0x3498db, false, false),
                             "hi",
                             Map.of(),
@@ -300,7 +293,6 @@ class ChatRelayTest {
             boolean poll) {
         return new DiscordMessage(
                 CHAT,
-                1,
                 new DiscordMessage.Sender(MEMBER, "Alex", null, false, false),
                 content,
                 Map.of(),

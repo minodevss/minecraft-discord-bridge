@@ -55,8 +55,7 @@ final class JdaEvents {
             return;
         }
         Message message = event.getMessage();
-        if (message.getType().isSystem()
-                || !origin(message).relayed(settings.relayBotMessages(), settings.relayWebhookMessages())) {
+        if (message.getType().isSystem() || !origin(message).relayed()) {
             return;
         }
         DiscordMessage mapped = MessageMapper.map(message);
@@ -84,7 +83,6 @@ final class JdaEvents {
         }
         Member member = event.getMember();
         InteractionRequest request = new InteractionRequest(
-                event.getIdLong(),
                 event.getName(),
                 event.getSubcommandName(),
                 options,

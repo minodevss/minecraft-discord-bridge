@@ -155,7 +155,6 @@ class ConsoleInputTest {
     private static DiscordMessage message(long channel, long author, boolean bot, boolean webhook, String content) {
         return new DiscordMessage(
                 channel,
-                1,
                 new DiscordMessage.Sender(author, "Admin", null, bot, webhook),
                 content,
                 Map.of(),

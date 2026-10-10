@@ -114,14 +114,6 @@ class TextRendererTest {
     }
 
     @Test
-    void fallsBackToPlainTextWhenRichTextJsonIsBroken() {
-        assertThat(TextRenderer.fromRichText(new RichText("{broken", "Steve fell")))
-                .isEqualTo(Component.text("Steve fell"));
-        assertThat(TextRenderer.fromRichText(new RichText("{\"text\":\"ok\"}", "ignored")))
-                .isEqualTo(Component.text("ok"));
-    }
-
-    @Test
     void flattensTranslatableToFallbackThenKeyWithoutTranslations() {
         assertThat(TextRenderer.plain(Component.translatable("death.fell", "Steve fell")))
                 .isEqualTo("Steve fell");

@@ -19,7 +19,6 @@ final class MessageMapper {
     static DiscordMessage map(Message message) {
         return new DiscordMessage(
                 message.getChannel().getIdLong(),
-                message.getIdLong(),
                 sender(message),
                 message.getContentRaw(),
                 users(message.getMentions()),
@@ -72,12 +71,7 @@ final class MessageMapper {
     }
 
     private static DiscordMessage.Attachment attachment(Message.Attachment attachment) {
-        return new DiscordMessage.Attachment(
-                attachment.getFileName(),
-                attachment.getUrl(),
-                attachment.getContentType(),
-                attachment.isImage(),
-                attachment.isVideo());
+        return new DiscordMessage.Attachment(attachment.getFileName(), attachment.getUrl(), attachment.isImage());
     }
 
     private static DiscordMessage.@Nullable Reply reply(Message message) {

@@ -76,7 +76,7 @@ public final class JdaDiscord implements Discord {
         static final Endpoints DISCORD = new Endpoints(RestConfig.DEFAULT_BASE_URL, null);
     }
 
-    private record Session(int generation, JDA jda, JdaPools pools) {}
+    private record Session(JDA jda, JdaPools pools) {}
 
     private record Phase(State state, @Nullable String reason) {}
 
@@ -378,7 +378,7 @@ public final class JdaDiscord implements Discord {
             JDA jda = builder(generation, intents, pools).build();
             synchronized (sessionLock) {
                 if (!closing) {
-                    session = new Session(generation, jda, pools);
+                    session = new Session(jda, pools);
                     nextRetry = FIRST_RETRY;
                     return;
                 }
