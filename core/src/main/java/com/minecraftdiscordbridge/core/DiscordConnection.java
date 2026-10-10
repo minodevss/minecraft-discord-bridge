@@ -5,7 +5,6 @@ import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 import com.minecraftdiscordbridge.core.commands.DiscordCommands;
 import com.minecraftdiscordbridge.core.config.BridgeConfig;
 import com.minecraftdiscordbridge.core.config.ConfigSnapshot;
-import com.minecraftdiscordbridge.core.config.DiscordConfig;
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.AutocompleteReply;
 import com.minecraftdiscordbridge.core.discord.AutocompleteRequest;
@@ -85,9 +84,7 @@ final class DiscordConnection {
         Set<DiscordId> ids = new LinkedHashSet<>();
         channels.chat().ifPresent(ids::add);
         channels.events().ifPresent(ids::add);
-        if (config.console().mirror() || !config.console().inputUsers().isEmpty()) {
-            config.discord().consoleChannel().ifPresent(ids::add);
-        }
+        config.console().channel().ifPresent(ids::add);
         return ids;
     }
 
@@ -128,21 +125,19 @@ final class DiscordConnection {
                 channelIds.isEmpty() ? DiscordCommands.setupOnly() : DiscordCommands.forConfig(config, platform);
         return new DiscordSettings(
                 snapshot.secrets().discordToken(),
-                guild(config.discord(), channels),
+                guild(config, channels),
                 channelIds,
                 Author.server(),
-                config.discord().autoEnableMessageContent(),
                 needsMembers(config),
                 commands);
     }
 
     private static boolean needsMembers(BridgeConfig config) {
-        return !config.roleSync().rules().isEmpty()
-                || config.linking().requiredRole().isPresent();
+        return !config.roleSync().isEmpty() || config.linking().requiredRole().isPresent();
     }
 
-    private static Optional<DiscordId> guild(DiscordConfig config, Channels channels) {
-        if (config.chatChannel().isPresent() || config.eventsChannel().isPresent()) {
+    private static Optional<DiscordId> guild(BridgeConfig config, Channels channels) {
+        if (config.chat().channel().isPresent() || config.events().channel().isPresent()) {
             return Optional.empty();
         }
         return channels.guild();

@@ -2,7 +2,6 @@ package com.minecraftdiscordbridge.core.console;
 
 import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
-import com.minecraftdiscordbridge.core.config.ConsoleConfig;
 import com.minecraftdiscordbridge.core.discord.Author;
 import com.minecraftdiscordbridge.core.discord.Discord;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
@@ -52,20 +51,19 @@ public final class ConsoleMirror implements AutoCloseable {
     }
 
     public static Optional<ConsoleMirror> start(
-            ConsoleConfig config,
             Optional<DiscordId> channel,
             Discord discord,
             Lang lang,
             CoreLoop loop,
             Supplier<Collection<String>> secrets) {
-        if (!config.mirror() || channel.isEmpty()) {
+        if (channel.isEmpty()) {
             return Optional.empty();
         }
         ConsoleBuffer buffer = new ConsoleBuffer(ConsoleBuffer.CAPACITY);
         Optional<Runnable> detach = attach(buffer);
         if (detach.isEmpty()) {
             LOGGER.warn("Cannot mirror the console because this server does not log through Log4j 2."
-                    + " Set console.mirror to false to hide this warning");
+                    + " Clear console.channel to hide this warning");
             return Optional.empty();
         }
         ConsoleMirror mirror = new ConsoleMirror(buffer, channel.get(), discord, lang, secrets, ZoneId.systemDefault());

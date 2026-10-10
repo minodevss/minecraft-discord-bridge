@@ -3,7 +3,7 @@ package com.minecraftdiscordbridge.core.setup;
 import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
 import com.minecraftdiscordbridge.core.codes.Attempts;
-import com.minecraftdiscordbridge.core.config.DiscordConfig;
+import com.minecraftdiscordbridge.core.config.BridgeConfig;
 import com.minecraftdiscordbridge.core.discord.CommandReply;
 import com.minecraftdiscordbridge.core.discord.CommandRequest;
 import com.minecraftdiscordbridge.core.discord.Discord;
@@ -32,7 +32,7 @@ public final class ChannelSetup {
 
     private final Discord discord;
     private final BindingStore bindings;
-    private final DiscordConfig config;
+    private final BridgeConfig config;
     private final IoExecutor io;
     private final SetupCodes codes;
     private final Attempts attempts;
@@ -42,7 +42,7 @@ public final class ChannelSetup {
 
     public ChannelSetup(
             FeatureContext context,
-            DiscordConfig config,
+            BridgeConfig config,
             BindingStore bindings,
             SetupCodes codes,
             Attempts attempts,
@@ -63,7 +63,7 @@ public final class ChannelSetup {
         Optional<ChannelRole> role = role(request.options().get(ROLE_OPTION));
         if (role.isEmpty()) {
             reply.replyEphemeral(userLang.text("discord.unknown-command"));
-        } else if (config.consoleChannel().equals(Optional.of(request.channelId()))) {
+        } else if (config.console().channel().equals(Optional.of(request.channelId()))) {
             reply.replyEphemeral(userLang.text("discord.setup.console-channel"));
         } else if (authorized(request, reply, userLang)) {
             save(request, reply, userLang, role.get());
@@ -124,11 +124,13 @@ public final class ChannelSetup {
 
     private String confirmation(Lang userLang, ChannelRole role) {
         String done = userLang.text("discord.setup.done." + role.id());
-        Optional<DiscordId> configured = role == ChannelRole.CHAT ? config.chatChannel() : config.eventsChannel();
+        Optional<DiscordId> configured = role == ChannelRole.CHAT
+                ? config.chat().channel()
+                : config.events().channel();
         if (configured.isEmpty()) {
             return done;
         }
-        return done + "\n" + userLang.text("discord.setup.config-wins", "discord." + role.id() + "-channel");
+        return done + "\n" + userLang.text("discord.setup.config-wins", role.id() + ".channel");
     }
 
     static ChannelBinding bind(Optional<ChannelBinding> current, DiscordId guild, ChannelRole role, DiscordId channel) {

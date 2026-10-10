@@ -13,13 +13,7 @@ class TokenRedactionTest {
     @Test
     void settingsNeverPrintTheToken() {
         DiscordSettings settings = new DiscordSettings(
-                TOKEN,
-                Optional.of(new DiscordId(1)),
-                Set.of(new DiscordId(2)),
-                Author.server(),
-                true,
-                false,
-                List.of());
+                TOKEN, Optional.of(new DiscordId(1)), Set.of(new DiscordId(2)), Author.server(), false, List.of());
 
         assertThat(settings.toString()).doesNotContain(TOKEN);
     }

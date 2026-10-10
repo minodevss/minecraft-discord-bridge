@@ -32,9 +32,8 @@ class LinkingTest {
     void givesLinkCodesWhenOnlyTheConsoleChannelIsSet() throws IOException {
         try (Harness harness = Harness.started(directory, """
                 config-version: 1
-                discord:
-                  console-channel: "444444444444444444"
                 console:
+                  channel: "444444444444444444"
                   input-users: ["555555555555555555"]
                 """)) {
             String reply = harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.LINK)

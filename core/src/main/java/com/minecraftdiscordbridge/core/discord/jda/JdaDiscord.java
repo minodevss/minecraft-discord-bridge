@@ -216,7 +216,7 @@ public final class JdaDiscord implements Discord {
         if (guild == null) {
             connection.degrade(settings.guild()
                     .map(id -> "The bot is not in Discord server " + id + ". Invite it with " + inviteUrl(jda))
-                    .orElseGet(() -> "The bot cannot see any channel set under discord: in config.yml. Fix the"
+                    .orElseGet(() -> "The bot cannot see the chat or events channel set in config.yml. Fix the"
                             + " channel IDs and run /discord reload, or invite the bot with " + inviteUrl(jda)));
             return;
         }

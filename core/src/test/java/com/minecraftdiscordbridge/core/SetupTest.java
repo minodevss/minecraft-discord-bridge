@@ -171,8 +171,8 @@ class SetupTest {
     void neverBindsTheConsoleChannel() throws IOException {
         try (Harness harness = Harness.started(directory, """
                 config-version: 1
-                discord:
-                  console-channel: "444444444444444444"
+                console:
+                  channel: "444444444444444444"
                 """)) {
             harness.discord().owners = Set.of(OWNER);
 
@@ -192,7 +192,7 @@ class SetupTest {
 
             assertThat(reply.next().text())
                     .startsWith("This channel now shows the Minecraft chat.")
-                    .contains("discord.chat-channel in config.yml takes priority");
+                    .contains("chat.channel in config.yml takes priority");
         }
     }
 }

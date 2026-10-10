@@ -33,7 +33,7 @@ import org.slf4j.event.Level;
 
 class ActionsTest {
     private static final String ACTIONS_ON = CHANNELS + """
-            actions:
+            discord-commands:
               whitelist: true
               kick: true
             """;

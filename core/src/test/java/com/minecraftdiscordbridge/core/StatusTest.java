@@ -42,9 +42,9 @@ class StatusTest {
     @Test
     void updatesTheTopicWhenAsked() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS + """
-                status:
-                  presence: false
-                  topic: true
+                player-count:
+                  bot-status: false
+                  channel-topic: true
                 """)) {
             RecordingDiscord discord = harness.discord();
             harness.publish(new GameEvent.ServerStarted(List.of(STEVE, ALEX)));

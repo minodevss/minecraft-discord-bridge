@@ -244,7 +244,7 @@ final class Activator implements BridgeCommand.Callbacks {
         BridgeConfig config = loaded.config();
         lang = Lang.of(config.language());
         linkingEnabled = config.linking().enabled();
-        Channels channels = Channels.resolve(config.discord(), ready.bindings().current());
+        Channels channels = Channels.resolve(config, ready.bindings().current());
         synchronized (lock) {
             if (closed) {
                 return DiscordConnection.Outcome.APPLIED;
@@ -267,9 +267,9 @@ final class Activator implements BridgeCommand.Callbacks {
 
     private void warnAboutUnsupported(BridgeConfig config) {
         PlatformInfo platform = services.platform().info();
-        if (config.actions().whitelist() && !platform.supportsWhitelist()) {
+        if (config.discordCommands().whitelist() && !platform.supportsWhitelist()) {
             LOGGER.warn(
-                    "actions.whitelist has no effect on {}, which has no whitelist; set it to false in config.yml",
+                    "discord-commands.whitelist has no effect on {}, which has no whitelist; set it to false in config.yml",
                     platform.software());
         }
     }

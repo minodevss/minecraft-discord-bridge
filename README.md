@@ -89,8 +89,8 @@ In Discord:
 /list                              Show who is online
 /link <code>                       Link your Discord account
 /unlink                            Unlink your Discord account
-/whitelist add|remove <player>     Change the whitelist (actions.whitelist)
-/kick <player> [reason]            Kick a player (actions.kick)
+/whitelist add|remove <player>     Change the whitelist (discord-commands.whitelist)
+/kick <player> [reason]            Kick a player (discord-commands.kick)
 ```
 
 `/link` and `/unlink` exist while linking is on. `/whitelist` and `/kick` exist only when you turn them on in `config.yml`, and by default only Discord administrators can use them. To let other roles use them, change the command permissions under **Server Settings > Integrations** in Discord.
@@ -105,15 +105,16 @@ The bridge folder holds three things:
 
 | Section | What it controls |
 | --- | --- |
-| `language` | `en` or `ko` for the bridge's own messages |
-| `discord` | Chat, events and console channel IDs. A channel ID in `config.yml` takes priority over `/setup`. |
-| `chat` | Both directions, the in-game format in MiniMessage, avatars, `@name` pings for linked players, blocked words |
-| `events` | Which events to post, and a role to ping when the server starts |
-| `status` | The player count as the bot's status and in the channel topic |
+| `language` | `en` or `ko` for the bridge's messages, and for deaths and advancements on Discord |
+| `chat` | The chat channel, both directions, the in-game format in MiniMessage, avatars, `@name` pings for linked players, blocked words |
+| `events` | The events channel, which events to post, and a role to ping when the server starts |
+| `player-count` | The player count as the bot's status and in the chat channel's topic |
 | `linking` | Account linking, and whether players need a linked account or a Discord role to join |
-| `role-sync` | Rules that pair Discord roles with permission groups |
-| `actions` | `/whitelist` and `/kick` from Discord, off by default |
-| `console` | The console mirror, and the Discord user IDs that may run console commands |
+| `console` | The console channel, and the Discord user IDs that may run console commands |
+| `discord-commands` | `/whitelist` and `/kick` in Discord, off by default |
+| `role-sync` | Pairs of Discord roles and LuckPerms groups |
+
+A channel ID in `config.yml` takes priority over `/setup`.
 
 To copy a channel, role or user ID, turn on **Developer Mode** in Discord under **User Settings > Advanced**, then right-click the channel, role or user and click **Copy ID**.
 

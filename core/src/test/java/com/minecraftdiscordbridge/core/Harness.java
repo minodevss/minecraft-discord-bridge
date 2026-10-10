@@ -44,9 +44,10 @@ final class Harness implements AutoCloseable {
     static final String TOKEN = "test-token";
     static final String CHANNELS = """
             config-version: 1
-            discord:
-              chat-channel: "222222222222222222"
-              events-channel: "333333333333333333"
+            chat:
+              channel: "222222222222222222"
+            events:
+              channel: "333333333333333333"
             """;
     static final PlayerProfile STEVE =
             new PlayerProfile(UUID.fromString("00000000-0000-4000-8000-000000000001"), "Steve", "Steve", "abc", false);
@@ -95,6 +96,14 @@ final class Harness implements AutoCloseable {
         harness.bridge.start();
         harness.discord();
         return harness;
+    }
+
+    static String withChatSettings(String settings) {
+        return CHANNELS.replace("events:", settings + "events:");
+    }
+
+    static String withEventSettings(String settings) {
+        return CHANNELS + settings;
     }
 
     RecordingDiscord discord() {

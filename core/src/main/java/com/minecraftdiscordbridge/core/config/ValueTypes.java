@@ -216,39 +216,38 @@ final class ValueTypes {
         private static final String GROUP = "group";
         private static final String DIRECTION = "direction";
         private static final List<String> KEYS = List.of(DISCORD_ROLE, GROUP, DIRECTION);
+        private static final String REQUIRED_KEYS = DISCORD_ROLE + " and " + GROUP;
         private static final ValueType<SyncDirection> DIRECTIONS = choice(SyncDirection.class);
 
         @Override
         public @Nullable RoleSyncRule read(YamlValue value, String path, Problems problems) {
             if (!(value instanceof Mapping mapping)) {
-                problems.error(value.at(), path, mismatch("a map with " + keyList(), value));
+                problems.error(value.at(), path, mismatch("a map with " + REQUIRED_KEYS, value));
                 return null;
             }
             mapping.fields().stream()
                     .filter(field -> !KEYS.contains(field.key()))
                     .forEach(field -> problems.warning(
                             field.keyAt(), path + "." + field.key(), Suggestions.unknownKey(field.key(), KEYS)));
-            String role = field(mapping, DISCORD_ROLE, DISCORD_ID, path, problems);
-            String group = field(mapping, GROUP, NAME, path, problems);
-            SyncDirection direction = field(mapping, DIRECTION, DIRECTIONS, path, problems);
+            String role = required(mapping, DISCORD_ROLE, DISCORD_ID, path, problems);
+            String group = required(mapping, GROUP, NAME, path, problems);
+            SyncDirection direction = mapping.field(DIRECTION)
+                    .map(field -> DIRECTIONS.read(field.value(), path + "." + DIRECTION, problems))
+                    .orElse(SyncDirection.DISCORD_TO_MINECRAFT);
             if (role == null || group == null || direction == null) {
                 return null;
             }
             return new RoleSyncRule(DiscordId.require(role, path + "." + DISCORD_ROLE), group, direction);
         }
 
-        private static <T> @Nullable T field(
+        private static <T> @Nullable T required(
                 Mapping mapping, String key, ValueType<T> type, String path, Problems problems) {
             YamlValue.Field field = mapping.field(key).orElse(null);
             if (field == null) {
-                problems.error(mapping.at(), path, "missing " + key + "; each rule needs " + keyList());
+                problems.error(mapping.at(), path, "missing " + key + "; each rule needs " + REQUIRED_KEYS);
                 return null;
             }
             return type.read(field.value(), path + "." + key, problems);
-        }
-
-        private static String keyList() {
-            return DISCORD_ROLE + ", " + GROUP + " and " + DIRECTION;
         }
 
         @Override
@@ -273,11 +272,13 @@ final class ValueTypes {
                     .append(": ")
                     .append(YamlText.quote(value.group()))
                     .append('\n');
-            out.append(rest)
-                    .append(DIRECTION)
-                    .append(": ")
-                    .append(YamlText.quote(id(value.direction())))
-                    .append('\n');
+            if (value.direction() != SyncDirection.DISCORD_TO_MINECRAFT) {
+                out.append(rest)
+                        .append(DIRECTION)
+                        .append(": ")
+                        .append(YamlText.quote(id(value.direction())))
+                        .append('\n');
+            }
         }
     }
 }

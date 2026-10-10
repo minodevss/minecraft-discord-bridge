@@ -2,7 +2,6 @@ package com.minecraftdiscordbridge.core.access;
 
 import static com.minecraftdiscordbridge.core.log.Log.LOGGER;
 
-import com.minecraftdiscordbridge.core.config.RoleSyncConfig;
 import com.minecraftdiscordbridge.core.config.RoleSyncRule;
 import com.minecraftdiscordbridge.core.config.SyncDirection;
 import com.minecraftdiscordbridge.core.discord.DiscordId;
@@ -67,8 +66,8 @@ public final class RoleSync implements AutoCloseable {
         this.context = context;
     }
 
-    public static RoleSync create(RoleSyncConfig config, PlatformInfo info, AccessContext context) {
-        if (config.rules().isEmpty()) {
+    public static RoleSync create(List<RoleSyncRule> rules, PlatformInfo info, AccessContext context) {
+        if (rules.isEmpty()) {
             return new RoleSync(List.of(), context);
         }
         if (!info.verifiesPlayers()) {
@@ -76,10 +75,10 @@ public final class RoleSync implements AutoCloseable {
             return new RoleSync(List.of(), context);
         }
         if (!context.groups().present()) {
-            LOGGER.warn("role-sync.rules needs LuckPerms. Install LuckPerms, or remove the rules to hide this warning");
+            LOGGER.warn("role-sync needs LuckPerms. Install LuckPerms, or empty role-sync to hide this warning");
             return new RoleSync(List.of(), context);
         }
-        RoleSync sync = new RoleSync(states(config.rules()), context);
+        RoleSync sync = new RoleSync(states(rules), context);
         sync.rules.forEach(sync::inspectGroup);
         if (sync.rules.stream().anyMatch(state -> !state.grantsGroup())) {
             sync.unwatch = context.groups()
@@ -257,9 +256,7 @@ public final class RoleSync implements AutoCloseable {
             return Check.REFUSED;
         }
         if (check instanceof GroupCheck.Missing) {
-            LOGGER.warn(
-                    "LuckPerms has no group named {}. Create it or fix role-sync.rules, then run /discord reload",
-                    group);
+            LOGGER.warn("LuckPerms has no group named {}. Create it or fix role-sync, then run /discord reload", group);
             return Check.REFUSED;
         }
         if (check instanceof GroupCheck.Dangerous dangerous && state.grantsGroup()) {
@@ -276,7 +273,7 @@ public final class RoleSync implements AutoCloseable {
     private static Check checkRole(RoleSyncRule rule, @Nullable RoleInfo role) {
         if (role == null) {
             LOGGER.warn(
-                    "Discord role {} in role-sync.rules does not exist. Fix the role ID and run /discord reload",
+                    "Discord role {} in role-sync does not exist. Fix the role ID and run /discord reload",
                     rule.discordRole());
             return Check.REFUSED;
         }
@@ -303,7 +300,7 @@ public final class RoleSync implements AutoCloseable {
         for (RoleSyncRule rule : rules) {
             if (rule.direction() == SyncDirection.MINECRAFT_TO_DISCORD && hasReverse(rules, rule)) {
                 LOGGER.warn(
-                        "role-sync.rules syncs Discord role {} and group {} both ways; only discord-to-minecraft"
+                        "role-sync syncs Discord role {} and group {} both ways; only discord-to-minecraft"
                                 + " is used. Remove one of the two rules",
                         rule.discordRole(),
                         rule.group());

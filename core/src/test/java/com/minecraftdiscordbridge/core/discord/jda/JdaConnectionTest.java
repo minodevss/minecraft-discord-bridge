@@ -64,21 +64,6 @@ class JdaConnectionTest extends JdaTestBase {
     }
 
     @Test
-    void degradesWithoutMessageContentWhenNotAllowedToTurnItOn() {
-        discord.applicationFlags = 0;
-
-        bridge = start(withAutoEnable(false));
-
-        awaitState(State.DEGRADED);
-        assertThat(bridge.status().reason().orElseThrow())
-                .contains("Message Content")
-                .contains("https://discord.com/developers/applications/" + APPLICATION_ID + "/bot");
-        assertThat(discord.requests("PATCH", "applications/@me")).isEmpty();
-        assertThat(discord.identifies.get(0).getInt("intents") & MESSAGE_CONTENT_INTENT)
-                .isZero();
-    }
-
-    @Test
     void degradesWhenDiscordRefusesToTurnOnMessageContent() {
         discord.applicationFlags = 0;
         discord.patchAllowed = false;
@@ -181,7 +166,7 @@ class JdaConnectionTest extends JdaTestBase {
 
         awaitState(State.DEGRADED);
         assertThat(bridge.status().reason().orElseThrow())
-                .contains("cannot see any channel set under discord: in config.yml");
+                .contains("cannot see the chat or events channel set in config.yml");
         assertThat(registrations()).isEmpty();
     }
 }

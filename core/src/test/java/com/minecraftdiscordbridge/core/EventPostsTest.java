@@ -75,14 +75,13 @@ class EventPostsTest {
 
     @Test
     void respectsEachToggle() throws IOException {
-        try (Harness harness = Harness.started(directory, CHANNELS + """
-                events:
+        try (Harness harness = Harness.started(directory, Harness.withEventSettings("""
                   join: false
                   leave: false
                   death: false
                   advancement: false
                   server-start: false
-                """)) {
+                """))) {
             harness.publish(new GameEvent.ServerStarted(List.of()));
             harness.publish(new GameEvent.PlayerJoined(STEVE, false));
             harness.publish(new GameEvent.PlayerDied(STEVE, new RichText("{}", "Steve died")));
@@ -98,8 +97,8 @@ class EventPostsTest {
     void usesTheChatChannelWhenNoEventsChannelIsSet() throws IOException {
         try (Harness harness = Harness.started(directory, """
                 config-version: 1
-                discord:
-                  chat-channel: "222222222222222222"
+                chat:
+                  channel: "222222222222222222"
                 """)) {
             harness.publish(new GameEvent.PlayerJoined(STEVE, false));
 
@@ -109,10 +108,9 @@ class EventPostsTest {
 
     @Test
     void pingsOnlyTheConfiguredRoleWhenTheServerStarts() throws IOException {
-        try (Harness harness = Harness.started(directory, CHANNELS + """
-                events:
+        try (Harness harness = Harness.started(directory, Harness.withEventSettings("""
                   server-start-ping-role: "777777777777777777"
-                """)) {
+                """))) {
             harness.publish(new GameEvent.ServerStarted(List.of()));
 
             OutboundMessage post = harness.discord().nextSent();

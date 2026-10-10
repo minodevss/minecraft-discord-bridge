@@ -25,7 +25,7 @@ final class Preflight {
         this.application = HttpUrl.get(restBaseUrl + "applications/@me");
     }
 
-    PreflightResult run(String token, boolean enableMessageContent) {
+    PreflightResult run(String token) {
         Request request;
         try {
             request = authorized(token).get().build();
@@ -41,7 +41,7 @@ final class Preflight {
             }
             ApplicationInfo info =
                     ApplicationInfo.parse(DataObject.fromJson(response.body().string()));
-            if (info.messageContentGranted() || !enableMessageContent) {
+            if (info.messageContentGranted()) {
                 return new PreflightResult.Ready(info);
             }
             return new PreflightResult.Ready(enableMessageContent(token, info));

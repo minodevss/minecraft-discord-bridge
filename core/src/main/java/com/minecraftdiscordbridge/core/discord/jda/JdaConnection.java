@@ -199,8 +199,7 @@ final class JdaConnection {
             if (closing) {
                 return new PreflightResult.Unreachable("stopping");
             }
-            return new Preflight(http, endpoints.restBaseUrl())
-                    .run(settings.token(), settings.autoEnableMessageContent());
+            return new Preflight(http, endpoints.restBaseUrl()).run(settings.token());
         } finally {
             connecting = false;
         }

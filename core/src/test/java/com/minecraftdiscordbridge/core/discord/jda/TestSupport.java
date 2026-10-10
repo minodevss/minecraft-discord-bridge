@@ -34,7 +34,6 @@ final class TestSupport {
                 Optional.of(new DiscordId(DiscordPayloads.GUILD_ID)),
                 Set.of(new DiscordId(DiscordPayloads.CHANNEL_ID)),
                 Author.server("Survival", Optional.of("https://example.com/server.png")),
-                true,
                 false,
                 commands);
     }

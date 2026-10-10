@@ -66,6 +66,16 @@ class StartupTest {
     }
 
     @Test
+    void needsNoMembersIntentToRequireOnlyALink() throws IOException {
+        try (Harness harness = Harness.started(directory, CHANNELS + """
+                linking:
+                  require-for-join: true
+                """)) {
+            assertThat(harness.discord().settings.requestMembersIntent()).isFalse();
+        }
+    }
+
+    @Test
     void staysIdleWithoutATokenAndKeepsTheServerUnaffected() throws IOException {
         try (Harness harness = Harness.create(directory, CHANNELS, Map.of())) {
             harness.bridge.start();
@@ -101,11 +111,10 @@ class StartupTest {
     void mirrorsTheConsoleOnlyWhileABotTokenIsSet() throws IOException {
         String mirrored = """
                 config-version: 1
-                discord:
-                  chat-channel: "222222222222222222"
-                  console-channel: "444444444444444444"
+                chat:
+                  channel: "222222222222222222"
                 console:
-                  mirror: true
+                  channel: "444444444444444444"
                 """;
         Files.writeString(directory.resolve("secrets.yml"), "discord-token: \"" + TOKEN + "\"\n");
         try (Harness harness = Harness.create(directory, mirrored, Map.of())) {
@@ -125,9 +134,8 @@ class StartupTest {
     @Test
     void hidesPendingLinkCodesInTheMirroredConsole() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS + """
-                  console-channel: "444444444444444444"
                 console:
-                  mirror: true
+                  channel: "444444444444444444"
                 """)) {
             String code = Harness.code(harness.run(RecordingSource.player(STEVE.id(), "Steve"), GameCommand.LINK)
                     .nextPlain());

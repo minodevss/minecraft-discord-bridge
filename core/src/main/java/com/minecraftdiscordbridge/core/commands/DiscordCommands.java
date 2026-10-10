@@ -83,7 +83,7 @@ public final class DiscordCommands {
                     true));
             commands.add(command(UNLINK, List.of(), Access.EVERYONE, true, true));
         }
-        if (config.actions().whitelist() && platform.supportsWhitelist()) {
+        if (config.discordCommands().whitelist() && platform.supportsWhitelist()) {
             commands.add(new CommandSpec(
                     WHITELIST,
                     english("command.whitelist"),
@@ -94,7 +94,7 @@ public final class DiscordCommands {
                     true,
                     false));
         }
-        if (config.actions().kick()) {
+        if (config.discordCommands().kick()) {
             commands.add(command(
                     KICK,
                     List.of(

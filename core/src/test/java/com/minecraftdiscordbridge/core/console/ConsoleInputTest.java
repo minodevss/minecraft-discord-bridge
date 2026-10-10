@@ -31,7 +31,7 @@ class ConsoleInputTest {
     private static final DiscordId CHAT = new DiscordId(222222222222222222L);
     private static final DiscordId ADMIN = new DiscordId(555555555555555555L);
     private static final DiscordId MEMBER = new DiscordId(666666666666666666L);
-    private static final ConsoleConfig ADMIN_ONLY = new ConsoleConfig(false, List.of(ADMIN));
+    private static final ConsoleConfig ADMIN_ONLY = new ConsoleConfig(Optional.of(CONSOLE), List.of(ADMIN));
 
     @TempDir
     Path directory;
@@ -73,7 +73,8 @@ class ConsoleInputTest {
         FakePlatform platform = platform(new ActionOutcome.Done());
 
         input(ADMIN_ONLY, platform).onMessage(message(CHAT, ADMIN, false, false, "stop"));
-        input(new ConsoleConfig(true, List.of()), platform).onMessage(message(CONSOLE, ADMIN, false, false, "stop"));
+        input(new ConsoleConfig(Optional.of(CONSOLE), List.of()), platform)
+                .onMessage(message(CONSOLE, ADMIN, false, false, "stop"));
 
         assertThat(platform.actions).isEmpty();
         assertThat(discord.sent).isEmpty();
@@ -141,11 +142,7 @@ class ConsoleInputTest {
         FeatureContext context = new FeatureContext(
                 discord, new IoExecutor(Runnable::run), Clock.systemUTC(), new Replies(Lang.of(Language.EN), 0));
         return new ConsoleInput(
-                context,
-                config,
-                Optional.of(CONSOLE),
-                new GameActions(platform, Runnable::run, Duration.ofMillis(100)),
-                List::of);
+                context, config, new GameActions(platform, Runnable::run, Duration.ofMillis(100)), List::of);
     }
 
     private FakePlatform platform(ActionOutcome outcome) {

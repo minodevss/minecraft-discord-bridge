@@ -46,7 +46,7 @@ public final class JoinGate {
     }
 
     public static JoinGate create(LinkingConfig config, PlatformInfo info, AccessContext context, Replies replies) {
-        boolean active = config.requireForJoin() && usable(config, info);
+        boolean active = config.gatesJoins() && usable(config, info);
         return new JoinGate(active, config.whenDiscordUnreachable(), config.requiredRole(), context, replies);
     }
 
@@ -168,8 +168,8 @@ public final class JoinGate {
 
     private static boolean usable(LinkingConfig config, PlatformInfo info) {
         if (!config.enabled()) {
-            LOGGER.warn("linking.require-for-join is on but linking.enabled is off, so nobody could link."
-                    + " The join gate stays off until linking.enabled is true");
+            LOGGER.warn("The join gate stays off because linking.enabled is false, so nobody could link; set it to"
+                    + " true, or clear linking.require-for-join and linking.required-role");
             return false;
         }
         if (!info.verifiesPlayers()) {

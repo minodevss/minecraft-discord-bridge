@@ -33,12 +33,8 @@ public final class ConsoleInput {
     private final Supplier<Collection<String>> secrets;
 
     public ConsoleInput(
-            FeatureContext context,
-            ConsoleConfig config,
-            Optional<DiscordId> channel,
-            GameActions game,
-            Supplier<Collection<String>> secrets) {
-        this.channel = config.inputUsers().isEmpty() ? Optional.empty() : channel;
+            FeatureContext context, ConsoleConfig config, GameActions game, Supplier<Collection<String>> secrets) {
+        this.channel = config.inputUsers().isEmpty() ? Optional.empty() : config.channel();
         this.users = Set.copyOf(config.inputUsers());
         this.game = game;
         this.discord = context.discord();

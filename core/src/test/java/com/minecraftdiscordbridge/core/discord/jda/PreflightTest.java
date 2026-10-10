@@ -37,7 +37,7 @@ class PreflightTest {
     void readsTheApplicationWithTheBotToken() throws Exception {
         server.enqueue(application(1L << 18));
 
-        PreflightResult result = preflight.run("secret", true);
+        PreflightResult result = preflight.run("secret");
 
         assertThat(result).isInstanceOf(PreflightResult.Ready.class);
         assertThat(((PreflightResult.Ready) result).application().id()).isEqualTo(42);
@@ -55,12 +55,12 @@ class PreflightTest {
                 .body("{\"message\":\"401: Unauthorized\",\"code\":0}")
                 .build());
 
-        assertThat(preflight.run("wrong", true)).isInstanceOf(PreflightResult.InvalidToken.class);
+        assertThat(preflight.run("wrong")).isInstanceOf(PreflightResult.InvalidToken.class);
     }
 
     @Test
     void reportsAnInvalidTokenThatCannotBeSentAsAHeader() {
-        assertThat(preflight.run("bad\ntoken", true)).isInstanceOf(PreflightResult.InvalidToken.class);
+        assertThat(preflight.run("bad\ntoken")).isInstanceOf(PreflightResult.InvalidToken.class);
         assertThat(server.getRequestCount()).isZero();
     }
 
@@ -68,7 +68,7 @@ class PreflightTest {
     void reportsDiscordAsUnreachableOnServerErrors() {
         server.enqueue(new MockResponse.Builder().code(502).build());
 
-        assertThat(preflight.run("secret", true)).isInstanceOf(PreflightResult.Unreachable.class);
+        assertThat(preflight.run("secret")).isInstanceOf(PreflightResult.Unreachable.class);
     }
 
     @Test
@@ -77,7 +77,7 @@ class PreflightTest {
         server.enqueue(application(otherFlags));
         server.enqueue(application(otherFlags | MESSAGE_CONTENT_LIMITED));
 
-        PreflightResult result = preflight.run("secret", true);
+        PreflightResult result = preflight.run("secret");
 
         server.takeRequest();
         RecordedRequest patch = server.takeRequest(1, TimeUnit.SECONDS);
@@ -93,20 +93,9 @@ class PreflightTest {
     void leavesFlagsAloneWhenMessageContentIsAlreadyOn() {
         server.enqueue(application(1L << 18));
 
-        preflight.run("secret", true);
+        preflight.run("secret");
 
         assertThat(server.getRequestCount()).isEqualTo(1);
-    }
-
-    @Test
-    void leavesFlagsAloneWhenNotAllowedToChangeThem() {
-        server.enqueue(application(0));
-
-        PreflightResult result = preflight.run("secret", false);
-
-        assertThat(server.getRequestCount()).isEqualTo(1);
-        assertThat(((PreflightResult.Ready) result).application().messageContentGranted())
-                .isFalse();
     }
 
     @Test
@@ -117,7 +106,7 @@ class PreflightTest {
                 .body("{\"message\":\"Missing Access\",\"code\":50001}")
                 .build());
 
-        PreflightResult result = preflight.run("secret", true);
+        PreflightResult result = preflight.run("secret");
 
         assertThat(server.getRequestCount()).isEqualTo(2);
         assertThat(((PreflightResult.Ready) result).application().messageContentGranted())

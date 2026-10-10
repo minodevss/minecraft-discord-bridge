@@ -27,7 +27,7 @@ class ReloadTest {
 
     @Test
     void staysIdleWithABrokenConfigAndStartsAfterAFixAndReload() throws IOException {
-        try (Harness harness = Harness.create(directory, CHANNELS + "events:\n  join: maybe\n")) {
+        try (Harness harness = Harness.create(directory, Harness.withEventSettings("  join: maybe\n"))) {
             harness.bridge.start();
             assertThat(harness.settledStatus()).contains("The settings have errors");
             assertThat(harness.discords).isEmpty();
@@ -43,7 +43,7 @@ class ReloadTest {
     @Test
     void keepsTheOldSettingsWhenAReloadedConfigIsBroken() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
-            harness.writeConfig(CHANNELS + "events:\n  join: maybe\n");
+            harness.writeConfig(Harness.withEventSettings("  join: maybe\n"));
             RecordingSource console = harness.run(RecordingSource.console(), GameCommand.RELOAD);
 
             assertThat(console.nextPlain()).contains("old settings stay in use");
@@ -58,7 +58,7 @@ class ReloadTest {
     @Test
     void appliesFeatureChangesOnReloadWithoutReconnecting() throws IOException {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
-            harness.writeConfig(CHANNELS + "events:\n  join: false\n");
+            harness.writeConfig(Harness.withEventSettings("  join: false\n"));
             RecordingSource console = harness.run(RecordingSource.console(), GameCommand.RELOAD);
 
             assertThat(console.nextPlain()).isEqualTo("Reloaded config.yml.");

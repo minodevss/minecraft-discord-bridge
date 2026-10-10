@@ -91,7 +91,6 @@ abstract class JdaTestBase {
                 Optional.empty(),
                 channels,
                 base.serverAuthor(),
-                base.autoEnableMessageContent(),
                 base.requestMembersIntent(),
                 base.commands());
     }
@@ -110,18 +109,6 @@ abstract class JdaTestBase {
 
     void awaitState(State state) {
         until(state.name(), () -> bridge.status().state() == state);
-    }
-
-    static DiscordSettings withAutoEnable(boolean autoEnable) {
-        DiscordSettings base = TestSupport.settings(List.of());
-        return new DiscordSettings(
-                base.token(),
-                base.guild(),
-                base.channelIds(),
-                base.serverAuthor(),
-                autoEnable,
-                base.requestMembersIntent(),
-                base.commands());
     }
 
     List<RecordedRequest> executions() {

@@ -9,7 +9,6 @@ public record DiscordSettings(
         Optional<DiscordId> guild,
         Set<DiscordId> channelIds,
         Author serverAuthor,
-        boolean autoEnableMessageContent,
         boolean requestMembersIntent,
         List<CommandSpec> commands) {
     public DiscordSettings {

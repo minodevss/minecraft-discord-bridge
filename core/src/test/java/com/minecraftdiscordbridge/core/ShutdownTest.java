@@ -76,7 +76,7 @@ class ShutdownTest {
 
     @Test
     void skipsTheStopPostWhenItIsTurnedOff() throws IOException {
-        Harness harness = Harness.started(directory, CHANNELS + "events:\n  server-stop: false\n");
+        Harness harness = Harness.started(directory, Harness.withEventSettings("  server-stop: false\n"));
         RecordingDiscord discord = harness.discord();
 
         harness.publish(new GameEvent.ServerStopping());

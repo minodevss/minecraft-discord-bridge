@@ -65,11 +65,18 @@ class JoinGateTest {
 
     @Test
     void letsEveryoneInWithoutTouchingDiscordWhenTheGateIsOff() {
-        JoinGate gate = gate(new LinkingConfig(
-                true, false, Optional.of(new DiscordId(777777777777777777L)), UnreachablePolicy.DENY));
+        JoinGate gate = gate(new LinkingConfig(true, false, Optional.empty(), UnreachablePolicy.DENY));
 
         assertThat(decide(gate, STEVE)).isInstanceOf(JoinDecision.Allow.class);
         assertThat(discord.memberLookups).isEmpty();
+    }
+
+    @Test
+    void turnsOnWhenARequiredRoleIsSet() {
+        JoinGate gate = gate(new LinkingConfig(
+                true, false, Optional.of(new DiscordId(777777777777777777L)), UnreachablePolicy.DENY));
+
+        assertThat(gate.active()).isTrue();
     }
 
     @Test

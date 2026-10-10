@@ -97,10 +97,8 @@ class AccessTest {
     void syncsTheGroupOnLinkJoinAndDiscordRoleChanges() throws Exception {
         try (Harness harness = Harness.create(directory, CHANNELS + """
                 role-sync:
-                  rules:
-                    - discord-role: "777777777777777777"
-                      group: "vip"
-                      direction: "discord-to-minecraft"
+                  - discord-role: "777777777777777777"
+                    group: "vip"
                 """)) {
             harness.groups.groups.put("vip", new GroupCheck.Safe());
             harness.bridge.start();
@@ -127,8 +125,8 @@ class AccessTest {
     @Test
     void runsConsoleCommandsFromListedUsersInTheConsoleChannel() throws Exception {
         try (Harness harness = Harness.started(directory, CHANNELS + """
-                  console-channel: "444444444444444444"
                 console:
+                  channel: "444444444444444444"
                   input-users: ["555555555555555555"]
                 """)) {
             RecordingDiscord discord = harness.discord();

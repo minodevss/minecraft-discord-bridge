@@ -1,118 +1,85 @@
-# Minecraft Discord Bridge settings.
-# The bot token goes in secrets.yml, not here.
-# Changes take effect after a reload or a restart.
+# Minecraft Discord Bridge settings. The bot token goes in secrets.yml.
+# Run /discord reload after you edit this file.
+# To copy an ID, turn on Developer Mode in Discord (User Settings > Advanced),
+# then right-click the channel, role or user and click Copy ID.
 
-# Used to upgrade this file. Do not change it.
-config-version: 1
-
-# Language of the bridge's own messages: en (English) or ko (Korean).
+# Language of the bridge's messages, and of deaths and advancements on Discord: en or ko.
 language: "en"
 
-# To copy an ID, turn on Developer Mode in Discord (User Settings > Advanced),
-# then right-click the channel, role or user and copy its ID.
-discord:
-  # Channel for chat. Leave empty to choose it with /setup in Discord.
-  chat-channel: ""
-
-  # Channel for joins, leaves, deaths, advancements and server start and stop.
-  # Empty uses the chat channel.
-  events-channel: ""
-
-  # Channel that shows the server console. Empty turns it off.
-  console-channel: ""
-
-  # Try to turn on the bot's Message Content intent when it is off.
-  # The bridge needs it to read messages from Discord.
-  auto-enable-message-content: true
-
 chat:
-  # Send Minecraft chat to Discord.
-  minecraft-to-discord: true
+  # Channel ID for chat. Empty: run /setup in the channel instead.
+  channel: ""
 
-  # Send Discord chat to Minecraft.
+  minecraft-to-discord: true
   discord-to-minecraft: true
 
-  # How Discord messages look in Minecraft, in MiniMessage format.
-  # <author> is the sender's name and <message> is the text.
+  # How Discord messages look in game, in MiniMessage. <author> is the sender, <message> the text.
   format: "<gray>[Discord]</gray> <author>: <message>"
 
-  # Avatar for player messages on Discord. {texture} is the player's skin texture ID.
+  # Player head on Discord. {texture} is the skin (the UUID if unknown); {uuid} and {name} also work.
+  # Empty uses Discord's default avatar.
   avatar-url: "https://crafthead.net/helm/{texture}"
 
-  # Avatar to use when the skin texture is not known. {uuid} is the player's UUID.
-  avatar-url-fallback: "https://crafthead.net/helm/{uuid}"
-
-  # Let @name in Minecraft chat ping that player's linked Discord account.
+  # Let @name in game ping that player's linked Discord account.
   ping-linked-players: false
 
-  # Messages that match one of these regular expressions are not relayed.
+  # Messages that match one of these regular expressions are not sent either way.
   # Example: blocked-words: ["(?i)badword"]
   blocked-words: []
 
-# Messages posted to the events channel.
+# Set any event to false to stop posting it. On Velocity, join also posts server switches.
 events:
-  # Post when a player joins.
+  # Channel ID for events. Empty: the /setup as:events channel, else the chat channel.
+  channel: ""
+
   join: true
-
-  # Post when a player leaves.
   leave: true
-
-  # Post when a player dies.
   death: true
-
-  # Post when a player earns an advancement.
   advancement: true
-
-  # Post when the server starts.
   server-start: true
-
-  # Post when the server stops.
   server-stop: true
 
-  # Role to ping when the server starts. Empty pings nobody.
+  # Role ID to ping when the server starts. Empty pings nobody.
   server-start-ping-role: ""
 
-status:
-  # Show the player count as the bot's status.
-  presence: true
-
-  # Show the player count in the chat channel's topic.
-  topic: false
+# Show the player count as the bot's status and in the chat channel's topic.
+player-count:
+  bot-status: true
+  channel-topic: false
 
 linking:
-  # Let players link their Minecraft and Discord accounts.
+  # Players link with /discord link in game and /link in Discord.
   enabled: true
 
-  # Only players who linked their account can join.
+  # Only linked players can join. The minecraftdiscordbridge.gate.bypass permission skips this.
   require-for-join: false
 
-  # Discord role a linked player must have to join. Empty means no role is needed.
+  # Role ID a player also needs to join. Setting it turns on require-for-join.
   required-role: ""
 
-  # When linking is required and Discord cannot be reached: deny or allow joins.
+  # deny or allow joins when Discord cannot be reached to check required-role.
   when-discord-unreachable: "deny"
 
-# Keeps Discord roles and permission groups in step.
-role-sync:
-  # Each rule pairs a Discord role with a permission group.
-  # direction is discord-to-minecraft or minecraft-to-discord. Example:
-  #   rules:
-  #     - discord-role: "123456789012345678"
-  #       group: "vip"
-  #       direction: "discord-to-minecraft"
-  rules: []
+console:
+  # Channel ID that mirrors the server console, with tokens, IPs and passwords hidden. Empty: off.
+  channel: ""
 
-actions:
-  # Allow Discord commands that add and remove players from the whitelist.
+  # Discord user IDs that may run console commands in that channel. Empty: nobody.
+  # Example: input-users: ["123456789012345678"]
+  input-users: []
+
+# /whitelist and /kick in Discord. Only Discord admins can use them
+# unless you allow more roles in Server Settings > Integrations.
+discord-commands:
   whitelist: false
-
-  # Allow a Discord command that kicks players.
   kick: false
 
-console:
-  # Copy the server console to the console channel.
-  mirror: false
+# Pair Discord roles with LuckPerms groups. direction is discord-to-minecraft
+# (the default, can be left out) or minecraft-to-discord. Example:
+#   role-sync:
+#     - discord-role: "123456789012345678"
+#       group: "vip"
+role-sync: []
 
-  # Discord user IDs that can run console commands from the console channel.
-  # Empty means nobody. Example: input-users: ["123456789012345678"]
-  input-users: []
+# Used to upgrade this file. Do not change it.
+config-version: 1
