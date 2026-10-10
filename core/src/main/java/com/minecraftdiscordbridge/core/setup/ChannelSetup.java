@@ -77,7 +77,7 @@ public final class ChannelSetup {
     public void autocomplete(String typed, Lang reader, AutocompleteReply reply) {
         String prefix = typed.strip().toLowerCase(Locale.ROOT);
         reply.respond(List.of(ChannelRole.CHAT, ChannelRole.EVENTS).stream()
-                .map(role -> new AutocompleteReply.Choice(reader.text("discord.setup.role." + id(role)), id(role)))
+                .map(role -> new AutocompleteReply.Choice(reader.text("discord.setup.role." + role.id()), role.id()))
                 .filter(choice -> choice.value().startsWith(prefix)
                         || choice.name().toLowerCase(Locale.ROOT).startsWith(prefix))
                 .toList());
@@ -120,7 +120,10 @@ public final class ChannelSetup {
                 () -> bindings.save(next),
                 () -> {
                     LOGGER.info(
-                            "Discord user {} chose channel {} for {}", request.userId(), request.channelId(), id(role));
+                            "Discord user {} chose channel {} for {}",
+                            request.userId(),
+                            request.channelId(),
+                            role.id());
                     reply.replyEphemeral(confirmation(reader, role));
                     bound.run();
                 },
@@ -133,12 +136,12 @@ public final class ChannelSetup {
     }
 
     private String confirmation(Lang reader, ChannelRole role) {
-        String done = reader.text("discord.setup.done." + id(role));
+        String done = reader.text("discord.setup.done." + role.id());
         Optional<DiscordId> configured = role == ChannelRole.CHAT ? config.chatChannel() : config.eventsChannel();
         if (configured.isEmpty()) {
             return done;
         }
-        return done + "\n" + reader.text("discord.setup.config-wins", "discord." + id(role) + "-channel");
+        return done + "\n" + reader.text("discord.setup.config-wins", "discord." + role.id() + "-channel");
     }
 
     static ChannelBinding bind(Optional<ChannelBinding> current, DiscordId guild, ChannelRole role, DiscordId channel) {
@@ -153,17 +156,6 @@ public final class ChannelSetup {
         if (typed == null || typed.isBlank()) {
             return Optional.of(ChannelRole.CHAT);
         }
-        String id = typed.strip().toLowerCase(Locale.ROOT);
-        if (id.equals("chat")) {
-            return Optional.of(ChannelRole.CHAT);
-        }
-        if (id.equals("events")) {
-            return Optional.of(ChannelRole.EVENTS);
-        }
-        return Optional.empty();
-    }
-
-    private static String id(ChannelRole role) {
-        return role.name().toLowerCase(Locale.ROOT);
+        return ChannelRole.find(typed.strip().toLowerCase(Locale.ROOT));
     }
 }
