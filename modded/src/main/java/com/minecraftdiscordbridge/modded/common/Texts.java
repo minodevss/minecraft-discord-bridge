@@ -45,7 +45,7 @@ final class Texts {
                 .toString();
     }
     //?} else {
-    /*private static Component fromJson(String json, RegistryAccess registries) {
+    /*private static Component fromJson(String json, RegistryAccess unused) {
         Component component = Component.Serializer.fromJson(json);
         if (component == null) {
             throw new IllegalArgumentException("Text JSON is null");
@@ -53,7 +53,7 @@ final class Texts {
         return component;
     }
 
-    private static String toJson(Component component, RegistryAccess registries) {
+    private static String toJson(Component component, RegistryAccess unused) {
         return Component.Serializer.toJson(component);
     }
     *///?}

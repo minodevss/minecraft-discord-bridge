@@ -1,5 +1,8 @@
+import net.ltgt.gradle.errorprone.errorprone
+
 plugins {
     id("bridge.adapter")
+    id("bridge.checks")
 }
 
 val (minecraft, loader) = name.split('-', limit = 2)
@@ -26,13 +29,10 @@ dependencies {
     compileOnly("${jspecify.module}") { version { prefer(jspecify.versionConstraint.requiredVersion) } }
 }
 
-java {
-    toolchain { languageVersion = JavaLanguageVersion.of(javaRelease) }
-}
-
 tasks.withType<JavaCompile>().configureEach {
-    options.encoding = "UTF-8"
     options.release = javaRelease
+    // The sources also compile for Java 17, which has no unnamed variables.
+    options.errorprone.disable("UnnamedVariable")
 }
 
 sourceSets.main {

@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.common.util.FakePlayer;
@@ -56,7 +57,7 @@ final class ForgeLoaderHooks implements LoaderHooks {
         if (player == null) {
             return DefaultPermissions.allows(source, permission);
         }
-        return PermissionAPI.getPermission(player, nodes.get(permission));
+        return PermissionAPI.getPermission(player, Objects.requireNonNull(nodes.get(permission)));
     }
 
     private static PermissionNode<Boolean> node(Permission permission) {

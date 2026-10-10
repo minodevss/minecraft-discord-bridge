@@ -100,7 +100,7 @@ public final class ModdedBridge {
             return current.bridge()
                     .checkJoin(Profiles.of(profile), isOperator(server, profile))
                     .completeOnTimeout(new JoinDecision.Allow(), GATE_WAIT_SECONDS, TimeUnit.SECONDS)
-                    .thenApplyAsync(decision -> kickMessage(decision, server), server::execute);
+                    .thenApplyAsync(decision -> kickMessage(decision, server), server);
         } catch (RuntimeException | LinkageError error) {
             failures.warn("Could not check a joining player with Minecraft Discord Bridge; report this bug", error);
             return CompletableFuture.completedFuture(Optional.empty());

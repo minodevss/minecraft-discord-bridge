@@ -1,6 +1,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import net.fabricmc.loom.api.LoomGradleExtensionAPI
 import net.fabricmc.loom.task.RemapJarTask
+import net.ltgt.gradle.errorprone.errorprone
 
 plugins {
     id("bridge.modded")
@@ -25,6 +26,14 @@ dependencies {
 }
 
 loom.serverOnlyMinecraftJar()
+
+tasks.withType<JavaCompile>().configureEach {
+    options.errorprone {
+        option("NullAway:ExcludedFieldAnnotations", "org.spongepowered.asm.mixin.Shadow")
+        option("UnusedMethod:ExemptingMethodAnnotations", "org.spongepowered.asm.mixin.injection.Inject")
+        option("Unused:methodAnnotationsExemptingParameters", "org.spongepowered.asm.mixin.injection.Inject")
+    }
+}
 
 if (unobfuscated) {
     loom.nestJars(tasks.named<ShadowJar>("shadowJar"), configurations.named("include"))
