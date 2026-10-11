@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -26,7 +27,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.events.GenericEvent;
@@ -142,11 +143,11 @@ final class JdaConnection {
         }
     }
 
-    void shutdown(Deadline deadline, Consumer<JDA> beforeLogout) {
+    void shutdown(Deadline deadline, Function<JDA, CompletionStage<?>> farewell) {
         long budgetMillis = deadline.remaining().toMillis();
         closing = true;
         try {
-            Future<?> graceful = lifecycle.submit(() -> stopGracefully(beforeLogout, deadline));
+            Future<?> graceful = lifecycle.submit(() -> stopGracefully(farewell, deadline));
             if (connecting) {
                 http.dispatcher().cancelAll();
             }
@@ -305,21 +306,30 @@ final class JdaConnection {
                 new StatusReason(StatusReason.Kind.DISCONNECTED, meaning));
     }
 
-    private void stopGracefully(Consumer<JDA> beforeLogout, Deadline deadline) {
+    private void stopGracefully(Function<JDA, CompletionStage<?>> farewell, Deadline deadline) {
         JDA jda = jda();
         if (jda == null) {
             return;
         }
         jda.cancelRequests();
-        beforeLogout.accept(jda);
-        jda.shutdown();
         try {
+            awaitFarewell(farewell.apply(jda), deadline);
+            jda.shutdown();
             if (!jda.awaitShutdown(remaining(deadline), TimeUnit.NANOSECONDS)) {
                 jda.shutdownNow();
             }
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
             jda.shutdownNow();
+        }
+    }
+
+    // JDA's graceful shutdown waits only for queued requests; release() would cut one already in flight.
+    private static void awaitFarewell(CompletionStage<?> sent, Deadline deadline) throws InterruptedException {
+        try {
+            sent.toCompletableFuture().get(remaining(deadline), TimeUnit.NANOSECONDS);
+        } catch (ExecutionException | TimeoutException unconfirmed) {
+            LOGGER.warn("Discord did not confirm the last message before the shutdown deadline; it may be missing");
         }
     }
 
