@@ -5,9 +5,7 @@
 
 ### Bug Fixes
 
-* **core:** keep status working while jda has not named a cached channel yet ([c79a5ea](https://github.com/minodevss/minecraft-discord-bridge/commit/c79a5ea002a80c588232f5731ef5eae16d741d7e))
-* **core:** keep status working while JDA has not named a cached channel yet ([5271d54](https://github.com/minodevss/minecraft-discord-bridge/commit/5271d54351c35c0018c6ed0f2c3bd377fcbca45d))
-* **core:** wait for Discord to confirm the final message before logging out ([874e52c](https://github.com/minodevss/minecraft-discord-bridge/commit/874e52c34fda7496aab09481c52e42a9a41c74ad))
+* **core:** keep status working while JDA has not named a cached channel yet ([c79a5ea](https://github.com/minodevss/minecraft-discord-bridge/commit/c79a5ea002a80c588232f5731ef5eae16d741d7e))
 * **core:** wait for Discord to confirm the final message before logging out ([ce47aeb](https://github.com/minodevss/minecraft-discord-bridge/commit/ce47aebeb457f5fa9a0a272f95f427252deb0d3d))
 
 ## 0.1.0 (2026-10-10)
