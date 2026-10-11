@@ -1,3 +1,5 @@
+<img src="docs/images/logo.png" alt="" width="128">
+
 # Discord Bridge for Minecraft
 
 Connect one Minecraft server, or one Velocity network, to one Discord server. Chat goes both ways, game events show up in a channel, and players can link their accounts. The bridge runs inside the server as a plugin or mod, and you run your own Discord bot. The server never waits for Discord: it starts while the bridge connects in the background, and the bridge finishes stopping within a few seconds.
