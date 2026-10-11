@@ -125,7 +125,7 @@ public final class ModdedEvents {
         } catch (RuntimeException | LinkageError error) {
             failures.warn(
                     "Could not hand a " + event
-                            + " event to Minecraft Discord Bridge; report this bug with the error below",
+                            + " event to Discord Bridge for Minecraft; report this bug with the error below",
                     error);
         }
     }

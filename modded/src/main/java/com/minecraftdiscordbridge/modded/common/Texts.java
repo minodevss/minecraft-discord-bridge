@@ -22,7 +22,7 @@ final class Texts {
         } catch (RuntimeException error) {
             UNREADABLE.warn(
                     "Skipped a message whose text JSON this Minecraft version cannot read;"
-                            + " update Minecraft Discord Bridge if this repeats",
+                            + " update Discord Bridge for Minecraft if this repeats",
                     error);
             return Optional.empty();
         }

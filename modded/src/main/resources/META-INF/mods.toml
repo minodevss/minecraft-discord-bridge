@@ -6,7 +6,7 @@ issueTrackerURL = "https://github.com/minodevss/minecraft-discord-bridge/issues"
 [[mods]]
 modId = "minecraftdiscordbridge"
 version = "${version}"
-displayName = "Minecraft Discord Bridge"
+displayName = "Discord Bridge for Minecraft"
 description = "Minecraft ↔ Discord bridge"
 authors = "minodevss"
 displayURL = "https://github.com/minodevss/minecraft-discord-bridge"

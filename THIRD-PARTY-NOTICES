@@ -1,4 +1,4 @@
-Minecraft Discord Bridge: third-party notices
+Discord Bridge for Minecraft: third-party notices
 
 The release jars bundle the libraries listed below. Their classes are moved
 into the package com.minecraftdiscordbridge.libs: the package names in the
@@ -76,7 +76,7 @@ Trove
   com.minecraftdiscordbridge.libs.gnu.trove. The unchanged source code is the
   net.sf.trove4j:core:3.1.0:sources jar on Maven Central
   (https://repo1.maven.org/maven2/net/sf/trove4j/core/3.1.0/). The source of
-  Minecraft Discord Bridge, including the build that renames the packages, is
+  Discord Bridge for Minecraft, including the build that renames the packages, is
   at https://github.com/minodevss/minecraft-discord-bridge.
 
 Apache Commons Collections
