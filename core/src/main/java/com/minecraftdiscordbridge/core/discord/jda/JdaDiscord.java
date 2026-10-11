@@ -190,13 +190,13 @@ public final class JdaDiscord implements Discord {
         return jda == null || connection.closing() ? null : scope.current(jda);
     }
 
-    private void sendFarewell(List<OutboundMessage> farewell) {
-        for (OutboundMessage message : farewell) {
-            var unused = webhooks.sendFinal(message).exceptionally(failure -> {
-                LOGGER.warn("Could not send the last message to Discord: {}", Failures.describe(failure));
-                return null;
-            });
-        }
+    private CompletableFuture<Void> sendFarewell(List<OutboundMessage> farewell) {
+        return CompletableFuture.allOf(farewell.stream()
+                .map(message -> webhooks.sendFinal(message).exceptionally(failure -> {
+                    LOGGER.warn("Could not send the last message to Discord: {}", Failures.describe(failure));
+                    return null;
+                }))
+                .toArray(CompletableFuture<?>[]::new));
     }
 
     private void onEvent(int generation, GenericEvent event) {

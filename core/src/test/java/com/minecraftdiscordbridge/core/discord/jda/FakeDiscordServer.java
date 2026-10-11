@@ -42,6 +42,7 @@ final class FakeDiscordServer implements AutoCloseable {
     volatile boolean guildMember = true;
     volatile String everyonePermissions = ADMINISTRATOR;
     volatile boolean stallLogin;
+    volatile boolean holdWebhookAnswers;
     volatile boolean botManagesRoles;
     final AtomicInteger webhookGoneResponses = new AtomicInteger();
     final AtomicInteger rateLimitedResponses = new AtomicInteger();
@@ -49,6 +50,7 @@ final class FakeDiscordServer implements AutoCloseable {
     private static final long DISCORD_EPOCH = 1420070400000L;
     private final AtomicLong ids = new AtomicLong((System.currentTimeMillis() - DISCORD_EPOCH) << 22);
     private final CountDownLatch released = new CountDownLatch(1);
+    private final CountDownLatch webhookAnswers = new CountDownLatch(1);
     private final AtomicInteger sequence = new AtomicInteger();
     private final List<WebSocket> sockets = new CopyOnWriteArrayList<>();
     private volatile @Nullable WebSocket socket;
@@ -111,9 +113,14 @@ final class FakeDiscordServer implements AutoCloseable {
         dispatch("MESSAGE_CREATE", message);
     }
 
+    void answerHeldWebhooks() {
+        webhookAnswers.countDown();
+    }
+
     @Override
     public void close() throws IOException {
         released.countDown();
+        webhookAnswers.countDown();
         sockets.forEach(open -> open.close(1000, null));
         server.close();
     }
@@ -203,6 +210,9 @@ final class FakeDiscordServer implements AutoCloseable {
         if (stallMessages) {
             return stalled();
         }
+        if (holdWebhookAnswers) {
+            await(webhookAnswers);
+        }
         String rest = route.substring("webhooks/".length());
         long webhookId = Long.parseLong(rest.substring(0, rest.indexOf('/')));
         return json(message(webhookId, "sent")
@@ -230,12 +240,16 @@ final class FakeDiscordServer implements AutoCloseable {
     }
 
     private MockResponse stalled() {
+        await(released);
+        return error(503, 0, "Stalled");
+    }
+
+    private static void await(CountDownLatch latch) {
         try {
-            released.await(30, TimeUnit.SECONDS);
+            latch.await(30, TimeUnit.SECONDS);
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
         }
-        return error(503, 0, "Stalled");
     }
 
     private static String route(RecordedRequest request) {
@@ -268,6 +282,7 @@ final class FakeDiscordServer implements AutoCloseable {
 
         @Override
         public void onClosing(WebSocket webSocket, int code, String reason) {
+            timeline.add("GATEWAY close");
             webSocket.close(code, null);
         }
 

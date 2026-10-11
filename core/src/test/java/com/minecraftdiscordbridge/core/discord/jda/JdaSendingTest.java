@@ -17,7 +17,9 @@ import com.minecraftdiscordbridge.core.loop.Deadline;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import mockwebserver3.RecordedRequest;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.utils.data.DataArray;
 import net.dv8tion.jda.api.utils.data.DataObject;
 import org.junit.jupiter.api.Test;
@@ -150,6 +152,25 @@ class JdaSendingTest extends JdaTestBase {
         DataObject last = DiscordPayloads.body(executions().get(1));
         assertThat(last.getString("content")).isEqualTo("Server stopped");
         assertThat(last.getString("username")).isEqualTo("Survival");
+        assertThat(bridge.status().state()).isEqualTo(State.STOPPED);
+    }
+
+    @Test
+    void staysConnectedUntilDiscordAnswersTheFinalMessage() {
+        bridge = startReady();
+        until("webhook", () -> webhooks.stored.containsKey(CHANNEL));
+        JDA jda = bridge.currentJda();
+        discord.holdWebhookAnswers = true;
+
+        CompletableFuture<Void> stopping = CompletableFuture.runAsync(() -> bridge.shutdown(
+                List.of(OutboundMessage.of(CHANNEL, SERVER, "Server stopped")), Deadline.after(SHUTDOWN_BUDGET)));
+        until("final message", () -> executions().size() == 1);
+
+        assertThat(jda.getStatus()).isEqualTo(JDA.Status.CONNECTED);
+        assertThat(stopping).isNotDone();
+        discord.answerHeldWebhooks();
+        stopping.join();
+        assertThat(discord.timeline).contains("GATEWAY close");
         assertThat(bridge.status().state()).isEqualTo(State.STOPPED);
     }
 
