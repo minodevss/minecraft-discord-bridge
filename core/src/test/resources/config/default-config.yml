@@ -1,4 +1,4 @@
-# Minecraft Discord Bridge settings. The bot token goes in secrets.yml.
+# Discord Bridge for Minecraft settings. The bot token goes in secrets.yml.
 # Run /discord reload after you edit this file.
 # To copy an ID, turn on Developer Mode in Discord (User Settings > Advanced),
 # then right-click the channel, role or user and click Copy ID.

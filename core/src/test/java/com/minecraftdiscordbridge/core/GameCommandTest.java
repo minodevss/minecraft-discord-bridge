@@ -54,7 +54,7 @@ class GameCommandTest {
             assertThat(usable(harness, RecordingSource.player(STEVE.id(), "Steve")))
                     .containsExactly(GameCommand.TOGGLE);
             RecordingSource player = harness.help(RecordingSource.player(STEVE.id(), "Steve"));
-            assertThat(player.nextPlain()).isEqualTo("Minecraft Discord Bridge");
+            assertThat(player.nextPlain()).isEqualTo("Discord Bridge for Minecraft");
             assertThat(player.nextPlain()).startsWith("/discord toggle");
             Waits.nothingIn(player.replies);
         }
@@ -65,7 +65,7 @@ class GameCommandTest {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             RecordingSource player = harness.help(RecordingSource.player(STEVE.id(), "Steve"));
 
-            assertThat(player.nextPlain()).isEqualTo("Minecraft Discord Bridge");
+            assertThat(player.nextPlain()).isEqualTo("Discord Bridge for Minecraft");
             assertThat(player.nextPlain()).startsWith("/discord link");
             assertThat(player.nextPlain()).startsWith("/discord unlink");
             assertThat(player.nextPlain()).startsWith("/discord toggle");
@@ -78,7 +78,7 @@ class GameCommandTest {
         try (Harness harness = Harness.started(directory, CHANNELS)) {
             RecordingSource console = harness.help(RecordingSource.console());
 
-            assertThat(console.nextPlain()).isEqualTo("Minecraft Discord Bridge");
+            assertThat(console.nextPlain()).isEqualTo("Discord Bridge for Minecraft");
             assertThat(console.nextPlain()).startsWith("/discord status");
             assertThat(console.nextPlain()).startsWith("/discord reload");
             assertThat(console.nextPlain()).startsWith("/discord setup");

@@ -13,7 +13,7 @@ final class ConfigSchema {
     static final String VERSION_KEY = "config-version";
     static final List<String> VERSION_COMMENT = List.of("Used to upgrade this file. Do not change it.");
     static final List<String> HEADER = List.of(
-            "Minecraft Discord Bridge settings. The bot token goes in secrets.yml.",
+            "Discord Bridge for Minecraft settings. The bot token goes in secrets.yml.",
             "Run /discord reload after you edit this file.",
             "To copy an ID, turn on Developer Mode in Discord (User Settings > Advanced),",
             "then right-click the channel, role or user and click Copy ID.");

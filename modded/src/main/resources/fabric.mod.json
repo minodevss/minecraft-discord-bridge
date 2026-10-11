@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "minecraftdiscordbridge",
   "version": "${version}",
-  "name": "Minecraft Discord Bridge",
+  "name": "Discord Bridge for Minecraft",
   "description": "Minecraft ↔ Discord bridge",
   "authors": ["minodevss"],
   "license": "Apache-2.0",

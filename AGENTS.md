@@ -1,4 +1,4 @@
-# Minecraft Discord Bridge
+# Discord Bridge for Minecraft
 
 Connects one Minecraft server (or one Velocity network) to one Discord server: chat both ways, game events, status, account linking and a few fixed actions.
 Runs inside the server as a Paper or Velocity plugin, or a Fabric, NeoForge or Forge mod. Every owner runs their own bot.
