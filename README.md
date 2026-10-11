@@ -12,6 +12,10 @@ Connect one Minecraft server, or one Velocity network, to one Discord server. Ch
 - A console channel that mirrors the server console, with tokens, webhook URLs, IP addresses and passwords hidden.
 - English and Korean.
 
+![Players chatting in a Discord channel through the bridge](docs/images/discord.png)
+
+![The same chat in game, with the Discord reply](docs/images/in-game.png)
+
 ## Install
 
 Download the jar for your server from the [latest release](https://github.com/minodevss/minecraft-discord-bridge/releases/latest) and put it in the `plugins` or `mods` folder.
