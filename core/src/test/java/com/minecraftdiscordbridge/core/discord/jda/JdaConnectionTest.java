@@ -2,6 +2,7 @@ package com.minecraftdiscordbridge.core.discord.jda;
 
 import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.APPLICATION_ID;
 import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.CHANNEL_ID;
+import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.GUILD_ID;
 import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.MESSAGE_CONTENT_INTENT;
 import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.OTHER_GUILD_ID;
 import static com.minecraftdiscordbridge.core.discord.jda.DiscordPayloads.PLAYER_ID;
@@ -20,6 +21,9 @@ import java.util.List;
 import java.util.Set;
 import mockwebserver3.RecordedRequest;
 import net.dv8tion.jda.api.utils.data.DataArray;
+import net.dv8tion.jda.internal.JDAImpl;
+import net.dv8tion.jda.internal.entities.GuildImpl;
+import net.dv8tion.jda.internal.entities.channel.concrete.TextChannelImpl;
 import org.junit.jupiter.api.Test;
 
 class JdaConnectionTest extends JdaTestBase {
@@ -30,6 +34,15 @@ class JdaConnectionTest extends JdaTestBase {
         awaitState(State.READY);
         assertThat(bridge.status().reasons()).isEmpty();
         assertThat(take(listener.statuses).state()).isEqualTo(State.READY);
+    }
+
+    @Test
+    void reportsStatusWhileJdaHasCachedAChannelButNotYetNamedIt() {
+        bridge = startReady();
+        JDAImpl jda = (JDAImpl) bridge.currentJda();
+        jda.getChannelsView().put(new TextChannelImpl(CHANNEL_ID, (GuildImpl) jda.getGuildById(GUILD_ID)));
+
+        assertThat(bridge.status().channels().get(CHANNEL).name()).isEmpty();
     }
 
     @Test
