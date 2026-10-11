@@ -123,7 +123,8 @@ public final class JdaDiscord implements Discord {
     private Optional<String> channelName(DiscordId id) {
         JDA jda = connection.jda();
         GuildChannel channel = jda == null ? null : jda.getGuildChannelById(id.value());
-        return channel == null ? Optional.empty() : Optional.of(channel.getName());
+        // JDA caches a channel before it sets the name, so other threads can briefly read a null name.
+        return channel == null ? Optional.empty() : Optional.ofNullable(channel.getName());
     }
 
     @Override
